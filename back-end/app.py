@@ -27,99 +27,10 @@ class UserData(db.Model):
     # Use the same primary key as the User id
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     completed_tutorial = db.Column(db.Boolean, default=False)
-    # One-to-many relationship with Varmints
-    varmints = db.relationship('Varmint', backref='user_data', lazy=True)
 
     def to_dict(self):
         return {
-            "completed_tutorial": self.completed_tutorial,
-            "varmints": [varmint.to_dict() for varmint in self.varmints]
         }
-
-class Varmint(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_data_id = db.Column(db.Integer, db.ForeignKey('user_data.id'), nullable=True)
-    evolution_line = db.Column(db.Integer, default=0)
-    evolution_stage = db.Column(db.Integer, default=0) # combine with evolution_line to form evol_ID
-    name = db.Column(db.String(50))
-    level = db.Column(db.Integer, default=1)
-    xp = db.Column(db.Integer, default=0)
-    hunger = db.Column(db.Float, default=1.0) # float from 0 - 1
-    happiness = db.Column(db.Integer, default=5) # int max 5
-    abilities = db.Column(db.String(200), default="") # comma-separated string
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_data_id": self.user_data_id,
-            "evolution_id": [self.evolution_stage, self.evolution_line],
-            "name": self.name,
-            "level": self.level,
-            "xp": self.xp,
-            "hunger": self.hunger,
-            "happiness": self.happiness,
-            "abilities": self.abilities.split(",") if self.abilities else []
-        }
-
-    @classmethod
-    def process_json(cls, varmint_data, user_data_id):
-        """
-        Given a dictionary of varmint data and a parent user_data_id,
-        either update an existing varmint (if "id" exists) or create a new one.
-        """
-        print('unpacking varmint...')
-        # If an id is provided, try to fetch and update an existing varmint.
-        if "id" in varmint_data:
-            varmint = cls.query.get(varmint_data["id"])
-            if varmint and varmint.user_data_id == user_data_id:
-                varmint.name = varmint_data.get("name", varmint.name)
-                varmint.level = varmint_data.get("level", varmint.level)
-                varmint.xp = varmint_data.get("xp", varmint.xp)
-                varmint.hunger = varmint_data.get("hunger", varmint.hunger)
-                varmint.happiness = varmint_data.get("happiness", varmint.happiness)
-                # Handle abilities: if provided as a list, join into a comma-separated string.
-                abilities = varmint_data.get("abilities")
-                if abilities is not None:
-                    if isinstance(abilities, list):
-                        varmint.abilities = ",".join(abilities)
-                    else:
-                        varmint.abilities = abilities
-                # Process evolution identifier if provided.
-                evolution_id = varmint_data.get("evolution_id")
-                if evolution_id and isinstance(evolution_id, list) and len(evolution_id) == 2:
-                    varmint.evolution_stage, varmint.evolution_line = evolution_id
-                return varmint
-
-        # Otherwise, create a new varmint.
-        name = varmint_data.get("name")
-        level = varmint_data.get("level", 1)
-        xp = varmint_data.get("xp", 0)
-        hunger = varmint_data.get("hunger", 1.0)
-        happiness = varmint_data.get("happiness", 5)
-        abilities = varmint_data.get("abilities", [])
-        if isinstance(abilities, list):
-            abilities = ",".join(abilities)
-        evolution_id = varmint_data.get("evolution_id", [0, 0])
-        if isinstance(evolution_id, list) and len(evolution_id) == 2:
-            evolution_stage, evolution_line = evolution_id
-        else:
-            evolution_stage, evolution_line = 0, 0
-
-        new_varmint = cls(
-            user_data_id=user_data_id,
-            evolution_line=evolution_line,
-            evolution_stage=evolution_stage,
-            name=name,
-            level=level,
-            xp=xp,
-            hunger=hunger,
-            happiness=happiness,
-            abilities=abilities
-        )
-        db.session.add(new_varmint)
-        return new_varmint
-
-
 
 with app.app_context():
     db.create_all()
@@ -197,15 +108,6 @@ def update_userdata(user_id):
         return jsonify(error="UserData not found"), 404
 
     data = request.get_json()
-
-    # Update the tutorial status if provided
-    if 'completed_tutorial' in data:
-        user.data.completed_tutorial = data['completed_tutorial']
-
-    # Process varmints if provided using our helper function.
-    if 'varmints' in data:
-        for varmint_data in data['varmints']:
-            Varmint.process_json(varmint_data, user.data.id)
 
     db.session.commit()
     updated_data = user.data.to_dict()
