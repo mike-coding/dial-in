@@ -1,117 +1,163 @@
-from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session, relationship
+from pydantic import BaseModel
+from typing import Optional
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS
+# Database setup
+SQLALCHEMY_DATABASE_URL = "sqlite:///./data.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure this to specific origins in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Dependency to get database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # ---------------------------
-# Models
+# Pydantic Models (Request/Response schemas)
 # ---------------------------
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    data: Optional[dict] = {}
+
+    class Config:
+        from_attributes = True
+
+# ---------------------------
+# SQLAlchemy Models
+# ---------------------------
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(80), unique=True, nullable=False, index=True)
+    password = Column(String(120), nullable=False)
+    
     # One-to-one relationship with UserData
-    data = db.relationship('UserData', backref='user', uselist=False)
+    data = relationship('UserData', back_populates='user', uselist=False)
 
     def to_dict(self):
         return {"id": self.id, "username": self.username}
 
-class UserData(db.Model):
+class UserData(Base):
     __tablename__ = 'user_data'
+    
     # Use the same primary key as the User id
-    id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    completed_tutorial = db.Column(db.Boolean, default=False)
+    id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    completed_tutorial = Column(Boolean, default=False)
+    
+    # Back reference to user
+    user = relationship('User', back_populates='data')
 
     def to_dict(self):
         return {
+            "completed_tutorial": self.completed_tutorial
         }
 
-with app.app_context():
-    db.create_all()
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 # ---------------------------
 # Routes
 # ---------------------------
-@app.route('/')
+@app.get("/")
 def index():
-    return jsonify(message="Flask API is running.")
+    return {"message": "FastAPI is running."}
 
 # Registration endpoint (now returns complete user data)
-@app.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify(error="Invalid payload"), 400
-
-    existing_user = User.query.filter_by(username=data['username']).first()
+@app.post("/register", response_model=UserResponse)
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
     if existing_user:
-        return jsonify(error="Username already exists"), 400
+        raise HTTPException(status_code=400, detail="Username already exists")
 
-    new_user = User(username=data['username'], password=data['password'])
-    db.session.add(new_user)
-    db.session.flush()  # Get new_user.id without committing yet
+    # Create new user
+    new_user = User(username=user_data.username, password=user_data.password)
+    db.add(new_user)
+    db.flush()  # Get new_user.id without committing yet
 
     # Create associated UserData for this new user
     new_user_data = UserData(id=new_user.id, completed_tutorial=False)
-    db.session.add(new_user_data)
-    db.session.commit()
+    db.add(new_user_data)
+    db.commit()
+    db.refresh(new_user)
 
-    # Return full user data including UserData and nested varmints
+    # Return full user data including UserData
     result = new_user.to_dict()
     result["data"] = new_user.data.to_dict() if new_user.data else {}
-    return jsonify(result), 201
+    return result
 
 # Login endpoint (now returns complete user data)
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify(error="Invalid payload"), 400
-
-    user = User.query.filter_by(username=data['username']).first()
+@app.post("/login", response_model=UserResponse)
+def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    # Find user
+    user = db.query(User).filter(User.username == user_data.username).first()
     if not user:
-        return jsonify(error="User not found"), 404
+        raise HTTPException(status_code=404, detail="User not found")
 
-    if user.password != data['password']:
-        return jsonify(error="Incorrect password"), 401
+    if user.password != user_data.password:
+        raise HTTPException(status_code=401, detail="Incorrect password")
 
-    # Return full user data including UserData and nested varmints
+    # Return full user data including UserData
     result = user.to_dict()
     result["data"] = user.data.to_dict() if user.data else {}
-    return jsonify(result), 200
+    return result
 
-# Endpoint to get a user's full data (user + userdata + nested varmints)
-@app.route('/userdata/<int:user_id>', methods=['GET'])
-def get_userdata(user_id):
-    user = db.session.get(User, user_id)
+# Endpoint to get a user's full data (user + userdata)
+@app.get("/userdata/{user_id}", response_model=UserResponse)
+def get_userdata(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        return jsonify(error="User not found"), 404
+        raise HTTPException(status_code=404, detail="User not found")
     if not user.data:
-        return jsonify(error="UserData not found"), 404
+        raise HTTPException(status_code=404, detail="UserData not found")
 
     result = user.to_dict()
     result['data'] = user.data.to_dict()
-    return jsonify(result), 200
+    return result
 
-@app.route('/userdata/<int:user_id>', methods=['PUT'])
-def update_userdata(user_id):
-    user = db.session.get(User, user_id)
+@app.put("/userdata/{user_id}")
+def update_userdata(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        return jsonify(error="User not found"), 404
+        raise HTTPException(status_code=404, detail="User not found")
     if not user.data:
-        return jsonify(error="UserData not found"), 404
+        raise HTTPException(status_code=404, detail="UserData not found")
 
-    data = request.get_json()
-
-    db.session.commit()
+    # Note: You may want to add request body handling here for updating specific fields
+    # For now, just returning the current data
+    db.commit()
     updated_data = user.data.to_dict()
-    return jsonify(updated_data), 200
+    return updated_data
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=5000)
