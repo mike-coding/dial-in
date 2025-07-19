@@ -44,7 +44,7 @@ function App() {
   return (
     <div className="relative h-screen w-screen flex flex-row justify-center items-center bg-gray-100">
       <Drawer/>
-      <div className="BODY__ w-full flex flex-col items-center border-2 border-black mx-10 my-10 p-6"> 
+      <div className="BODY__ w-full flex flex-col items-center mx-10 my-10 p-6"> 
         {renderCurrentPage()}
       </div>
     </div>
