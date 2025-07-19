@@ -7,7 +7,11 @@ interface Task {
   createdAt: Date;
 }
 
-const Tasks: React.FC = () => {
+interface TasksProps {
+  isMobile?: boolean;
+}
+
+const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
 
@@ -49,30 +53,30 @@ const Tasks: React.FC = () => {
   const totalCount = tasks.length;
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6">
+    <div className={`w-full ${isMobile ? 'max-w-full px-2' : 'max-w-2xl'} mx-auto ${isMobile ? 'p-2' : 'p-6'}`}>
       <div className="bg-white rounded-lg shadow-lg">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Tasks</h1>
+        <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-gray-200`}>
+          <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800 mb-2`}>Tasks</h1>
           <p className="text-gray-600">
             {completedCount} of {totalCount} tasks completed
           </p>
         </div>
 
         {/* Add new task */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex gap-2">
+        <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-gray-200`}>
+          <div className={`flex gap-2 ${isMobile ? 'flex-col' : ''}`}>
             <input
               type="text"
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Add a new task..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`${isMobile ? 'w-full mb-2' : 'flex-1'} px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
             />
             <div
               onClick={addTask}
-              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors cursor-pointer select-none"
+              className={`${isMobile ? 'w-full text-center' : 'px-6'} py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors cursor-pointer select-none`}
             >
               Add
             </div>
@@ -80,51 +84,51 @@ const Tasks: React.FC = () => {
         </div>
 
         {/* Tasks list */}
-        <div className="max-h-96 overflow-y-auto">
+        <div className={`${isMobile ? 'max-h-80' : 'max-h-96'} overflow-y-auto`}>
           {tasks.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className={`${isMobile ? 'p-6' : 'p-8'} text-center text-gray-500`}>
               <div className="text-4xl mb-2">📝</div>
-              <p>No tasks yet. Add one above to get started!</p>
+              <p className={isMobile ? 'text-sm' : ''}>No tasks yet. Add one above to get started!</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-200">
               {tasks.map((task) => (
-                <li key={task.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <li key={task.id} className={`${isMobile ? 'p-3' : 'p-4'} hover:bg-gray-50 transition-colors`}>
                   <div className="flex items-center gap-3">
                     <div
                       onClick={() => toggleTask(task.id)}
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors cursor-pointer select-none ${
+                      className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} rounded border-2 flex items-center justify-center transition-colors cursor-pointer select-none ${
                         task.completed
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'border-gray-300 hover:border-green-400'
                       }`}
                     >
                       {task.completed && (
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'}`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${
+                      <p className={`${isMobile ? 'text-base' : 'text-sm'} font-medium ${
                         task.completed 
                           ? 'text-gray-500 line-through' 
                           : 'text-gray-900'
                       }`}>
                         {task.text}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500 mt-1`}>
                         {task.createdAt.toLocaleDateString()} at {task.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     
                     <div
                       onClick={() => deleteTask(task.id)}
-                      className="text-red-400 hover:text-red-600 transition-colors p-1 cursor-pointer select-none"
+                      className={`text-red-400 hover:text-red-600 transition-colors ${isMobile ? 'p-2' : 'p-1'} cursor-pointer select-none`}
                       aria-label="Delete task"
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                     </div>
@@ -137,15 +141,15 @@ const Tasks: React.FC = () => {
 
         {/* Footer with actions */}
         {tasks.length > 0 && (
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">
+          <div className={`${isMobile ? 'p-3' : 'p-4'} border-t border-gray-200 bg-gray-50`}>
+            <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'}`}>
+              <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
                 {tasks.filter(task => !task.completed).length} remaining
               </span>
               {completedCount > 0 && (
                 <div
                   onClick={clearCompleted}
-                  className="text-sm text-red-500 hover:text-red-700 transition-colors cursor-pointer select-none"
+                  className={`${isMobile ? 'text-xs' : 'text-sm'} text-red-500 hover:text-red-700 transition-colors cursor-pointer select-none`}
                 >
                   Clear completed ({completedCount})
                 </div>

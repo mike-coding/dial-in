@@ -1,40 +1,52 @@
 import React from "react";
 import useStore, { Page } from "../hooks/AppContext";
 
-
 const Drawer: React.FC = () => {
   return (
-    <div className="h-full w-52 bg-white">
-      <div className="p-2 py-5">
-        <h2 className="flex flex-row justify-center text-xl font-bold mb-4 border-b-3 pb-5 border-gray-200">DIAL_IN [v0.0.1]</h2>
+    <div className="h-full w-52 bg-white shadow-lg border-r border-gray-200">
+      <div className="p-4 py-6 border-b border-gray-200">
+        <h2 className="flex flex-row justify-center text-lg font-bold text-gray-800">
+          DIAL_IN
+        </h2>
+        <p className="flex flex-row justify-center text-xs text-gray-500 mt-1">
+          v0.0.1
+        </p>
       </div>
-      <div className="__Navigation_Buttons w-full flex flex-col gap-5 text-xl">
-        <NavigationButton targetPage="Dashboard"/>
-        <NavigationButton targetPage="Tasks"/>
-        <NavigationButton targetPage="Calendar"/>
-        <NavigationButton targetPage="Users"/>
+      <div className="__Navigation_Buttons w-full flex flex-col gap-2 p-4">
+        <NavigationButton targetPage="Dashboard" icon="🏠" />
+        <NavigationButton targetPage="Tasks" icon="✓" />
+        <NavigationButton targetPage="Calendar" icon="📅" />
+        <NavigationButton targetPage="Users" icon="👥" />
       </div>
-  </div>
+    </div>
   );
 };
 
 export default Drawer;
 
 interface NavigationButtonProps {
-  targetPage:Page
+  targetPage: Page;
+  icon: string;
 }
 
-const NavigationButton: React.FC<NavigationButtonProps> = ({targetPage}) => {
-  const { setCurrentPage } = useStore();
+const NavigationButton: React.FC<NavigationButtonProps> = ({ targetPage, icon }) => {
+  const { currentPage, setCurrentPage } = useStore();
+  const isActive = currentPage === targetPage;
+
   return (
-    <div 
-      className="flex flex-row justify-center hover:scale-110 "
+    <button
+      className={`flex flex-row items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left w-full ${
+        isActive
+          ? "bg-blue-100 text-blue-700 shadow-sm"
+          : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+      }`}
       onClick={() => setCurrentPage(targetPage)}
-      >
-        {targetPage}
-    </div>
-  )
-}
+    >
+      <span className="text-lg">{icon}</span>
+      <span className="font-medium">{targetPage}</span>
+    </button>
+  );
+};
 
 
 
