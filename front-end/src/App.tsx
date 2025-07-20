@@ -1,18 +1,46 @@
 import './App.css'
+import React from 'react'
 import Drawer from './components/Drawer'
 import MobileNavigation from './components/MobileNavigation'
 import Tasks from './components/Tasks'
-import useStore from './hooks/AppContext'
+import Auth from './components/Auth'
+import { useNavigationContext, useUserData } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
 
 function App() {
-  const { currentPage } = useStore();
+  const { navigation } = useNavigationContext();
+  const { authState, checkAuthStatus } = useUserData();
   const { isMobile, isTablet, isDesktop } = useDeviceDetection();
+
+  // Check authentication status on app startup
+  React.useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
+  // Show loading screen during initial auth check
+  if (authState.isLoading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+            <div className="text-white font-bold text-xl">DI</div>
+          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth screen if not authenticated
+  if (!authState.isAuthenticated) {
+    return <Auth isMobile={isMobile} />;
+  }
 
   const renderCurrentPage = () => {
     const mobilePageClasses = isMobile ? "px-2" : "";
     
-    switch (currentPage) {
+    switch (navigation.currentPage) {
       case 'Tasks':
         return <Tasks isMobile={isMobile} />;
       case 'Dashboard':
@@ -119,7 +147,7 @@ function App() {
       {/* Mobile Layout */}
       {isMobile && (
         <div className="w-full h-full flex flex-col">
-          <div className="bg-white border-b shadow-md h-10 flex items-center justify-end px-4">
+          <div className="bg-white border-b shadow-md h-10 flex items-center justify-start px-4">
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">v0.0.1</div>
           </div>

@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./instance/data.db"
@@ -50,6 +51,97 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Category models
+class CategoryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    user_id: int
+    created_at: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+# Rule models
+class RuleCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    category_id: int
+    rate_pattern: str  # New encoding system (e.g., "w#1M#1,2,3,4,5,6,7,8,9,10,11,12T#09:00")
+
+class RuleResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    category_id: int
+    rate_pattern: str
+    is_active: bool
+    created_at: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+# Task models
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    category_id: int
+    rule_id: Optional[int] = None
+    due_date: Optional[str] = None
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    is_completed: Optional[bool] = None
+    due_date: Optional[str] = None
+
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    category_id: int
+    rule_id: Optional[int]
+    user_id: int
+    is_completed: bool
+    due_date: Optional[str]
+    created_at: Optional[str]
+    completed_at: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+# Event models
+class EventCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    category_id: int
+    rule_id: Optional[int] = None
+    start_time: str
+    end_time: Optional[str] = None
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    end_time: Optional[str] = None
+
+class EventResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    category_id: int
+    rule_id: Optional[int]
+    user_id: int
+    start_time: str
+    end_time: Optional[str]
+    created_at: Optional[str]
+
+    class Config:
+        from_attributes = True
+
 # ---------------------------
 # SQLAlchemy Models
 # ---------------------------
@@ -79,6 +171,121 @@ class UserData(Base):
     def to_dict(self):
         return {
             "completed_tutorial": self.completed_tutorial
+        }
+
+class Category(Base):
+    __tablename__ = 'categories'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship('User')
+    rules = relationship('Rule', back_populates='category')
+    tasks = relationship('Task', back_populates='category')
+    events = relationship('Event', back_populates='category')
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "user_id": self.user_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+class Rule(Base):
+    __tablename__ = 'rules'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+    rate_pattern = Column(String(200), nullable=False)  # New encoding system (e.g., "w#1M#1,2,3,4,5,6,7,8,9,10,11,12T#09:00")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    category = relationship('Category', back_populates='rules')
+    tasks = relationship('Task', back_populates='rule')
+    events = relationship('Event', back_populates='rule')
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "category_id": self.category_id,
+            "rate_pattern": self.rate_pattern,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+class Task(Base):
+    __tablename__ = 'tasks'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+    rule_id = Column(Integer, ForeignKey('rules.id'), nullable=True)  # Optional rule assignment
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    is_completed = Column(Boolean, default=False)
+    due_date = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    user = relationship('User')
+    category = relationship('Category', back_populates='tasks')
+    rule = relationship('Rule', back_populates='tasks')
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "category_id": self.category_id,
+            "rule_id": self.rule_id,
+            "user_id": self.user_id,
+            "is_completed": self.is_completed,
+            "due_date": self.due_date.isoformat() if self.due_date else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None
+        }
+
+class Event(Base):
+    __tablename__ = 'events'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+    rule_id = Column(Integer, ForeignKey('rules.id'), nullable=True)  # Optional rule assignment
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship('User')
+    category = relationship('Category', back_populates='events')
+    rule = relationship('Rule', back_populates='events')
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "category_id": self.category_id,
+            "rule_id": self.rule_id,
+            "user_id": self.user_id,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
 # Create tables

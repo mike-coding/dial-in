@@ -1,5 +1,5 @@
 import React from "react";
-import useStore, { Page } from "../hooks/AppContext";
+import { Page, useNavigationContext } from "../hooks/AppContext";
 
 const Drawer: React.FC = () => {
   return (
@@ -30,8 +30,8 @@ interface NavigationButtonProps {
 }
 
 const NavigationButton: React.FC<NavigationButtonProps> = ({ targetPage, icon }) => {
-  const { currentPage, setCurrentPage } = useStore();
-  const isActive = currentPage === targetPage;
+  const { navigation, navigateTo } = useNavigationContext();
+  const isActive = navigation.currentPage === targetPage;
 
   return (
     <button
@@ -40,7 +40,7 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({ targetPage, icon })
           ? "bg-blue-100 text-blue-700 shadow-sm"
           : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
       }`}
-      onClick={() => setCurrentPage(targetPage)}
+      onClick={() => navigateTo(targetPage)}
     >
       <span className="text-lg">{icon}</span>
       <span className="font-medium">{targetPage}</span>

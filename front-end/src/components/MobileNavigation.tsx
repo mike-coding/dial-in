@@ -1,8 +1,8 @@
 import React from "react";
-import useStore, { Page } from "../hooks/AppContext";
+import { Page, useNavigationContext } from "../hooks/AppContext";
 
 const MobileNavigation: React.FC = () => {
-  const { currentPage, setCurrentPage } = useStore();
+  const { navigation, navigateTo } = useNavigationContext();
 
   const navigationItems: { page: Page; icon: string; label: string }[] = [
     { page: "Dashboard", icon: "🏠", label: "Home" },
@@ -17,9 +17,9 @@ const MobileNavigation: React.FC = () => {
         {navigationItems.map(({ page, icon, label }) => (
           <button
             key={page}
-            onClick={() => setCurrentPage(page)}
+            onClick={() => navigateTo(page)}
             className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
-              currentPage === page
+              navigation.currentPage === page
                 ? "bg-blue-100 text-blue-600 scale-105"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             }`}
