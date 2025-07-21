@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import TaskDetails from './TaskDetails';
 
@@ -11,6 +11,32 @@ interface TaskProps {
 
 const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [title, setTitle] = useState(task.title);
+  const [hasUnsavedTitle, setHasUnsavedTitle] = useState(false);
+  const taskRef = useRef<HTMLDivElement>(null);
+
+  // Update local title when task prop changes
+  React.useEffect(() => {
+    setTitle(task.title);
+    setHasUnsavedTitle(false);
+  }, [task.title]);
+
+  // Handle click outside to collapse task
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isExpanded && taskRef.current && !taskRef.current.contains(event.target as Node)) {
+        handleCollapseWithAutoSave();
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded, hasUnsavedTitle, title, task.title]);
 
   const handleTaskClick = (e: React.MouseEvent) => {
     // Don't expand if clicking on checkbox or delete button
@@ -24,8 +50,43 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
     onUpdate(task.id, updates);
   };
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+    setHasUnsavedTitle(e.target.value !== task.title);
+  };
+
+  const handleTitleBlur = () => {
+    if (hasUnsavedTitle && title.trim() && title !== task.title) {
+      handleUpdate({ title: title.trim() });
+    } else if (!title.trim()) {
+      // Revert to original title if empty
+      setTitle(task.title);
+      setHasUnsavedTitle(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      (e.target as HTMLInputElement).blur();
+    } else if (e.key === 'Escape') {
+      setTitle(task.title);
+      setHasUnsavedTitle(false);
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleCollapseWithAutoSave = () => {
+    // Auto-save any pending title changes before collapsing
+    if (hasUnsavedTitle && title.trim() && title !== task.title) {
+      handleUpdate({ title: title.trim() });
+    }
+    setIsExpanded(false);
+  };
+
   return (
     <div 
+      ref={taskRef}
       className={`rounded-sm shadow-sm hover:shadow-md transition-all duration-200 ${
         task.is_completed ? 'bg-white/50' : 'bg-white/90'
       }`}
@@ -57,40 +118,56 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
           
           {/* Task Content */}
           <div className="flex-1 min-w-0">
-            <p className={`text-lg transition-all duration-200 ${
-              task.is_completed 
-                ? 'text-gray-500/80 line-through' 
-                : 'text-gray-800'
-            }`}>
-              {task.title}
-            </p>
+            {isExpanded ? (
+              <input
+                type="text"
+                value={title}
+                onChange={handleTitleChange}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                onClick={(e) => e.stopPropagation()}
+                className={`w-full text-lg bg-transparent border-b border-gray-300 outline-none transition-all duration-200 focus:border-b-2 focus:border-gray-400 ${
+                  task.is_completed 
+                    ? 'text-gray-500/80' 
+                    : 'text-gray-800'
+                }`}
+                placeholder="Enter task title..."
+                autoFocus={false}
+              />
+            ) : (
+              <p className={`text-lg transition-all duration-200 ${
+                task.is_completed 
+                  ? 'text-gray-500/80' 
+                  : 'text-gray-800'
+              }`}>
+                {task.title}
+              </p>
+            )}
           </div>
           
-          {/* Expand/Collapse Indicator */}
+          {/* Expand/Collapse Controls */}
           <div className="flex items-center gap-2">
-            <svg 
-              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                isExpanded ? 'transform rotate-180' : ''
-              }`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-
-            {/* Delete Button */}
             <div
-              data-action="delete"
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(task.id);
+                if (isExpanded) {
+                  handleCollapseWithAutoSave();
+                } else {
+                  setIsExpanded(true);
+                }
               }}
-              className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center cursor-pointer transition-colors group"
-              aria-label="Delete task"
+              className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors group"
+              aria-label={isExpanded ? "Collapse task details" : "Expand task details"}
             >
-              <svg className="w-5 h-5 text-gray-500 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={3} d="M6 6l12 12M6 18L18 6" />
+              <svg 
+                className={`w-5 h-5 text-gray-500 group-hover:text-gray-700 transition-all duration-200 ${
+                  isExpanded ? 'transform rotate-180' : ''
+                }`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={3} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
           </div>
@@ -98,14 +175,18 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
       </div>
 
       {/* Expanded Details */}
-      {isExpanded && (
+      <div 
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
         <TaskDetails
           task={task}
           onSave={handleUpdate}
           onDelete={onDelete}
           onClose={() => setIsExpanded(false)}
         />
-      )}
+      </div>
     </div>
   );
 };
