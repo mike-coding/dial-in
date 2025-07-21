@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Page, useNavigationContext } from "../hooks/AppContext";
 
 // SVG Components
@@ -26,35 +26,135 @@ const UsersIcon = () => (
   </svg>
 );
 
+const CategoriesIcon = () => (
+  <svg fill="currentColor" width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <path d="M296 32h192c13.255 0 24 10.745 24 24v160c0 13.255-10.745 24-24 24H296c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24zm-80 0H24C10.745 32 0 42.745 0 56v160c0 13.255 10.745 24 24 24h192c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24zM0 296v160c0 13.255 10.745 24 24 24h192c13.255 0 24-10.745 24-24V296c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm296 184h192c13.255 0 24-10.745 24-24V296c0-13.255-10.745-24-24-24H296c-13.255 0-24 10.745-24 24v160c0 13.255 10.745 24 24 24z"/>
+  </svg>
+);
+
+const RulesIcon = () => (
+  <svg fill="currentColor" width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <path d="M440.65 12.57l4 82.77A247.16 247.16 0 0 0 255.83 8C134.73 8 33.91 94.92 12.29 209.82A12 12 0 0 0 24.09 224h49.05a12 12 0 0 0 11.67-9.26 175.91 175.91 0 0 1 317-56.94l-101.46-4.86a12 12 0 0 0-12.57 12v47.41a12 12 0 0 0 12 12H500a12 12 0 0 0 12-12V12a12 12 0 0 0-12-12h-47.37a12 12 0 0 0-11.98 12.57zM255.83 432a175.61 175.61 0 0 1-146-77.8l101.8 4.87a12 12 0 0 0 12.57-12v-47.4a12 12 0 0 0-12-12H12a12 12 0 0 0-12 12V500a12 12 0 0 0 12 12h47.35a12 12 0 0 0 12-12.6l-4.15-82.57A247.17 247.17 0 0 0 255.83 504c121.11 0 221.93-86.92 243.55-201.82a12 12 0 0 0-11.8-14.18h-49.05a12 12 0 0 0-11.67 9.26A175.86 175.86 0 0 1 255.83 432z"/>
+  </svg>
+);
+
 const MobileNavigation: React.FC = () => {
   const { navigation, navigateTo } = useNavigationContext();
 
-  const navigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
+  // Check if we're in the Tasks module (Tasks, Categories, or Rules)
+  const isTasksModule = ["Tasks", "Categories", "Rules"].includes(navigation.currentPage);
+  
+  // State to manage delayed unmounting for exit animation
+  const [showExpanded, setShowExpanded] = useState(isTasksModule);
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    if (isTasksModule && !showExpanded) {
+      // Expanding: show immediately
+      setShowExpanded(true);
+      setIsExiting(false);
+    } else if (!isTasksModule && showExpanded && !isExiting) {
+      // Collapsing: start exit animation
+      setIsExiting(true);
+      const timer = setTimeout(() => {
+        setShowExpanded(false);
+        setIsExiting(false);
+      }, 400); // Slightly longer than animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [isTasksModule, showExpanded, isExiting]);
+
+  const mainNavigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "Dashboard", icon: <DashboardIcon />, label: "Dash" },
     { page: "Tasks", icon: <TasksIcon />, label: "Tasks" },
     { page: "Calendar", icon: <CalendarIcon />, label: "Calendar" },
     { page: "Users", icon: <UsersIcon />, label: "Profile" },
   ];
 
+  const tasksSubNavItems = [
+    { page: "Tasks" as Page, icon: <TasksIcon />, label: "Tasks" },
+    { page: "Categories" as Page, icon: <CategoriesIcon />, label: "Categories" },
+    { page: "Rules" as Page, icon: <RulesIcon />, label: "Rules" },
+  ];
+
   return (
+    <>
+      <style>
+        {`
+          @keyframes fadeInSlideUp {
+            0% {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @keyframes fadeOutSlideDown {
+            0% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+            100% {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+          }
+        `}
+      </style>
     <div className="fixed bottom-0 left-0 right-0 bg-white/90 shadow-lg z-50 h-20">
       <div className="flex justify-around items-center h-full px-4 max-w-md mx-auto">
-        {navigationItems.map(({ page, icon, label }) => (
-          <button
-            key={page}
-            onClick={() => navigateTo(page)}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
-              navigation.currentPage === page
-                ? "bg-blue-100 text-blue-600 scale-105"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+        {mainNavigationItems.map(({ page, icon, label }) => (
+          <div 
+            key={page} 
+            className={`transition-all duration-300 ease-in-out ${
+              page === "Tasks" && isTasksModule ? "flex-1 max-w-[180px]" : "min-w-[60px] max-w-[60px]"
             }`}
           >
-            <div className="mb-1">{icon}</div>
-            <span className="text-xs font-medium">{label}</span>
-          </button>
+            {page === "Tasks" && isTasksModule ? (
+              // Expanded Tasks module with horizontal sub-navigation
+              <div className="flex items-center justify-start gap-1 bg-blue-100 rounded-lg p-1 transition-all duration-300 ease-in-out">
+                {tasksSubNavItems.map(({ page: subPage, icon: subIcon, label: subLabel }, index) => (
+                  <button
+                    key={subPage}
+                    onClick={() => navigateTo(subPage)}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 min-w-[45px] ${
+                      navigation.currentPage === subPage
+                        ? "text-blue-600 scale-105"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                    style={{ 
+                      opacity: 0,
+                      transform: 'translateY(10px)',
+                      animation: `fadeInSlideUp 300ms ease-out ${index * 100}ms forwards`
+                    }}
+                  >
+                    <div className="mb-1">{subIcon}</div>
+                    <span className="text-xs font-medium">{subLabel}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // Regular navigation button
+              <button
+                onClick={() => navigateTo(page)}
+                className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
+                  navigation.currentPage === page
+                    ? "bg-blue-100 text-blue-600 scale-105"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <div className="mb-1">{icon}</div>
+                <span className="text-xs font-medium">{label}</span>
+              </button>
+            )}
+          </div>
         ))}
       </div>
     </div>
+    </>
   );
 };
 

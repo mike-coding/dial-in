@@ -22,17 +22,17 @@ class UserResponse(BaseModel):
 # Category models
 class CategoryCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    icon: Optional[str] = None
     user_id: int
 
 class CategoryUpdate(BaseModel):
     name: Optional[str] = None
-    description: Optional[str] = None
+    icon: Optional[str] = None
 
 class CategoryResponse(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    icon: Optional[str]
     user_id: int
     created_at: Optional[str]
 

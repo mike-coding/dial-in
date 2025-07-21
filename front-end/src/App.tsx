@@ -3,6 +3,8 @@ import React from 'react'
 import Drawer from './components/Drawer'
 import MobileNavigation from './components/MobileNavigation'
 import Tasks from './components/Tasks'
+import Categories from './components/Categories'
+import Rules from './components/Rules'
 import Auth from './components/Auth'
 import { useNavigationContext, useUserData } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
@@ -49,6 +51,10 @@ function App() {
     switch (navigation.currentPage) {
       case 'Tasks':
         return <Tasks isMobile={isMobile} />;
+      case 'Categories':
+        return <Categories />;
+      case 'Rules':
+        return <Rules />;
       case 'Dashboard':
         return (
           <div className={`text-center w-full max-w-4xl ${mobilePageClasses}`}>

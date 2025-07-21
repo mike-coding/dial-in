@@ -22,7 +22,7 @@ class Category(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    description = Column(Text)
+    icon = Column(String(10), nullable=True)  # Store emoji character
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -36,7 +36,7 @@ class Category(Base):
         return {
             "id": self.id,
             "name": self.name,
-            "description": self.description,
+            "icon": self.icon,
             "user_id": self.user_id,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
