@@ -134,18 +134,28 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
       // Load all user data in parallel
       const [categoriesRes, tasksRes, eventsRes, rulesRes] = await Promise.all([
-        fetch(`http://${currentHost}:5000/users/${userId}/categories`),
-        fetch(`http://${currentHost}:5000/users/${userId}/tasks`),
-        fetch(`http://${currentHost}:5000/users/${userId}/events`),
-        fetch(`http://${currentHost}:5000/users/${userId}/rules`),
+        fetch(`http://${currentHost}:5000/categories/?user_id=${userId}`),
+        fetch(`http://${currentHost}:5000/tasks/?user_id=${userId}`),
+        fetch(`http://${currentHost}:5000/events/?user_id=${userId}`),
+        fetch(`http://${currentHost}:5000/rules/?user_id=${userId}`),
       ]);
 
-      // Parse all responses
+      // Parse all responses, handling 404s as empty arrays
+      const parseResponse = async (res: Response) => {
+        if (res.status === 404) {
+          return []; // Return empty array for 404s (new user with no data)
+        }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      };
+
       const [categories, tasks, events, rules] = await Promise.all([
-        categoriesRes.json(),
-        tasksRes.json(),
-        eventsRes.json(),
-        rulesRes.json(),
+        parseResponse(categoriesRes),
+        parseResponse(tasksRes),
+        parseResponse(eventsRes),
+        parseResponse(rulesRes),
       ]);
 
       // Emit user data loaded event instead of direct store manipulation
@@ -222,7 +232,7 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
     try {
       const currentHost = window.location.hostname;
-      const response = await fetch(`http://${currentHost}:5000/login`, {
+      const response = await fetch(`http://${currentHost}:5000/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -233,6 +243,9 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
       }
 
       const userData = await response.json();
+      
+      // Store user data in localStorage for persistence
+      localStorage.setItem('dial_in_user', JSON.stringify(userData));
       
       set({ 
         userData,
@@ -275,7 +288,7 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
     try {
       const currentHost = window.location.hostname;
-      const response = await fetch(`http://${currentHost}:5000/register`, {
+      const response = await fetch(`http://${currentHost}:5000/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -287,6 +300,9 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
       }
 
       const userData = await response.json();
+      
+      // Store user data in localStorage for persistence
+      localStorage.setItem('dial_in_user', JSON.stringify(userData));
       
       set({ 
         userData,
@@ -318,6 +334,9 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
   },
 
   logout: () => {
+    // Clear localStorage
+    localStorage.removeItem('dial_in_user');
+    
     // Emit logout event instead of direct store manipulation
     eventBus.emit<AuthStatusChangedEvent>('auth-status-changed', {
       isAuthenticated: false,
@@ -351,29 +370,50 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
     });
 
     try {
-      const currentHost = window.location.hostname;
-      const response = await fetch(`http://${currentHost}:5000/me`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        set({ 
-          userData,
-          authState: {
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
+      // First, check localStorage for stored user data
+      const storedUserData = localStorage.getItem('dial_in_user');
+      
+      if (storedUserData) {
+        try {
+          const userData = JSON.parse(storedUserData);
+          
+          // Quickly set authenticated state from localStorage
+          set({ 
+            userData,
+            authState: {
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            }
+          });
+          
+          // Load user data in the background
+          if (userData.id) {
+            await get().loadUserData(userData.id);
           }
-        });
-        
-        // Load user data if authenticated
-        await get().loadUserData(userData.id);
-      } else {
-        throw new Error("Not authenticated");
+          
+          if (VERBOSE_DEBUG) console.log("✅ Auth restored from localStorage:", userData);
+          return;
+        } catch (parseError) {
+          console.error("❌ Failed to parse stored user data:", parseError);
+          localStorage.removeItem('dial_in_user');
+        }
       }
+      
+      // No valid stored data found
+      set({ 
+        userData: null,
+        authState: {
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        }
+      });
+      
+      if (VERBOSE_DEBUG) console.log("ℹ️ No stored authentication found");
+      
     } catch (error) {
+      console.error("❌ Auth check failed:", error);
       set({ 
         userData: null,
         authState: {

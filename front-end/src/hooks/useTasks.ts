@@ -58,7 +58,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     });
 
     const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/tasks`;
+    const apiUrl = `http://${currentHost}:5000/tasks/`;
 
     fetch(apiUrl, {
       method: "POST",

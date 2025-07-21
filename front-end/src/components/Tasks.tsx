@@ -1,56 +1,59 @@
 import React, { useState } from 'react';
-
-interface Task {
-  id: number;
-  text: string;
-  completed: boolean;
-  createdAt: Date;
-}
+import { useTasks } from '../hooks/useTasks';
+import { useCategories } from '../hooks/useCategories';
 
 interface TasksProps {
   isMobile?: boolean;
 }
 
 const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
+  const { tasks, addTask, updateTask, deleteTask } = useTasks();
+  const { categories } = useCategories();
 
-  const addTask = () => {
+  // Get default category (first one) or create a fallback
+  const defaultCategory = categories.length > 0 ? categories[0] : null;
+
+  const handleAddTask = () => {
     if (newTaskText.trim() === '') return;
     
-    const newTask: Task = {
-      id: Date.now(),
-      text: newTaskText.trim(),
-      completed: false,
-      createdAt: new Date()
-    };
+    addTask({
+      title: newTaskText.trim(),
+      description: '',
+      category_id: defaultCategory?.id || null, // Allow null category
+      is_completed: false,
+    });
     
-    setTasks([...tasks, newTask]);
     setNewTaskText('');
   };
 
   const toggleTask = (id: number) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+    const task = (tasks || []).find(t => t.id === id);
+    if (task) {
+      updateTask(id, { 
+        is_completed: !task.is_completed,
+        completed_at: !task.is_completed ? new Date().toISOString() : undefined
+      });
+    }
   };
 
-  const deleteTask = (id: number) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const handleDeleteTask = (id: number) => {
+    deleteTask(id);
   };
 
   const clearCompleted = () => {
-    setTasks(tasks.filter(task => !task.completed));
+    const completedTasks = (tasks || []).filter(task => task.is_completed);
+    completedTasks.forEach(task => deleteTask(task.id));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      addTask();
+      handleAddTask();
     }
   };
 
-  const completedCount = tasks.filter(task => task.completed).length;
-  const totalCount = tasks.length;
+  const completedCount = (tasks || []).filter(task => task.is_completed).length;
+  const totalCount = (tasks || []).length;
 
   return (
     <div className={`w-full ${isMobile ? 'max-w-full px-2' : 'max-w-2xl'} mx-auto ${isMobile ? 'p-2' : 'p-6'}`}>
@@ -75,7 +78,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
               className={`${isMobile ? 'w-full mb-2' : 'flex-1'} px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
             />
             <div
-              onClick={addTask}
+              onClick={handleAddTask}
               className={`${isMobile ? 'w-full text-center' : 'px-6'} py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors cursor-pointer select-none`}
             >
               Add
@@ -85,25 +88,25 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
         {/* Tasks list */}
         <div className={`${isMobile ? 'max-h-80' : 'max-h-96'} overflow-y-auto`}>
-          {tasks.length === 0 ? (
+          {(tasks || []).length === 0 ? (
             <div className={`${isMobile ? 'p-6' : 'p-8'} text-center text-gray-500`}>
               <div className="text-4xl mb-2">📝</div>
               <p className={isMobile ? 'text-sm' : ''}>No tasks yet. Add one above to get started!</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {tasks.map((task) => (
+              {(tasks || []).map((task) => (
                 <li key={task.id} className={`${isMobile ? 'p-3' : 'p-4'} hover:bg-gray-50 transition-colors`}>
                   <div className="flex items-center gap-3">
                     <div
                       onClick={() => toggleTask(task.id)}
                       className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} rounded border-2 flex items-center justify-center transition-colors cursor-pointer select-none ${
-                        task.completed
+                        task.is_completed
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'border-gray-300 hover:border-green-400'
                       }`}
                     >
-                      {task.completed && (
+                      {task.is_completed && (
                         <svg className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'}`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
@@ -112,19 +115,19 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                     
                     <div className="flex-1 min-w-0">
                       <p className={`${isMobile ? 'text-base' : 'text-sm'} font-medium ${
-                        task.completed 
+                        task.is_completed 
                           ? 'text-gray-500 line-through' 
                           : 'text-gray-900'
                       }`}>
-                        {task.text}
+                        {task.title}
                       </p>
                       <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500 mt-1`}>
-                        {task.createdAt.toLocaleDateString()} at {task.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(task.created_at).toLocaleDateString()} at {new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     
                     <div
-                      onClick={() => deleteTask(task.id)}
+                      onClick={() => handleDeleteTask(task.id)}
                       className={`text-red-400 hover:text-red-600 transition-colors ${isMobile ? 'p-2' : 'p-1'} cursor-pointer select-none`}
                       aria-label="Delete task"
                     >
@@ -140,11 +143,11 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         </div>
 
         {/* Footer with actions */}
-        {tasks.length > 0 && (
+        {(tasks || []).length > 0 && (
           <div className={`${isMobile ? 'p-3' : 'p-4'} border-t border-gray-200 bg-gray-50`}>
             <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'}`}>
               <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
-                {tasks.filter(task => !task.completed).length} remaining
+                {(tasks || []).filter(task => !task.is_completed).length} remaining
               </span>
               {completedCount > 0 && (
                 <div

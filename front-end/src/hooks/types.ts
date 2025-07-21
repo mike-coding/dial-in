@@ -22,7 +22,7 @@ export interface Task {
   id: number;
   title: string;
   description?: string;
-  category_id: number;
+  category_id: number | null; // Allow null category
   rule_id?: number;
   user_id: number;
   is_completed: boolean;
@@ -35,7 +35,7 @@ export interface Event {
   id: number;
   title: string;
   description?: string;
-  category_id: number;
+  category_id: number | null; // Allow null category
   rule_id?: number;
   user_id: number;
   start_time: string;
