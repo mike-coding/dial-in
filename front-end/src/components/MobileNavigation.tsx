@@ -37,7 +37,7 @@ const MobileNavigation: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 h-20">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/90 shadow-lg z-50 h-20">
       <div className="flex justify-around items-center h-full px-4 max-w-md mx-auto">
         {navigationItems.map(({ page, icon, label }) => (
           <button
