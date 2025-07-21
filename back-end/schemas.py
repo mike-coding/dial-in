@@ -79,6 +79,7 @@ class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     is_completed: Optional[bool] = None
+    completed_at: Optional[str] = None  # Add this field
     due_date: Optional[str] = None
 
 class TaskResponse(BaseModel):

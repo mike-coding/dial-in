@@ -60,19 +60,28 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
         message="Login successful"
     )
 
-@router.get("/me", response_model=UserResponse)
-async def get_current_user(db: Session = Depends(get_db)):
-    """Get current authenticated user info."""
-    # For development, we'll use localStorage on frontend + server validation
-    # In production, you'd want proper JWT tokens or session management
+@router.post("/me", response_model=UserResponse)
+async def validate_user(user_data: dict, db: Session = Depends(get_db)):
+    """Validate that a stored user ID is still valid."""
+    user_id = user_data.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="user_id is required"
+        )
     
-    # For now, this endpoint exists to validate that the server is reachable
-    # The frontend will handle persistence via localStorage
-    # We could add session validation here later
+    # Find user by ID
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
     
-    raise HTTPException(
-        status_code=401,
-        detail="Session validation not implemented yet - using client-side persistence"
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        message="User validation successful"
     )
 
 @router.post("/logout")

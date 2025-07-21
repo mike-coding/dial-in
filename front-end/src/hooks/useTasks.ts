@@ -101,6 +101,12 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
   updateTask: (id, changes) => {
     if (VERBOSE_DEBUG) console.log(`🔄 Updating task ${id}:`, changes);
 
+    const userData = useUserDataStore.getState().userData;
+    if (!userData) {
+      console.error("❌ updateTask called but userData is null!");
+      return;
+    }
+
     const { tasks } = get();
     const originalTask = tasks.find(t => t.id === id);
     
@@ -115,7 +121,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     });
     
     const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/tasks/${id}`;
+    const apiUrl = `http://${currentHost}:5000/tasks/${id}?user_id=${userData.id}`;
     
     fetch(apiUrl, {
       method: "PUT",
@@ -155,6 +161,12 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
   deleteTask: (id) => {
     if (VERBOSE_DEBUG) console.log(`🗑️ Deleting task ${id}`);
 
+    const userData = useUserDataStore.getState().userData;
+    if (!userData) {
+      console.error("❌ deleteTask called but userData is null!");
+      return;
+    }
+
     const { tasks } = get();
     const originalTasks = [...tasks];
     const filteredTasks = tasks.filter(task => task.id !== id);
@@ -165,7 +177,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     });
     
     const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/tasks/${id}`;
+    const apiUrl = `http://${currentHost}:5000/tasks/${id}?user_id=${userData.id}`;
     
     fetch(apiUrl, { method: "DELETE" })
       .then(() => {

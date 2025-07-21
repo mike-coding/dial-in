@@ -377,30 +377,43 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
         try {
           const userData = JSON.parse(storedUserData);
           
-          // Quickly set authenticated state from localStorage
-          set({ 
-            userData,
-            authState: {
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-            }
+          // Verify with server that this user still exists and is valid
+          const currentHost = window.location.hostname;
+          const response = await fetch(`http://${currentHost}:5000/auth/me`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userData.id }),
           });
           
-          // Load user data in the background
-          if (userData.id) {
-            await get().loadUserData(userData.id);
+          if (response.ok) {
+            const validatedUser = await response.json();
+            
+            set({ 
+              userData: validatedUser,
+              authState: {
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              }
+            });
+            
+            // Load user data in the background
+            await get().loadUserData(validatedUser.id);
+            
+            if (VERBOSE_DEBUG) console.log("✅ Auth validated with server:", validatedUser);
+            return;
+          } else {
+            // Stored user is invalid, remove from localStorage
+            console.warn("❌ Stored user is invalid, clearing localStorage");
+            localStorage.removeItem('dial_in_user');
           }
-          
-          if (VERBOSE_DEBUG) console.log("✅ Auth restored from localStorage:", userData);
-          return;
         } catch (parseError) {
           console.error("❌ Failed to parse stored user data:", parseError);
           localStorage.removeItem('dial_in_user');
         }
       }
       
-      // No valid stored data found
+      // No valid stored data found or server validation failed
       set({ 
         userData: null,
         authState: {
@@ -410,10 +423,11 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
         }
       });
       
-      if (VERBOSE_DEBUG) console.log("ℹ️ No stored authentication found");
+      if (VERBOSE_DEBUG) console.log("ℹ️ No valid authentication found");
       
     } catch (error) {
       console.error("❌ Auth check failed:", error);
+      localStorage.removeItem('dial_in_user');
       set({ 
         userData: null,
         authState: {
