@@ -64,11 +64,6 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
             }`}>
               {task.title}
             </p>
-            {task.description && !isExpanded && (
-              <p className="text-sm text-gray-500 mt-1 truncate">
-                {task.description}
-              </p>
-            )}
           </div>
           
           {/* Expand/Collapse Indicator */}

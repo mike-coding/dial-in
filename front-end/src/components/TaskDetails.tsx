@@ -13,17 +13,24 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onSave, onDelete, onClo
   const { categories } = useCategories();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
-  const [categoryId, setCategoryId] = useState(task.category_id || '');
-  const [dueDate, setDueDate] = useState(task.due_date || '');
+  const [categoryId, setCategoryId] = useState(task.category_id?.toString() || '');
+  const [dueDate, setDueDate] = useState(() => {
+    if (!task.due_date) return '';
+    // Convert ISO string to YYYY-MM-DD for date input
+    return task.due_date.split('T')[0];
+  });
   const [hasChanges, setHasChanges] = useState(false);
 
   // Check if there are unsaved changes
   useEffect(() => {
+    const originalCategoryId = task.category_id?.toString() || '';
+    const originalDueDate = task.due_date ? task.due_date.split('T')[0] : '';
+    
     const changed = 
       title !== task.title ||
       description !== (task.description || '') ||
-      categoryId !== (task.category_id || '') ||
-      dueDate !== (task.due_date || '');
+      categoryId !== originalCategoryId ||
+      dueDate !== originalDueDate;
     setHasChanges(changed);
   }, [title, description, categoryId, dueDate, task]);
 
@@ -31,8 +38,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onSave, onDelete, onClo
     const updates: Partial<TaskType> = {
       title,
       description: description || undefined,
-      category_id: categoryId ? Number(categoryId) : undefined,
-      due_date: dueDate || undefined,
+      category_id: categoryId ? Number(categoryId) : null,
+      due_date: dueDate ? new Date(dueDate + 'T00:00:00').toISOString() : undefined,
     };
     onSave(updates);
     onClose();
@@ -45,18 +52,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onSave, onDelete, onClo
     }
   };
 
-  const formatDateForInput = (dateString: string | undefined) => {
-    if (!dateString) return '';
-    // Convert from ISO string to YYYY-MM-DD format for input
-    return dateString.split('T')[0];
-  };
-
-  const formatDateForSubmission = (dateString: string) => {
-    if (!dateString) return '';
-    // Convert from YYYY-MM-DD to ISO string
-    return new Date(dateString + 'T00:00:00').toISOString();
-  };
-
   return (
     <div className="p-4">
       <div className="space-y-4">
@@ -67,7 +62,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onSave, onDelete, onClo
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 mb-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Enter task title..."
           />
         </div>
@@ -94,7 +89,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onSave, onDelete, onClo
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 mb-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">No category</option>
             {categories?.map((category) => (
@@ -112,28 +107,22 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onSave, onDelete, onClo
           </label>
           <input
             type="date"
-            value={formatDateForInput(dueDate)}
-            onChange={(e) => setDueDate(e.target.value ? formatDateForSubmission(e.target.value) : '')}
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between">
           <button
             onClick={handleDelete}
             className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
           >
-            Delete Task
+            Delete
           </button>
           
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-            >
-              Cancel
-            </button>
             <button
               onClick={handleSave}
               disabled={!hasChanges || !title.trim()}

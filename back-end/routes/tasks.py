@@ -41,6 +41,13 @@ async def update_task(task_id: int, task_data: TaskUpdate, user_id: int, db: Ses
                 value = datetime.fromisoformat(value.replace('Z', '+00:00'))
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid datetime format for completed_at")
+        # Handle datetime string conversion for due_date
+        elif field == "due_date" and value is not None and isinstance(value, str):
+            try:
+                # Parse ISO format datetime string
+                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid datetime format for due_date")
         setattr(task, field, value)
     
     db.commit()
