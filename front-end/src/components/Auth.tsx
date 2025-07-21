@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useUserData } from '../hooks/AppContext';
+import { getVersionString } from '../utils/version';
 
 interface AuthProps {
   isMobile?: boolean;
@@ -79,7 +80,7 @@ const Auth: React.FC<AuthProps> = ({ isMobile = false }) => {
             <h1 className="text-3xl font-bold text-gray-900">
               DIAL_IN
             </h1>
-            <div className="flex flex-row text-sm text-gray-500 font-medium h-full items-end pb-2.5">v0.0.1</div>
+            <div className="flex flex-row text-sm text-gray-500 font-medium h-full items-end pb-2.5">{getVersionString()}</div>
           </div>
         </div>
 

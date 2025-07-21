@@ -1,5 +1,6 @@
 import React from "react";
 import { Page, useNavigationContext } from "../hooks/AppContext";
+import { getVersionString } from '../utils/version';
 
 // SVG Components (same as MobileNavigation)
 const DashboardIcon = () => (
@@ -36,12 +37,12 @@ const Drawer: React.FC = () => {
 
   return (
     <div className="h-full w-52 bg-white shadow-lg border-r border-gray-200">
-      <div className="p-4 py-6 border-b border-gray-200">
+      <div className="p-4 py-6 border-b border-gray-200 flex flex-row justify-center gap-1">
         <h2 className="flex flex-row justify-center text-lg font-bold text-gray-800">
           DIAL_IN
         </h2>
-        <p className="flex flex-row justify-center text-xs text-gray-500 mt-1">
-          v0.0.1
+        <p className="flex flex-row justify-center text-xs text-gray-500 mt-2">
+          {getVersionString()}
         </p>
       </div>
       <div className="__Navigation_Buttons w-full flex flex-col gap-2 p-4">

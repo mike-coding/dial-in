@@ -6,6 +6,7 @@ import Tasks from './components/Tasks'
 import Auth from './components/Auth'
 import { useNavigationContext, useUserData } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
+import { getVersionString } from './utils/version'
 
 function App() {
   const { navigation } = useNavigationContext();
@@ -16,6 +17,11 @@ function App() {
   React.useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
+
+  // Update document title with version
+  React.useEffect(() => {
+    document.title = `DIAL_IN ${getVersionString()}`;
+  }, []);
 
   // Show loading screen during initial auth check
   if (authState.isLoading) {
@@ -157,7 +163,7 @@ function App() {
         <div className="w-full h-full flex flex-col">
           <div className="bg-white/80 shadow-md h-10 flex items-center justify-start px-4">
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
-            <div className="text-sm text-gray-500 font-medium ml-2">v0.0.1</div>
+            <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
           </div>
           <div className="flex-1 w-full overflow-y-auto px-4 py-8">
             {renderCurrentPage()}
