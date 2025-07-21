@@ -3,7 +3,7 @@ export type Page = "Tasks" | "Calendar" | "Rules" | "Categories" | "Users" | "Da
 export interface Category {
   id: number;
   name: string;
-  description?: string;
+  icon?: string;
   user_id: number;
   created_at: string;
 }

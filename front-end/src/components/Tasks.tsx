@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
-import { useCategories } from '../hooks/useCategories';
 import { Task as TaskType } from '../hooks/types';
 import Task from './Task';
 
@@ -12,10 +11,6 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const [newTaskText, setNewTaskText] = useState('');
   const [filter, setFilter] = useState('Today');
   const { tasks, addTask, updateTask, deleteTask } = useTasks();
-  const { categories } = useCategories();
-
-  // Get default category (first one) or create a fallback
-  const defaultCategory = categories.length > 0 ? categories[0] : null;
 
   const handleAddTask = () => {
     if (newTaskText.trim() === '') return;
@@ -23,7 +18,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
     addTask({
       title: newTaskText.trim(),
       description: '',
-      category_id: defaultCategory?.id || null, // Allow null category
+      category_id: null, // Default to no category
       is_completed: false,
     });
     

@@ -152,6 +152,12 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
   },
 
   deleteCategory: (id) => {
+    const userData = useUserDataStore.getState().userData;
+    if (!userData) {
+      console.error("❌ deleteCategory called but userData is null!");
+      return;
+    }
+
     if (VERBOSE_DEBUG) console.log("🗑️ Deleting category:", id);
 
     const { categories } = get();
@@ -164,7 +170,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
     });
 
     const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/categories/${id}`;
+    const apiUrl = `http://${currentHost}:5000/categories/${id}?user_id=${userData.id}`;
 
     fetch(apiUrl, { method: "DELETE" })
       .then(() => {
