@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[RuleResponse])
 async def get_rules(user_id: int, db: Session = Depends(get_db)):
-    rules = db.query(Rule).filter(Rule.category.has(user_id=user_id)).all()
+    rules = db.query(Rule).filter(Rule.user_id == user_id).all()
     return [RuleResponse(**rule.to_dict()) for rule in rules]
 
 @router.post("/", response_model=RuleResponse)
@@ -25,7 +25,7 @@ async def create_rule(rule_data: RuleCreate, db: Session = Depends(get_db)):
 async def update_rule(rule_id: int, rule_data: RuleUpdate, user_id: int, db: Session = Depends(get_db)):
     rule = db.query(Rule).filter(
         Rule.id == rule_id,
-        Rule.category.has(user_id=user_id)
+        Rule.user_id == user_id
     ).first()
     
     if not rule:
@@ -43,7 +43,7 @@ async def update_rule(rule_id: int, rule_data: RuleUpdate, user_id: int, db: Ses
 async def delete_rule(rule_id: int, user_id: int, db: Session = Depends(get_db)):
     rule = db.query(Rule).filter(
         Rule.id == rule_id,
-        Rule.category.has(user_id=user_id)
+        Rule.user_id == user_id
     ).first()
     
     if not rule:

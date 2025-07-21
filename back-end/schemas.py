@@ -43,7 +43,8 @@ class CategoryResponse(BaseModel):
 class RuleCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    category_id: int
+    category_id: Optional[int] = None  # Now optional
+    user_id: int  # Add user_id
     rate_pattern: str  # New encoding system (e.g., "w#1M#1,2,3,4,5,6,7,8,9,10,11,12T#09:00")
 
 class RuleUpdate(BaseModel):
@@ -57,7 +58,8 @@ class RuleResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
-    category_id: int
+    category_id: Optional[int]  # Now optional
+    user_id: int  # Add user_id
     rate_pattern: str
     is_active: bool
     created_at: Optional[str]

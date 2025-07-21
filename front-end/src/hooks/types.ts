@@ -12,7 +12,8 @@ export interface Rule {
   id: number;
   name: string;
   description?: string;
-  category_id: number;
+  category_id?: number; // Now optional
+  user_id: number; // Add user_id
   rate_pattern: string;
   is_active: boolean;
   created_at: string;

@@ -47,12 +47,14 @@ class Rule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     description = Column(Text)
-    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)  # Now optional
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Add user_id for ownership
     rate_pattern = Column(String(200), nullable=False)  # New encoding system (e.g., "w#1M#1,2,3,4,5,6,7,8,9,10,11,12T#09:00")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
+    user = relationship('User')
     category = relationship('Category', back_populates='rules')
     tasks = relationship('Task', back_populates='rule')
     events = relationship('Event', back_populates='rule')
@@ -63,6 +65,7 @@ class Rule(Base):
             "name": self.name,
             "description": self.description,
             "category_id": self.category_id,
+            "user_id": self.user_id,
             "rate_pattern": self.rate_pattern,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None
