@@ -34,6 +34,13 @@ async def update_task(task_id: int, task_data: TaskUpdate, user_id: int, db: Ses
     
     update_data = task_data.dict(exclude_unset=True)
     for field, value in update_data.items():
+        # Handle datetime string conversion for completed_at
+        if field == "completed_at" and value is not None and isinstance(value, str):
+            try:
+                # Parse ISO format datetime string
+                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid datetime format for completed_at")
         setattr(task, field, value)
     
     db.commit()
