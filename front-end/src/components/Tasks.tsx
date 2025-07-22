@@ -93,8 +93,14 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
     monthFromNow.setMonth(today.getMonth() + 1);
 
     return tasks.filter(task => {
-      // Date filter
-      if (task.due_date) {
+      // Check if task is overdue
+      const isOverdue = task.due_date && new Date(task.due_date) < now && !task.is_completed;
+      
+      // If task is overdue and we don't want to show overdue tasks, filter it out
+      if (isOverdue && !filters.showOverdue) return false;
+      
+      // Date filter (only apply to non-overdue tasks)
+      if (task.due_date && !isOverdue) {
         const dueDate = new Date(task.due_date);
         const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
         
@@ -112,7 +118,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
             if (dueDateOnly < today) return false;
             break;
         }
-      } else {
+      } else if (!task.due_date) {
         // Task has no due date - respect showUndated setting for all date filters
         if (!filters.showUndated) return false;
       }
@@ -126,13 +132,6 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
       // Uncategorized filter
       if (!task.category_id && !filters.showUncategorized) return false;
-
-      // Overdue filter
-      if (task.due_date) {
-        const dueDate = new Date(task.due_date);
-        const isOverdue = dueDate < now && !task.is_completed;
-        if (isOverdue && !filters.showOverdue) return false;
-      }
 
       return true;
     });
