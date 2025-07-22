@@ -105,8 +105,8 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
             }}
             className={`w-6 h-6 rounded-md border-t-1 border-l-1 flex items-center justify-center transition-all duration-200 cursor-pointer ${
               task.is_completed
-                ? 'bg-gray-500/20 border-gray-500/50 text-white scale-110'
-                : 'bg-gray-400/20 border-gray-400/50 hover:border-green-400 hover:scale-105'
+                ? 'bg-gray-400/10 border-gray-500/50 text-white scale-110'
+                : 'bg-gray-300/10 border-gray-400/50 hover:border-green-400 hover:scale-105'
             }`}
           >
             {task.is_completed && (
@@ -176,12 +176,13 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
 
       {/* Expanded Details */}
       <div 
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        className={`transition-all duration-300 ease-in-out ${
+          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}
       >
         <TaskDetails
           task={task}
+          isExpanded={isExpanded}
           onSave={handleUpdate}
           onDelete={onDelete}
           onClose={() => setIsExpanded(false)}

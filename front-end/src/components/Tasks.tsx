@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTasks } from '../hooks/useTasks';
+import { useCategories } from '../hooks/useCategories';
 import { Task as TaskType } from '../hooks/types';
 import Task from './Task';
 
@@ -7,10 +8,41 @@ interface TasksProps {
   isMobile?: boolean;
 }
 
+interface FilterState {
+  dateFilter: 'Today' | 'This Week' | 'This Month' | 'Upcoming';
+  categoryIds: number[];
+  showUndated: boolean;
+  showUncategorized: boolean;
+  showOverdue: boolean;
+}
+
 const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const [newTaskText, setNewTaskText] = useState('');
-  const [filter, setFilter] = useState('Today');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    dateFilter: 'Today',
+    categoryIds: [],
+    showUndated: true,
+    showUncategorized: true,
+    showOverdue: true,
+  });
   const { tasks, addTask, updateTask, deleteTask } = useTasks();
+  const { categories } = useCategories();
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close filter dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    if (isFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isFilterOpen]);
 
   const handleAddTask = () => {
     if (newTaskText.trim() === '') return;
@@ -49,7 +81,73 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
     }
   };
 
-  const completedCount = (tasks || []).filter(task => task.is_completed).length;
+  // Filter tasks based on current filters
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekFromNow = new Date(today);
+    weekFromNow.setDate(today.getDate() + 7);
+    const monthFromNow = new Date(today);
+    monthFromNow.setMonth(today.getMonth() + 1);
+
+    return tasks.filter(task => {
+      // Date filter
+      if (task.due_date) {
+        const dueDate = new Date(task.due_date);
+        const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+        
+        switch (filters.dateFilter) {
+          case 'Today':
+            if (dueDateOnly.getTime() !== today.getTime()) return false;
+            break;
+          case 'This Week':
+            if (dueDateOnly < today || dueDateOnly >= weekFromNow) return false;
+            break;
+          case 'This Month':
+            if (dueDateOnly < today || dueDateOnly >= monthFromNow) return false;
+            break;
+          case 'Upcoming':
+            if (dueDateOnly < today) return false;
+            break;
+        }
+      } else {
+        // Task has no due date - respect showUndated setting for all date filters
+        if (!filters.showUndated) return false;
+      }
+
+      // Category filter
+      if (filters.categoryIds.length > 0) {
+        if (!task.category_id || !filters.categoryIds.includes(task.category_id)) {
+          return false;
+        }
+      }
+
+      // Uncategorized filter
+      if (!task.category_id && !filters.showUncategorized) return false;
+
+      // Overdue filter
+      if (task.due_date) {
+        const dueDate = new Date(task.due_date);
+        const isOverdue = dueDate < now && !task.is_completed;
+        if (isOverdue && !filters.showOverdue) return false;
+      }
+
+      return true;
+    });
+  }, [tasks, filters]);
+
+  const toggleCategoryFilter = (categoryId: number) => {
+    setFilters(prev => ({
+      ...prev,
+      categoryIds: prev.categoryIds.includes(categoryId)
+        ? prev.categoryIds.filter(id => id !== categoryId)
+        : [...prev.categoryIds, categoryId]
+    }));
+  };
+
+  const completedCount = filteredTasks.filter(task => task.is_completed).length;
 
   return (
     <div className="">
@@ -57,21 +155,122 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         
         {/* Filter Dropdown */}
         <div className="mb-6 flex justify-center">
-          <div className="relative">
-            <select 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="bg-white/90 rounded-md px-6 py-3 text-gray-700 font-medium shadow-sm hover:shadow-md transition-shadow appearance-none pr-10 cursor-pointer"
+          <div className="relative" ref={filterDropdownRef}>
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="bg-white/90 rounded-md px-6 py-3 text-gray-700 font-medium shadow-sm hover:shadow-md transition-shadow cursor-pointer flex items-center gap-2"
             >
-              <option value="Today">Today</option>
-              <option value="This Week">This Week</option>
-              <option value="All">All</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span>{filters.dateFilter}</span>
+              <svg className={`w-4 h-4 text-gray-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            </div>
+            </button>
+            
+            {isFilterOpen && (
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-md shadow-lg border border-gray-200 p-4 z-50 w-80">
+                {/* Date Filter */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Time Period</h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="radio"
+                        name="dateFilter"
+                        checked={filters.dateFilter === 'Today'}
+                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'Today' }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">Today</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="radio"
+                        name="dateFilter"
+                        checked={filters.dateFilter === 'Upcoming'}
+                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'Upcoming' }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">Upcoming</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="radio"
+                        name="dateFilter"
+                        checked={filters.dateFilter === 'This Week'}
+                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'This Week' }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">This Week</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="radio"
+                        name="dateFilter"
+                        checked={filters.dateFilter === 'This Month'}
+                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'This Month' }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">This Month</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Category Filter */}
+                {categories && categories.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Categories</h3>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {categories.map(category => (
+                        <label key={category.id} className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={filters.categoryIds.includes(category.id)}
+                            onChange={() => toggleCategoryFilter(category.id)}
+                            className="mr-2"
+                          />
+                          <span className="text-lg mr-1">{category.icon || '📁'}</span>
+                          <span className="text-gray-900">{category.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Filters */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Show</h3>
+                  <div className="space-y-1">
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.showUndated}
+                        onChange={(e) => setFilters(prev => ({ ...prev, showUndated: e.target.checked }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">Undated</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.showUncategorized}
+                        onChange={(e) => setFilters(prev => ({ ...prev, showUncategorized: e.target.checked }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">Uncategorized</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.showOverdue}
+                        onChange={(e) => setFilters(prev => ({ ...prev, showOverdue: e.target.checked }))}
+                        className="mr-2"
+                      />
+                      <span className="text-gray-900">Overdue</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -101,16 +300,16 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
         {/* Tasks List */}
         <div className="space-y-3">
-          {(tasks || []).length === 0 ? (
+          {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4 opacity-50">📝</div>
-              <p className="text-gray-500 text-lg">No tasks yet</p>
-              <p className="text-gray-400 text-sm mt-1">Add one above to get started!</p>
+              <p className="text-gray-500 text-lg">No tasks match your filters</p>
+              <p className="text-gray-400 text-sm mt-1">Try adjusting your filter settings above</p>
             </div>
           ) : (
             <>
               {/* Incomplete Tasks */}
-              {(tasks || []).filter(task => !task.is_completed).map((task) => (
+              {filteredTasks.filter(task => !task.is_completed).map((task) => (
                 <Task
                   key={task.id}
                   task={task}
@@ -128,7 +327,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
               )}
 
               {/* Completed Tasks */}
-              {(tasks || []).filter(task => task.is_completed).map((task) => (
+              {filteredTasks.filter(task => task.is_completed).map((task) => (
                 <Task
                   key={task.id}
                   task={task}
