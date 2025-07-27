@@ -114,7 +114,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
             onChange={(e) => setDescription(e.target.value)}
             onBlur={handleDescriptionBlur}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-gray-400 resize-none"
+            className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 resize-none"
             placeholder="Add a description..."
           />
         </div>
@@ -133,7 +133,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                 setIsCategoryDropdownOpen(true);
               }
             }}
-            className="w-full px-3 py-2 mb-1 border border-gray-300 rounded-md text-left flex items-center justify-between transition-colors"
+            className="w-full px-3 py-2 mb-1 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
           >
             <div className="flex items-center gap-2">
               {categoryId ? (
@@ -199,7 +199,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
             type="date"
             value={dueDate}
             onChange={handleDueDateChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
+            className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
           />
         </div>
 

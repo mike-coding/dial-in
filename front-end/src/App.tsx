@@ -136,12 +136,12 @@ function App() {
 
   return (
     <div className="h-full w-full relative overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0" style={{ backgroundImage: 'url(/bg/rockwaterBG.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
-      
-      {/* Backdrop Effects Overlay - only affects background */}
+      {/* Background Image 
+      <div className="absolute inset-0" style={{ backgroundImage: 'url(/bg/natureBG.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+      */}
+      {/* Backdrop Effects Overlay - only affects background
       <div className="absolute inset-0 backdrop-blur-md backdrop-brightness-180 backdrop-saturate-60 backdrop-contrast-70"></div>
-      
+       */}
       {/* Content Layer */}
       <div className="relative h-full w-full flex flex-row">
         {/* Desktop Layout */}
@@ -166,8 +166,8 @@ function App() {
 
       {/* Mobile Layout */}
       {isMobile && (
-        <div className="w-full h-full flex flex-col">
-          <div className="bg-white/80 shadow-md h-10 flex items-center justify-start px-4">
+        <div className="w-full h-full flex flex-col bg-gray-100/80">
+          <div className="bg-white/80 border-b border-gray-400 h-10 flex items-center justify-start px-4">
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
           </div>

@@ -87,12 +87,9 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   return (
     <div 
       ref={taskRef}
-      className={`rounded-sm shadow-sm hover:shadow-md transition-all duration-200 ${
-        task.is_completed ? 'bg-white/50' : 'bg-white/90'
-      }`}
-    >
+      className={`rounded-md ${task.is_completed ? 'bg-gray-200/80' : 'bg-white'} transition-all duration-200`}>
       <div 
-        className="p-4 cursor-pointer"
+        className="px-4 py-3 cursor-pointer"
         onClick={handleTaskClick}
       >
         <div className="flex items-center gap-4">
@@ -103,12 +100,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
               e.stopPropagation();
               onToggle(task.id);
             }}
-            className={`w-6 h-6 rounded-md border-t-1 border-l-1 flex items-center justify-center transition-all duration-200 cursor-pointer ${
-              task.is_completed
-                ? 'bg-gray-400/10 border-gray-500/50 text-white scale-110'
-                : 'bg-gray-300/10 border-gray-400/50 hover:border-green-400 hover:scale-105'
-            }`}
-          >
+            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 cursor-pointer border-gray-400/50 border-2 text-gray-600/50`}>
             {task.is_completed && (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={3} d="M5 12l5 5L20 7" />
@@ -126,19 +118,19 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
                 onBlur={handleTitleBlur}
                 onKeyDown={handleTitleKeyDown}
                 onClick={(e) => e.stopPropagation()}
-                className={`w-full text-lg bg-transparent border-b border-gray-300 outline-none transition-all duration-200 focus:border-b-2 focus:border-gray-400 ${
+                className={`w-full text-lg bg-gray-400/10 rounded-md outline-none transition-all duration-200 focus:bg-gray-400/20 px-2 py-1 ${
                   task.is_completed 
-                    ? 'text-gray-500/80' 
-                    : 'text-gray-800'
+                    ? 'text-gray-600/80' 
+                    : 'text-gray-600/80'
                 }`}
                 placeholder="Enter task title..."
                 autoFocus={false}
               />
             ) : (
-              <p className={`text-lg transition-all duration-200 ${
+              <p className={`text-lg transition-all duration-200 px-2 py-1 ${
                 task.is_completed 
-                  ? 'text-gray-500/80' 
-                  : 'text-gray-800'
+                  ? 'text-gray-600/80' 
+                  : 'text-gray-600/80'
               }`}>
                 {task.title}
               </p>

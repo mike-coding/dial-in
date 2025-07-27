@@ -87,10 +87,22 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekFromNow = new Date(today);
-    weekFromNow.setDate(today.getDate() + 7);
-    const monthFromNow = new Date(today);
-    monthFromNow.setMonth(today.getMonth() + 1);
+    
+    // Fix week calculation - assume Monday as week start
+    const weekStart = new Date(today);
+    const dayOfWeek = today.getDay();
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 6 days from Monday
+    weekStart.setDate(today.getDate() - daysFromMonday);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    
+    // Fix month calculation - handle year rollover
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    if (monthEnd.getMonth() === 0) { // January = 0, so we rolled over
+      monthEnd.setFullYear(monthEnd.getFullYear());
+    }
 
     return tasks.filter(task => {
       // Check if task is overdue
@@ -99,8 +111,8 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
       // If task is overdue and we don't want to show overdue tasks, filter it out
       if (isOverdue && !filters.showOverdue) return false;
       
-      // Date filter (only apply to non-overdue tasks)
-      if (task.due_date && !isOverdue) {
+      // Date filter (only apply to non-overdue, incomplete tasks)
+      if (task.due_date && !isOverdue && !task.is_completed) {
         const dueDate = new Date(task.due_date);
         const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
         
@@ -109,12 +121,37 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
             if (dueDateOnly.getTime() !== today.getTime()) return false;
             break;
           case 'This Week':
-            if (dueDateOnly < today || dueDateOnly >= weekFromNow) return false;
+            // Show incomplete tasks due from today through end of this week
+            if (dueDateOnly < today || dueDateOnly >= weekEnd) return false;
             break;
           case 'This Month':
-            if (dueDateOnly < today || dueDateOnly >= monthFromNow) return false;
+            // Show incomplete tasks due from today through end of this month
+            if (dueDateOnly < today || dueDateOnly >= monthEnd) return false;
             break;
           case 'Upcoming':
+            if (dueDateOnly < today) return false;
+            break;
+        }
+      } else if (task.due_date && task.is_completed) {
+        // For completed tasks, apply more lenient date filtering
+        const dueDate = new Date(task.due_date);
+        const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+        
+        switch (filters.dateFilter) {
+          case 'Today':
+            // Show completed tasks that were due today OR were overdue and just completed
+            if (dueDateOnly.getTime() !== today.getTime() && dueDateOnly >= today) return false;
+            break;
+          case 'This Week':
+            // Show completed tasks from this entire week (past and future)
+            if (dueDateOnly < weekStart || dueDateOnly >= weekEnd) return false;
+            break;
+          case 'This Month':
+            // Show completed tasks from this entire month (past and future)
+            if (dueDateOnly < monthStart || dueDateOnly >= monthEnd) return false;
+            break;
+          case 'Upcoming':
+            // For upcoming, still don't show past completed tasks
             if (dueDateOnly < today) return false;
             break;
         }
@@ -125,13 +162,18 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
       // Category filter
       if (filters.categoryIds.length > 0) {
-        if (!task.category_id || !filters.categoryIds.includes(task.category_id)) {
+        // If specific categories are selected, only show tasks in those categories
+        // BUT also include uncategorized tasks if showUncategorized is true
+        const hasMatchingCategory = task.category_id && filters.categoryIds.includes(task.category_id);
+        const isUncategorizedAndShown = !task.category_id && filters.showUncategorized;
+        
+        if (!hasMatchingCategory && !isUncategorizedAndShown) {
           return false;
         }
+      } else {
+        // No specific categories selected, so just apply the uncategorized filter
+        if (!task.category_id && !filters.showUncategorized) return false;
       }
-
-      // Uncategorized filter
-      if (!task.category_id && !filters.showUncategorized) return false;
 
       return true;
     });
@@ -149,7 +191,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const completedCount = filteredTasks.filter(task => task.is_completed).length;
 
   return (
-    <div className="">
+    <div className="rounded-xl ">
       <div className={`w-full ${isMobile ? 'max-w-full px-4' : 'max-w-2xl'} mx-auto ${isMobile ? 'pt-4' : 'pt-8'}`}>
         
         {/* Filter Dropdown */}
@@ -157,7 +199,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
           <div className="relative" ref={filterDropdownRef}>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="bg-white/90 rounded-md px-6 py-3 text-gray-700 font-medium shadow-sm hover:shadow-md transition-shadow cursor-pointer flex items-center gap-2"
+              className="bg-white/30 rounded-md px-6 py-3 text-gray-800 font-medium transition-all duration-200 cursor-pointer flex items-center gap-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100"
             >
               <span>{filters.dateFilter}</span>
               <svg className={`w-4 h-4 text-gray-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +208,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
             </button>
             
             {isFilterOpen && (
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-md shadow-lg border border-gray-200 p-4 z-50 w-80">
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-md border border-gray-200 p-4 z-50 w-80">
                 {/* Date Filter */}
                 <div className="mb-4">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Time Period</h3>
@@ -274,14 +316,14 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         </div>
 
         {/* Add Task Input */}
-        <div className="mb-6">
-          <div className="bg-white/90 rounded-sm shadow-sm border border-gray-100 px-4 py-3">
+        <div className="mb-2">
+          <div className="bg-white/30 rounded-md border border-white/20 px-4 py-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100">
             <div className="flex items-center gap-3">
               <div 
                 onClick={handleAddTask}
-                className="w-10 h-10 flex items-center justify-center cursor-pointer transition-colors"
+                className="w-10 h-10 flex items-center justify-center cursor-pointer transition-colors hover:scale-105 transition-all duration-200"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="square" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
@@ -291,14 +333,14 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                 onChange={(e) => setNewTaskText(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Add a new task..."
-                className="flex-1 text-gray-700 placeholder-gray-400 bg-transparent border-none outline-none text-lg"
+                className="flex-1 text-gray-600/80 placeholder-gray-600/40 bg-transparent border-none outline-none text-lg"
               />
             </div>
           </div>
         </div>
 
         {/* Tasks List */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4 opacity-50">📝</div>
@@ -320,8 +362,8 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
               {/* Divider - only show if there are completed tasks */}
               {completedCount > 0 && (
-                <div className="flex flex-row justify-center py-4 w-full">
-                  <div className="h-1 bg-gray-300 w-5/6"></div>
+                <div className="flex flex-row justify-center py-2 w-full">
+                  <div className="h-1 w-5/6 rounded-sm bg-gray-600/20 transition-all duration-200 backdrop-blur-lg backdrop-brightness-100 backdrop-saturate-70 backdrop-contrast-100"></div>
                 </div>
               )}
 
