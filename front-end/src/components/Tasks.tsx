@@ -3,6 +3,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useCategories } from '../hooks/useCategories';
 import { Task as TaskType } from '../hooks/types';
 import Task from './Task';
+import WindowsEmoji from './WindowsEmoji';
 
 interface TasksProps {
   isMobile?: boolean;
@@ -161,17 +162,23 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
       }
 
       // Category filter
-      if (filters.categoryIds.length > 0) {
-        // If specific categories are selected, only show tasks in those categories
-        // BUT also include uncategorized tasks if showUncategorized is true
-        const hasMatchingCategory = task.category_id && filters.categoryIds.includes(task.category_id);
-        const isUncategorizedAndShown = !task.category_id && filters.showUncategorized;
-        
-        if (!hasMatchingCategory && !isUncategorizedAndShown) {
-          return false;
+      if (categories && categories.length > 0) {
+        // Categories exist in the system
+        if (filters.categoryIds.length > 0) {
+          // Some categories are selected - show tasks from those categories + uncategorized if enabled
+          const hasMatchingCategory = task.category_id && filters.categoryIds.includes(task.category_id);
+          const isUncategorizedAndShown = !task.category_id && filters.showUncategorized;
+          
+          if (!hasMatchingCategory && !isUncategorizedAndShown) {
+            return false;
+          }
+        } else {
+          // No categories are selected - only show uncategorized tasks (if enabled)
+          if (task.category_id) return false; // Hide all categorized tasks
+          if (!task.category_id && !filters.showUncategorized) return false; // Hide uncategorized if disabled
         }
       } else {
-        // No specific categories selected, so just apply the uncategorized filter
+        // No categories exist in system - just apply uncategorized filter for safety
         if (!task.category_id && !filters.showUncategorized) return false;
       }
 
@@ -269,7 +276,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                             onChange={() => toggleCategoryFilter(category.id)}
                             className="mr-2"
                           />
-                          <span className="text-lg mr-1">{category.icon || '📁'}</span>
+                          <WindowsEmoji emoji={category.icon || '📁'} size={18} className="mr-1" />
                           <span className="text-gray-900">{category.name}</span>
                         </label>
                       ))}
@@ -343,7 +350,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         <div className="space-y-2">
           {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4 opacity-50">📝</div>
+              <WindowsEmoji emoji="📝" size={72} className="mb-4 opacity-50" />
               <p className="text-gray-500 text-lg">No tasks match your filters</p>
               <p className="text-gray-400 text-sm mt-1">Try adjusting your filter settings above</p>
             </div>

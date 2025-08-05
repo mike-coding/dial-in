@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useCategories } from "../hooks/useCategories";
+import WindowsEmoji from "./WindowsEmoji";
 
 const Categories: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -154,9 +155,9 @@ const Categories: React.FC = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="w-10 h-10 flex items-center justify-center text-2xl hover:bg-gray-100 rounded-lg transition-colors"
+                  className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  {selectedEmoji}
+                  <WindowsEmoji emoji={selectedEmoji} size={24} />
                 </button>
               </div>
               
@@ -178,16 +179,14 @@ const Categories: React.FC = () => {
                 {emojiOptions.map((emoji, index) => (
                   <button
                     key={`${emoji}-${index}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
+                    onClick={() => {
                       setSelectedEmoji(emoji);
                       setShowEmojiPicker(false);
                     }}
-                    className="w-8 h-8 flex items-center justify-center text-xl hover:bg-blue-100 rounded transition-colors flex-shrink-0"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-blue-100 rounded transition-colors flex-shrink-0"
                     title={emoji}
                   >
-                    {emoji}
+                    <WindowsEmoji emoji={emoji} size={20} />
                   </button>
                 ))}
               </div>
@@ -199,7 +198,9 @@ const Categories: React.FC = () => {
         <div className="space-y-3">
           {categories.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4 opacity-50">🏷️</div>
+              <div className="mb-4 opacity-50 flex justify-center">
+                <WindowsEmoji emoji="🏷️" size={72} />
+              </div>
               <p className="text-gray-500 text-lg">No categories yet</p>
               <p className="text-gray-400 text-sm mt-1">Add one above to get started!</p>
             </div>
@@ -208,7 +209,7 @@ const Categories: React.FC = () => {
               <div key={category.id} className="bg-white/90 rounded-sm shadow-sm border border-gray-100 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{category.icon || '📂'}</span>
+                    <WindowsEmoji emoji={category.icon || '📂'} size={24} />
                     <span className="text-lg text-gray-700">{category.name}</span>
                   </div>
                   <button

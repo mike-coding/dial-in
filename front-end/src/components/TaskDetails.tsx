@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
+import WindowsEmoji from './WindowsEmoji';
 
 interface TaskDetailsProps {
   task: TaskType;
@@ -138,9 +139,10 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
             <div className="flex items-center gap-2">
               {categoryId ? (
                 <>
-                  <span className="text-lg">
-                    {categories?.find(cat => cat.id === categoryId)?.icon || '📁'}
-                  </span>
+                  <WindowsEmoji 
+                    emoji={categories?.find(cat => cat.id === categoryId)?.icon || '📁'} 
+                    size={18} 
+                  />
                   <span className="text-gray-900">
                     {categories?.find(cat => cat.id === categoryId)?.name || 'No category'}
                   </span>
@@ -171,7 +173,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                   !categoryId ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
                 }`}
               >
-                <span className="text-lg">📋</span>
+                <WindowsEmoji emoji="📋" size={18} />
                 <span>No category</span>
               </div>
               {categories?.map((category) => (
@@ -182,7 +184,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                     categoryId === category.id ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
                   }`}
                 >
-                  <span className="text-lg">{category.icon || '📁'}</span>
+                  <WindowsEmoji emoji={category.icon || '📁'} size={18} />
                   <span>{category.name}</span>
                 </div>
               ))}

@@ -127,7 +127,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
                 autoFocus={false}
               />
             ) : (
-              <p className={`text-lg transition-all duration-200 px-2 py-1 ${
+              <p className={`text-lg transition-all duration-200 px-2 py-1 truncate ${
                 task.is_completed 
                   ? 'text-gray-600/80' 
                   : 'text-gray-600/80'

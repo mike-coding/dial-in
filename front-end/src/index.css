@@ -81,3 +81,9 @@ h1 {
   initial-value: dropdown-in 0.1s ease-out forwards;
 }
 
+@font-face {
+  font-family: 'Segoe UI Emoji';
+  src: url('./seguiemj.ttf') format('truetype');
+  font-display: swap;
+}
+

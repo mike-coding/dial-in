@@ -6,6 +6,8 @@ import Tasks from './components/Tasks'
 import Categories from './components/Categories'
 import Rules from './components/Rules'
 import Auth from './components/Auth'
+import Profile from './components/Profile'
+import WindowsEmoji from './components/WindowsEmoji'
 import { useNavigationContext, useUserData } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
 import { getVersionString } from './utils/version'
@@ -65,19 +67,19 @@ function App() {
             {isMobile && (
               <div className="mt-8 grid grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow">
-                  <div className="text-2xl mb-2">✓</div>
+                  <WindowsEmoji emoji="✓" size={32} className="mb-2" />
                   <div className="text-sm font-medium">Tasks</div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
-                  <div className="text-2xl mb-2">📅</div>
+                  <WindowsEmoji emoji="📅" size={32} className="mb-2" />
                   <div className="text-sm font-medium">Calendar</div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
-                  <div className="text-2xl mb-2">👥</div>
+                  <WindowsEmoji emoji="👥" size={32} className="mb-2" />
                   <div className="text-sm font-medium">Users</div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
-                  <div className="text-2xl mb-2">📊</div>
+                  <WindowsEmoji emoji="📊" size={32} className="mb-2" />
                   <div className="text-sm font-medium">Analytics</div>
                 </div>
               </div>
@@ -94,7 +96,7 @@ function App() {
             {isMobile && (
               <div className="mt-8">
                 <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="text-4xl mb-4">📅</div>
+                  <WindowsEmoji emoji="📅" size={48} className="mb-4" />
                   <p className="text-sm text-gray-500">
                     We're working on bringing you a beautiful calendar experience optimized for mobile.
                   </p>
@@ -104,24 +106,7 @@ function App() {
           </div>
         );
       case 'Users':
-        return (
-          <div className={`text-center w-full max-w-4xl ${mobilePageClasses}`}>
-            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-800 mb-4`}>
-              Users
-            </h1>
-            <p className="text-gray-600">User management coming soon...</p>
-            {isMobile && (
-              <div className="mt-8">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="text-4xl mb-4">👥</div>
-                  <p className="text-sm text-gray-500">
-                    User management features will be available soon with mobile-first design.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        );
+        return <Profile isMobile={isMobile} />;
       default:
         return (
           <div className={`text-center w-full max-w-4xl ${mobilePageClasses}`}>
