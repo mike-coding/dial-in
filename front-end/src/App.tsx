@@ -7,6 +7,7 @@ import Categories from './components/Categories'
 import Rules from './components/Rules'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
+import Calendar from './components/Calendar'
 import WindowsEmoji from './components/WindowsEmoji'
 import { useNavigationContext, useUserData } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
@@ -87,24 +88,7 @@ function App() {
           </div>
         );
       case 'Calendar':
-        return (
-          <div className={`text-center w-full max-w-4xl ${mobilePageClasses}`}>
-            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-800 mb-4`}>
-              Calendar
-            </h1>
-            <p className="text-gray-600">Calendar feature coming soon...</p>
-            {isMobile && (
-              <div className="mt-8">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <WindowsEmoji emoji="📅" size={48} className="mb-4" />
-                  <p className="text-sm text-gray-500">
-                    We're working on bringing you a beautiful calendar experience optimized for mobile.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        );
+        return <Calendar isMobile={isMobile} />;
       case 'Users':
         return <Profile isMobile={isMobile} />;
       default:
