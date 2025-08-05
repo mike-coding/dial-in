@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Page, useNavigationContext } from "../hooks/AppContext";
 import { getVersionString } from '../utils/version';
 
@@ -27,12 +27,35 @@ const UsersIcon = () => (
   </svg>
 );
 
+const CategoriesIcon = () => (
+  <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <path d="M296 32h192c13.255 0 24 10.745 24 24v160c0 13.255-10.745 24-24 24H296c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24zm-80 0H24C10.745 32 0 42.745 0 56v160c0 13.255 10.745 24 24 24h192c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24zM0 296v160c0 13.255 10.745 24 24 24h192c13.255 0 24-10.745 24-24V296c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm296 184h192c13.255 0 24-10.745 24-24V296c0-13.255-10.745-24-24-24H296c-13.255 0-24 10.745-24 24v160c0 13.255 10.745 24 24 24z"/>
+  </svg>
+);
+
+const RulesIcon = () => (
+  <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <path d="M440.65 12.57l4 82.77A247.16 247.16 0 0 0 255.83 8C134.73 8 33.91 94.92 12.29 209.82A12 12 0 0 0 24.09 224h49.05a12 12 0 0 0 11.67-9.26 175.91 175.91 0 0 1 317-56.94l-101.46-4.86a12 12 0 0 0-12.57 12v47.41a12 12 0 0 0 12 12H500a12 12 0 0 0 12-12V12a12 12 0 0 0-12-12h-47.37a12 12 0 0 0-11.98 12.57zM255.83 432a175.61 175.61 0 0 1-146-77.8l101.8 4.87a12 12 0 0 0 12.57-12v-47.4a12 12 0 0 0-12-12H12a12 12 0 0 0-12 12V500a12 12 0 0 0 12 12h47.35a12 12 0 0 0 12-12.6l-4.15-82.57A247.17 247.17 0 0 0 255.83 504c121.11 0 221.93-86.92 243.55-201.82a12 12 0 0 0-11.8-14.18h-49.05a12 12 0 0 0-11.67 9.26A175.86 175.86 0 0 1 255.83 432z"/>
+  </svg>
+);
+
 const Drawer: React.FC = () => {
+  const { navigation, navigateTo } = useNavigationContext();
+
+  // Check if we're in the Tasks module (Tasks, Categories, or Rules)
+  const isTasksModule = ["Tasks", "Categories", "Rules"].includes(navigation.currentPage);
+
   const navigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
-    { page: "Dashboard", icon: <DashboardIcon />, label: "Dash" },
+    { page: "Dashboard", icon: <DashboardIcon />, label: "Dashboard" },
     { page: "Tasks", icon: <TasksIcon />, label: "Tasks" },
     { page: "Calendar", icon: <CalendarIcon />, label: "Calendar" },
     { page: "Users", icon: <UsersIcon />, label: "Profile" },
+  ];
+
+  const tasksSubNavItems = [
+    { page: "Tasks" as Page, icon: <TasksIcon />, label: "Tasks" },
+    { page: "Categories" as Page, icon: <CategoriesIcon />, label: "Categories" },
+    { page: "Rules" as Page, icon: <RulesIcon />, label: "Rules" },
   ];
 
   return (
@@ -46,9 +69,39 @@ const Drawer: React.FC = () => {
         </p>
       </div>
       <div className="__Navigation_Buttons w-full flex flex-col gap-2 p-4">
-        {navigationItems.map(({ page, icon, label }) => (
-          <NavigationButton key={page} targetPage={page} icon={icon} label={label} />
-        ))}
+        {navigationItems.map(({ page, icon, label }) => {
+          if (page === "Tasks" && isTasksModule) {
+            // Expanded Tasks module - just the blue container with sub-navigation (like mobile)
+            return (
+              <div key={page} className="bg-blue-100 rounded-lg p-2 space-y-1">
+                {tasksSubNavItems.map(({ page: subPage, icon: subIcon, label: subLabel }) => (
+                  <button
+                    key={subPage}
+                    onClick={() => navigateTo(subPage)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-left w-full text-sm ${
+                      navigation.currentPage === subPage
+                        ? "text-blue-600 scale-105"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    <div>{subIcon}</div>
+                    <span className="font-medium">{subLabel}</span>
+                  </button>
+                ))}
+              </div>
+            );
+          } else {
+            // Regular navigation button
+            return (
+              <NavigationButton 
+                key={page} 
+                targetPage={page} 
+                icon={icon} 
+                label={label}
+              />
+            );
+          }
+        })}
       </div>
     </div>
   );
@@ -62,7 +115,11 @@ interface NavigationButtonProps {
   label: string;
 }
 
-const NavigationButton: React.FC<NavigationButtonProps> = ({ targetPage, icon, label }) => {
+const NavigationButton: React.FC<NavigationButtonProps> = ({ 
+  targetPage, 
+  icon, 
+  label
+}) => {
   const { navigation, navigateTo } = useNavigationContext();
   const isActive = navigation.currentPage === targetPage;
 
