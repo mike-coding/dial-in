@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Page, useNavigationContext } from "../hooks/AppContext";
 import { getVersionString } from '../utils/version';
 
