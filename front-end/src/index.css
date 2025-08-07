@@ -83,7 +83,7 @@ h1 {
 
 @font-face {
   font-family: 'Segoe UI Emoji';
-  src: url('./seguiemj.ttf') format('truetype');
+  src: url('/seguiemj.ttf') format('truetype');
   font-display: swap;
 }
 
