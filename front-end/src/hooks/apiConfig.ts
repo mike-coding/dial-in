@@ -12,8 +12,8 @@ const getApiBaseUrl = (): string => {
     return `http://${hostname}:5000`;
   }
   
-  // Production: Use your Railway backend URL
-  return 'dial-in-production-0132.up.railway.app:5000';
+  // Production: Railway uses HTTPS and no custom port
+  return 'https://dial-in-production-0132.up.railway.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
