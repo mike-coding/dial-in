@@ -3,6 +3,7 @@ import React from 'react';
 import { Event } from './types';
 import { useUserDataStore } from './useUserData';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
+import { createApiUrl } from './apiConfig';
 
 // Verbose flag for debug logging
 const VERBOSE_DEBUG = false;
@@ -51,8 +52,7 @@ export const useEventsStore = create<EventsStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/events`;
+    const apiUrl = createApiUrl('/events');
 
     fetch(apiUrl, {
       method: "POST",
@@ -108,8 +108,7 @@ export const useEventsStore = create<EventsStore>((set, get) => ({
       hasPendingWrites: true,
     });
     
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/events/${id}`;
+    const apiUrl = createApiUrl(`/events/${id}`);
     
     fetch(apiUrl, {
       method: "PUT",
@@ -158,8 +157,7 @@ export const useEventsStore = create<EventsStore>((set, get) => ({
       hasPendingWrites: true,
     });
     
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/events/${id}`;
+    const apiUrl = createApiUrl(`/events/${id}`);
     
     fetch(apiUrl, { method: "DELETE" })
       .then(() => {
