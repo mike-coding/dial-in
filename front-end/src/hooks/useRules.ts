@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import React from 'react';
 import { Rule } from './types';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
+import { createApiUrl } from './apiConfig';
 
 // Verbose flag for debug logging
 const VERBOSE_DEBUG = false;
@@ -43,8 +44,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/rules`;
+    const apiUrl = createApiUrl('/rules');
 
     fetch(apiUrl, {
       method: "POST",
@@ -99,8 +99,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/rules/${id}`;
+    const apiUrl = createApiUrl(`/rules/${id}`);
 
     fetch(apiUrl, {
       method: "PUT",
@@ -149,8 +148,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/rules/${id}`;
+    const apiUrl = createApiUrl(`/rules/${id}`);
 
     fetch(apiUrl, { method: "DELETE" })
       .then(() => {

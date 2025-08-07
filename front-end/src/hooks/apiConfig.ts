@@ -9,14 +9,30 @@ const getApiBaseUrl = (): string => {
       hostname.startsWith('10.') || 
       hostname.startsWith('172.')) {
     // Development: Use local backend
-    return `http://${hostname}:5000`;
+    return `http://${hostname}`;
   }
   
   // Production: Railway uses HTTPS and no custom port
   return 'https://dial-in-production-0132.up.railway.app';
 };
 
-export const API_BASE_URL = getApiBaseUrl();
+const getPort = (): string => {
+  const hostname = window.location.hostname;
+  
+  // Development environments need port 5000
+  if (hostname === 'localhost' || 
+      hostname === '127.0.0.1' || 
+      hostname.startsWith('192.168.') || 
+      hostname.startsWith('10.') || 
+      hostname.startsWith('172.')) {
+    return ':5000';
+  }
+  
+  // Production: No port needed
+  return '';
+};
+
+export const API_BASE_URL = getApiBaseUrl() + getPort();
 
 // Helper function for making API calls with the base URL
 export const createApiUrl = (endpoint: string): string => {

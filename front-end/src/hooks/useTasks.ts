@@ -3,6 +3,7 @@ import React from 'react';
 import { Task } from './types';
 import { useUserDataStore } from './useUserData';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
+import { createApiUrl } from './apiConfig';
 
 // Verbose flag for debug logging
 const VERBOSE_DEBUG = false;
@@ -57,8 +58,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/tasks/`;
+    const apiUrl = createApiUrl('/tasks/');
 
     fetch(apiUrl, {
       method: "POST",
@@ -120,8 +120,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
       hasPendingWrites: true,
     });
     
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/tasks/${id}?user_id=${userData.id}`;
+    const apiUrl = createApiUrl(`/tasks/${id}?user_id=${userData.id}`);
     
     fetch(apiUrl, {
       method: "PUT",
@@ -176,8 +175,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
       hasPendingWrites: true,
     });
     
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/tasks/${id}?user_id=${userData.id}`;
+    const apiUrl = createApiUrl(`/tasks/${id}?user_id=${userData.id}`);
     
     fetch(apiUrl, { method: "DELETE" })
       .then(() => {

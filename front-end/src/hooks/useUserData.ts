@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import React from 'react';
 import { UserData, AuthState, LoginCredentials, RegisterCredentials, DataLoadingState } from './types';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent, DataLoadingEvent } from './eventBus';
+import { createApiUrl } from './apiConfig';
 
 // Verbose flag for debug logging
 const VERBOSE_DEBUG = false;
@@ -80,8 +81,7 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
     // Perform optimistic update
     set({ userData: updatedUserData });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/userdata/${userData.id}`;
+    const apiUrl = createApiUrl(`/userdata/${userData.id}`);
 
     fetch(apiUrl, {
       method: "PUT",
@@ -119,7 +119,6 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
       }
     });
     
-    const currentHost = window.location.hostname;
     const domains = ['categories', 'tasks', 'events', 'rules'];
     
     try {
@@ -134,10 +133,10 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
 
       // Load all user data in parallel
       const [categoriesRes, tasksRes, eventsRes, rulesRes] = await Promise.all([
-        fetch(`http://${currentHost}:5000/categories/?user_id=${userId}`),
-        fetch(`http://${currentHost}:5000/tasks/?user_id=${userId}`),
-        fetch(`http://${currentHost}:5000/events/?user_id=${userId}`),
-        fetch(`http://${currentHost}:5000/rules/?user_id=${userId}`),
+        fetch(createApiUrl(`/categories/?user_id=${userId}`)),
+        fetch(createApiUrl(`/tasks/?user_id=${userId}`)),
+        fetch(createApiUrl(`/events/?user_id=${userId}`)),
+        fetch(createApiUrl(`/rules/?user_id=${userId}`)),
       ]);
 
       // Parse all responses, handling 404s as empty arrays
@@ -231,8 +230,7 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
     });
 
     try {
-      const currentHost = window.location.hostname;
-      const response = await fetch(`http://${currentHost}:5000/auth/login`, {
+      const response = await fetch(createApiUrl('/auth/login'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -287,8 +285,7 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
     });
 
     try {
-      const currentHost = window.location.hostname;
-      const response = await fetch(`http://${currentHost}:5000/auth/register`, {
+      const response = await fetch(createApiUrl('/auth/register'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -378,8 +375,7 @@ export const useUserDataStore = create<UserDataStore>((set, get) => ({
           const userData = JSON.parse(storedUserData);
           
           // Verify with server that this user still exists and is valid
-          const currentHost = window.location.hostname;
-          const response = await fetch(`http://${currentHost}:5000/auth/me`, {
+          const response = await fetch(createApiUrl('/auth/me'), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_id: userData.id }),

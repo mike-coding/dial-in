@@ -3,6 +3,7 @@ import React from 'react';
 import { Category } from './types';
 import { useUserDataStore } from './useUserData';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
+import { createApiUrl } from './apiConfig';
 
 // Verbose flag for debug logging
 const VERBOSE_DEBUG = false;
@@ -56,8 +57,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/categories`;
+    const apiUrl = createApiUrl('/categories');
 
     fetch(apiUrl, {
       method: "POST",
@@ -98,6 +98,12 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
   },
 
   updateCategory: (id, updates) => {
+    const userData = useUserDataStore.getState().userData;
+    if (!userData) {
+      console.error("❌ updateCategory called but userData is null!");
+      return;
+    }
+
     if (VERBOSE_DEBUG) console.log("🔄 Updating category:", id, updates);
 
     const { categories } = get();
@@ -113,8 +119,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/categories/${id}`;
+    const apiUrl = createApiUrl(`/categories/${id}?user_id=${userData.id}`);
 
     fetch(apiUrl, {
       method: "PUT",
@@ -168,9 +173,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       categories: filteredCategories,
       hasPendingWrites: true,
     });
-
-    const currentHost = window.location.hostname;
-    const apiUrl = `http://${currentHost}:5000/categories/${id}?user_id=${userData.id}`;
+    const apiUrl = createApiUrl(`/categories/${id}?user_id=${userData.id}`);
 
     fetch(apiUrl, { method: "DELETE" })
       .then(() => {
