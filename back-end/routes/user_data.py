@@ -9,7 +9,7 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.get("/user_data/{user_id}", response_model=UserDataResponse)
+@router.get("/{user_id}", response_model=UserDataResponse)
 def get_user_data(user_id: int, db: Session = Depends(get_db)):
     """Get user data/preferences for a specific user."""
     user_data = db.query(UserData).filter(UserData.user_id == user_id).first()
@@ -19,7 +19,7 @@ def get_user_data(user_id: int, db: Session = Depends(get_db)):
         user_data = UserData(
             user_id=user_id,
             theme="light",
-            time_period="week",
+            time_period="today",
             show_undated=True,
             show_uncategorized=True,
             show_overdue=True
@@ -28,9 +28,9 @@ def get_user_data(user_id: int, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user_data)
     
-    return user_data
+    return UserDataResponse(**user_data.to_dict())
 
-@router.post("/user_data", response_model=UserDataResponse)
+@router.post("/", response_model=UserDataResponse)
 def create_user_data(user_data: UserDataCreate, db: Session = Depends(get_db)):
     """Create new user data/preferences."""
     # Check if user_data already exists for this user
@@ -42,9 +42,9 @@ def create_user_data(user_data: UserDataCreate, db: Session = Depends(get_db)):
     db.add(db_user_data)
     db.commit()
     db.refresh(db_user_data)
-    return db_user_data
+    return UserDataResponse(**db_user_data.to_dict())
 
-@router.put("/user_data/{user_id}", response_model=UserDataResponse)
+@router.put("/{user_id}", response_model=UserDataResponse)
 def update_user_data(user_id: int, user_data_update: UserDataUpdate, db: Session = Depends(get_db)):
     """Update user data/preferences for a specific user."""
     user_data = db.query(UserData).filter(UserData.user_id == user_id).first()
@@ -64,9 +64,9 @@ def update_user_data(user_id: int, user_data_update: UserDataUpdate, db: Session
         db.commit()
         db.refresh(user_data)
     
-    return user_data
+    return UserDataResponse(**user_data.to_dict())
 
-@router.delete("/user_data/{user_id}")
+@router.delete("/{user_id}")
 def delete_user_data(user_id: int, db: Session = Depends(get_db)):
     """Delete user data/preferences for a specific user."""
     user_data = db.query(UserData).filter(UserData.user_id == user_id).first()

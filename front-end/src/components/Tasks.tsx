@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useCategories } from '../hooks/useCategories';
+import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
 import Task from './Task';
 import WindowsEmoji from './WindowsEmoji';
@@ -29,7 +30,49 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   });
   const { tasks, addTask, updateTask, deleteTask } = useTasks();
   const { categories } = useCategories();
+  const { userData: authUser } = useUser();
+  const { userData: preferences, loadUserData, updateUserData } = useUserData();
   const filterDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Load user preferences on mount
+  useEffect(() => {
+    if (authUser?.id && !preferences) {
+      loadUserData(authUser.id);
+    }
+  }, [authUser, preferences, loadUserData]);
+
+  // Update filters when user preferences load
+  useEffect(() => {
+    if (preferences) {
+      // Map backend time_period values to frontend dateFilter values
+      const dateFilterMap: Record<string, 'Today' | 'This Week' | 'This Month' | 'Upcoming'> = {
+        'today': 'Today',
+        'week': 'This Week', 
+        'month': 'This Month',
+        'upcoming': 'Upcoming'
+      };
+      
+      setFilters(prev => ({
+        ...prev,
+        dateFilter: dateFilterMap[preferences.time_period] || 'Today',
+        showUndated: preferences.show_undated,
+        showUncategorized: preferences.show_uncategorized,
+        showOverdue: preferences.show_overdue,
+      }));
+    }
+  }, [preferences]);
+
+  // Function to update filter preferences in backend
+  const updateFilterPreference = (updates: { 
+    time_period?: string;
+    show_undated?: boolean;
+    show_uncategorized?: boolean; 
+    show_overdue?: boolean;
+  }) => {
+    if (authUser?.id) {
+      updateUserData(authUser.id, updates);
+    }
+  };
 
   // Handle click outside to close filter dropdown
   useEffect(() => {
@@ -225,7 +268,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                         type="radio"
                         name="dateFilter"
                         checked={filters.dateFilter === 'Today'}
-                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'Today' }))}
+                        onChange={() => {
+                          setFilters(prev => ({ ...prev, dateFilter: 'Today' }));
+                          updateFilterPreference({ time_period: 'today' });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">Today</span>
@@ -235,7 +281,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                         type="radio"
                         name="dateFilter"
                         checked={filters.dateFilter === 'Upcoming'}
-                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'Upcoming' }))}
+                        onChange={() => {
+                          setFilters(prev => ({ ...prev, dateFilter: 'Upcoming' }));
+                          updateFilterPreference({ time_period: 'upcoming' });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">Upcoming</span>
@@ -245,7 +294,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                         type="radio"
                         name="dateFilter"
                         checked={filters.dateFilter === 'This Week'}
-                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'This Week' }))}
+                        onChange={() => {
+                          setFilters(prev => ({ ...prev, dateFilter: 'This Week' }));
+                          updateFilterPreference({ time_period: 'week' });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">This Week</span>
@@ -255,7 +307,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                         type="radio"
                         name="dateFilter"
                         checked={filters.dateFilter === 'This Month'}
-                        onChange={() => setFilters(prev => ({ ...prev, dateFilter: 'This Month' }))}
+                        onChange={() => {
+                          setFilters(prev => ({ ...prev, dateFilter: 'This Month' }));
+                          updateFilterPreference({ time_period: 'month' });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">This Month</span>
@@ -292,7 +347,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="checkbox"
                         checked={filters.showUndated}
-                        onChange={(e) => setFilters(prev => ({ ...prev, showUndated: e.target.checked }))}
+                        onChange={(e) => {
+                          setFilters(prev => ({ ...prev, showUndated: e.target.checked }));
+                          updateFilterPreference({ show_undated: e.target.checked });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">Undated</span>
@@ -301,7 +359,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="checkbox"
                         checked={filters.showUncategorized}
-                        onChange={(e) => setFilters(prev => ({ ...prev, showUncategorized: e.target.checked }))}
+                        onChange={(e) => {
+                          setFilters(prev => ({ ...prev, showUncategorized: e.target.checked }));
+                          updateFilterPreference({ show_uncategorized: e.target.checked });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">Uncategorized</span>
@@ -310,7 +371,10 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="checkbox"
                         checked={filters.showOverdue}
-                        onChange={(e) => setFilters(prev => ({ ...prev, showOverdue: e.target.checked }))}
+                        onChange={(e) => {
+                          setFilters(prev => ({ ...prev, showOverdue: e.target.checked }));
+                          updateFilterPreference({ show_overdue: e.target.checked });
+                        }}
                         className="mr-2"
                       />
                       <span className="text-gray-900">Overdue</span>
