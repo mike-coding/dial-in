@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from database import Base, engine
-from routes import auth, categories, tasks, events, rules, user_data
+from routes import auth, categories, tasks, events, rules, user, user_data
 
 # Create the database tables
 Base.metadata.create_all(bind=engine)
@@ -32,7 +32,8 @@ app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 app.include_router(tasks.router, prefix="/tasks", tags=["Tasks"])
 app.include_router(events.router, prefix="/events", tags=["Events"])
 app.include_router(rules.router, prefix="/rules", tags=["Rules"])
-app.include_router(user_data.router, prefix="/user-data", tags=["User Data"])
+app.include_router(user.router, prefix="/user", tags=["User"])
+app.include_router(user_data.router, prefix="/user_data", tags=["User Data"])
 
 @app.get("/")
 async def root():

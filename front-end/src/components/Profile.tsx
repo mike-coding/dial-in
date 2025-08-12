@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useUserData } from '../hooks/AppContext';
+import { useUser } from '../hooks/AppContext';
 
 interface ProfileProps {
   isMobile?: boolean;
 }
 
 const Profile: React.FC<ProfileProps> = ({ isMobile = false }) => {
-  const { userData, logout, updateUserData } = useUserData();
+  const { userData, logout, updateUserData } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: userData?.username || '',

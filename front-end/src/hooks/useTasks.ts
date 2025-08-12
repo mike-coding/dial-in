@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import React from 'react';
 import { Task } from './types';
-import { useUserDataStore } from './useUserData';
+import { useUserStore } from './useUser';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 
@@ -35,7 +35,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
   }),
   
   addTask: (taskData) => {
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ addTask called but userData is null!");
       return;
@@ -101,7 +101,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
   updateTask: (id, changes) => {
     if (VERBOSE_DEBUG) console.log(`🔄 Updating task ${id}:`, changes);
 
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ updateTask called but userData is null!");
       return;
@@ -160,7 +160,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
   deleteTask: (id) => {
     if (VERBOSE_DEBUG) console.log(`🗑️ Deleting task ${id}`);
 
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ deleteTask called but userData is null!");
       return;

@@ -9,13 +9,13 @@ import Auth from './components/Auth'
 import Profile from './components/Profile'
 import Calendar from './components/Calendar'
 import WindowsEmoji from './components/WindowsEmoji'
-import { useNavigationContext, useUserData } from './hooks/AppContext'
+import { useNavigationContext, useUser } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
 import { getVersionString } from './utils/version'
 
 function App() {
   const { navigation } = useNavigationContext();
-  const { authState, checkAuthStatus } = useUserData();
+  const { authState, checkAuthStatus } = useUser();
   const { isMobile, isTablet, isDesktop } = useDeviceDetection();
 
   // Check authentication status on app startup

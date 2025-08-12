@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUserData } from '../hooks/AppContext';
+import { useUser } from '../hooks/AppContext';
 import { getVersionString } from '../utils/version';
 
 interface AuthProps {
@@ -15,7 +15,7 @@ const Auth: React.FC<AuthProps> = ({ isMobile = false }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { login, register, authState } = useUserData();
+  const { login, register, authState } = useUser();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import React from 'react';
 import { Event } from './types';
-import { useUserDataStore } from './useUserData';
+import { useUserStore } from './useUser';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 
@@ -30,7 +30,7 @@ export const useEventsStore = create<EventsStore>((set, get) => ({
   }),
   
   addEvent: (eventData) => {
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ addEvent called but userData is null!");
       return;

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import React from 'react';
 import { Category } from './types';
-import { useUserDataStore } from './useUserData';
+import { useUserStore } from './useUser';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 
@@ -35,7 +35,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
   }),
   
   addCategory: (categoryData) => {
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ addCategory called but userData is null!");
       return;
@@ -98,7 +98,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
   },
 
   updateCategory: (id, updates) => {
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ updateCategory called but userData is null!");
       return;
@@ -157,7 +157,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
   },
 
   deleteCategory: (id) => {
-    const userData = useUserDataStore.getState().userData;
+    const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ deleteCategory called but userData is null!");
       return;

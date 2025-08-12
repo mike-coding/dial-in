@@ -128,3 +128,33 @@ class EventResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# UserData models
+class UserDataCreate(BaseModel):
+    user_id: int
+    theme: Optional[str] = "light"
+    time_period: Optional[str] = "today"
+    show_undated: Optional[bool] = True
+    show_uncategorized: Optional[bool] = True
+    show_overdue: Optional[bool] = True
+
+class UserDataUpdate(BaseModel):
+    theme: Optional[str] = None
+    time_period: Optional[str] = None
+    show_undated: Optional[bool] = None
+    show_uncategorized: Optional[bool] = None
+    show_overdue: Optional[bool] = None
+
+class UserDataResponse(BaseModel):
+    id: int
+    user_id: int
+    theme: str
+    time_period: str
+    show_undated: bool
+    show_uncategorized: bool
+    show_overdue: bool
+    created_at: Optional[str]
+    updated_at: Optional[str]
+
+    class Config:
+        from_attributes = True

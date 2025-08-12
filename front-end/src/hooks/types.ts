@@ -49,6 +49,26 @@ export interface UserData {
   username: string;
 }
 
+export interface UserPreferences {
+  id: number;
+  user_id: number;
+  theme: string;
+  time_period: string;
+  show_undated: boolean;
+  show_uncategorized: boolean;
+  show_overdue: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserPreferencesUpdate {
+  theme?: string;
+  time_period?: string;
+  show_undated?: boolean;
+  show_uncategorized?: boolean;
+  show_overdue?: boolean;
+}
+
 export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;

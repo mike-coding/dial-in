@@ -17,6 +17,38 @@ class User(Base):
             "username": self.username
         }
 
+class UserData(Base):
+    __tablename__ = "user_data"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True)
+    
+    # Simple user preferences
+    theme = Column(String(20), default="light")  # light, dark
+    time_period = Column(String(20), default="today")  # Today, This Week, This Month, Upcoming
+    show_undated = Column(Boolean, default=True)
+    show_uncategorized = Column(Boolean, default=True)
+    show_overdue = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship('User')
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "theme": self.theme,
+            "time_period": self.time_period,
+            "show_undated": self.show_undated,
+            "show_uncategorized": self.show_uncategorized,
+            "show_overdue": self.show_overdue,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
 class Category(Base):
     __tablename__ = 'categories'
     
