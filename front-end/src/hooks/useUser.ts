@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import React from 'react';
-import { UserData, AuthState, LoginCredentials, RegisterCredentials, DataLoadingState } from './types';
+import { User, UserData, AuthState, LoginCredentials, RegisterCredentials, DataLoadingState } from './types';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent, DataLoadingEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 
@@ -8,13 +8,13 @@ import { createApiUrl } from './apiConfig';
 const VERBOSE_DEBUG = false;
 
 interface UserStore {
-  userData: UserData | null;
+  userData: User | null;
   authState: AuthState;
   dataLoadingState: DataLoadingState;
   
   // Core user data methods
-  setUserData: (userData: UserData | null) => void;
-  updateUserData: (changes: Partial<UserData>) => void;
+  setUserData: (userData: User | null) => void;
+  updateUserData: (changes: Partial<User>) => void;
   
   // Authentication methods
   login: (credentials: LoginCredentials) => Promise<boolean>;
@@ -119,7 +119,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       }
     });
     
-    const domains = ['categories', 'tasks', 'events', 'rules'];
+    const domains = ['categories', 'tasks', 'events', 'rules', 'user_preferences'];
     
     try {
       // Emit loading events for each domain
@@ -132,11 +132,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
       });
 
       // Load all user data in parallel
-      const [categoriesRes, tasksRes, eventsRes, rulesRes] = await Promise.all([
+      const [categoriesRes, tasksRes, eventsRes, rulesRes, userPreferencesRes] = await Promise.all([
         fetch(createApiUrl(`/categories/?user_id=${userId}`)),
         fetch(createApiUrl(`/tasks/?user_id=${userId}`)),
         fetch(createApiUrl(`/events/?user_id=${userId}`)),
         fetch(createApiUrl(`/rules/?user_id=${userId}`)),
+        fetch(createApiUrl(`/user_data/${userId}`)),
       ]);
 
       // Parse all responses, handling 404s as empty arrays
@@ -150,11 +151,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
         return res.json();
       };
 
-      const [categories, tasks, events, rules] = await Promise.all([
+      const [categories, tasks, events, rules, userData] = await Promise.all([
         parseResponse(categoriesRes),
         parseResponse(tasksRes),
         parseResponse(eventsRes),
         parseResponse(rulesRes),
+        parseResponse(userPreferencesRes),
       ]);
 
       // Emit user data loaded event instead of direct store manipulation
@@ -164,6 +166,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
         tasks,
         events,
         rules,
+        userData,
       });
 
       // Update loading state

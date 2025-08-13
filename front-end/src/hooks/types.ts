@@ -44,12 +44,12 @@ export interface Event {
   created_at: string;
 }
 
-export interface UserData {
+export interface User {
   id: number;
   username: string;
 }
 
-export interface UserPreferences {
+export interface UserData {
   id: number;
   user_id: number;
   theme: string;
@@ -61,7 +61,7 @@ export interface UserPreferences {
   updated_at?: string;
 }
 
-export interface UserPreferencesUpdate {
+export interface UserUpdate {
   theme?: string;
   time_period?: string;
   show_undated?: boolean;

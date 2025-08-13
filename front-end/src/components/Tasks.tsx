@@ -10,60 +10,34 @@ interface TasksProps {
   isMobile?: boolean;
 }
 
-interface FilterState {
-  dateFilter: 'Today' | 'This Week' | 'This Month' | 'Upcoming';
-  categoryIds: number[];
-  showUndated: boolean;
-  showUncategorized: boolean;
-  showOverdue: boolean;
-}
-
 const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const [newTaskText, setNewTaskText] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({
-    dateFilter: 'Today',
-    categoryIds: [],
-    showUndated: true,
-    showUncategorized: true,
-    showOverdue: true,
-  });
+  const [categoryFilter, setCategoryFilter] = useState<number[]>([]);
   const { tasks, addTask, updateTask, deleteTask } = useTasks();
   const { categories } = useCategories();
   const { userData: authUser } = useUser();
-  const { userData: preferences, loadUserData, updateUserData } = useUserData();
+  const { userData: preferences, updateUserData } = useUserData();
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load user preferences on mount
-  useEffect(() => {
-    if (authUser?.id && !preferences) {
-      loadUserData(authUser.id);
-    }
-  }, [authUser, preferences, loadUserData]);
+  // Computed filter values directly from store (with fallbacks)
+  const dateFilter = (() => {
+    if (!preferences?.time_period) return 'Today';
+    const dateFilterMap: Record<string, 'Today' | 'This Week' | 'This Month' | 'Upcoming'> = {
+      'today': 'Today',
+      'week': 'This Week', 
+      'month': 'This Month',
+      'upcoming': 'Upcoming'
+    };
+    return dateFilterMap[preferences.time_period] || 'Today';
+  })();
 
-  // Update filters when user preferences load
-  useEffect(() => {
-    if (preferences) {
-      // Map backend time_period values to frontend dateFilter values
-      const dateFilterMap: Record<string, 'Today' | 'This Week' | 'This Month' | 'Upcoming'> = {
-        'today': 'Today',
-        'week': 'This Week', 
-        'month': 'This Month',
-        'upcoming': 'Upcoming'
-      };
-      
-      setFilters(prev => ({
-        ...prev,
-        dateFilter: dateFilterMap[preferences.time_period] || 'Today',
-        showUndated: preferences.show_undated,
-        showUncategorized: preferences.show_uncategorized,
-        showOverdue: preferences.show_overdue,
-      }));
-    }
-  }, [preferences]);
+  const showUndated = preferences?.show_undated;
+  const showUncategorized = preferences?.show_uncategorized;
+  const showOverdue = preferences?.show_overdue;
 
-  // Function to update filter preferences in backend
-  const updateFilterPreference = (updates: { 
+  // Direct preference updater (no local state sync)
+  const updatePreference = (updates: { 
     time_period?: string;
     show_undated?: boolean;
     show_uncategorized?: boolean; 
@@ -153,14 +127,14 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
       const isOverdue = task.due_date && new Date(task.due_date) < now && !task.is_completed;
       
       // If task is overdue and we don't want to show overdue tasks, filter it out
-      if (isOverdue && !filters.showOverdue) return false;
+      if (isOverdue && !showOverdue) return false;
       
       // Date filter (only apply to non-overdue, incomplete tasks)
       if (task.due_date && !isOverdue && !task.is_completed) {
         const dueDate = new Date(task.due_date);
         const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
         
-        switch (filters.dateFilter) {
+        switch (dateFilter) {
           case 'Today':
             if (dueDateOnly.getTime() !== today.getTime()) return false;
             break;
@@ -181,7 +155,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         const dueDate = new Date(task.due_date);
         const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
         
-        switch (filters.dateFilter) {
+        switch (dateFilter) {
           case 'Today':
             // Show completed tasks that were due today OR were overdue and just completed
             if (dueDateOnly.getTime() !== today.getTime() && dueDateOnly >= today) return false;
@@ -201,16 +175,16 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         }
       } else if (!task.due_date) {
         // Task has no due date - respect showUndated setting for all date filters
-        if (!filters.showUndated) return false;
+        if (!showUndated) return false;
       }
 
       // Category filter
       if (categories && categories.length > 0) {
         // Categories exist in the system
-        if (filters.categoryIds.length > 0) {
+        if (categoryFilter.length > 0) {
           // Some categories are selected - show tasks from those categories + uncategorized if enabled
-          const hasMatchingCategory = task.category_id && filters.categoryIds.includes(task.category_id);
-          const isUncategorizedAndShown = !task.category_id && filters.showUncategorized;
+          const hasMatchingCategory = task.category_id && categoryFilter.includes(task.category_id);
+          const isUncategorizedAndShown = !task.category_id && showUncategorized;
           
           if (!hasMatchingCategory && !isUncategorizedAndShown) {
             return false;
@@ -218,24 +192,23 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         } else {
           // No categories are selected - only show uncategorized tasks (if enabled)
           if (task.category_id) return false; // Hide all categorized tasks
-          if (!task.category_id && !filters.showUncategorized) return false; // Hide uncategorized if disabled
+          if (!task.category_id && !showUncategorized) return false; // Hide uncategorized if disabled
         }
       } else {
         // No categories exist in system - just apply uncategorized filter for safety
-        if (!task.category_id && !filters.showUncategorized) return false;
+        if (!task.category_id && !showUncategorized) return false;
       }
 
       return true;
     });
-  }, [tasks, filters]);
+  }, [tasks, dateFilter, showUndated, showUncategorized, showOverdue, categoryFilter]);
 
   const toggleCategoryFilter = (categoryId: number) => {
-    setFilters(prev => ({
-      ...prev,
-      categoryIds: prev.categoryIds.includes(categoryId)
-        ? prev.categoryIds.filter(id => id !== categoryId)
-        : [...prev.categoryIds, categoryId]
-    }));
+    setCategoryFilter(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
   };
 
   const completedCount = filteredTasks.filter(task => task.is_completed).length;
@@ -251,7 +224,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="bg-white/30 rounded-md px-6 py-3 text-gray-800 font-medium transition-all duration-200 cursor-pointer flex items-center gap-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100"
             >
-              <span>{filters.dateFilter}</span>
+              <span>{dateFilter}</span>
               <svg className={`w-4 h-4 text-gray-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -267,10 +240,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="radio"
                         name="dateFilter"
-                        checked={filters.dateFilter === 'Today'}
+                        checked={dateFilter === 'Today'}
                         onChange={() => {
-                          setFilters(prev => ({ ...prev, dateFilter: 'Today' }));
-                          updateFilterPreference({ time_period: 'today' });
+                          updatePreference({ time_period: 'today' });
                         }}
                         className="mr-2"
                       />
@@ -280,10 +252,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="radio"
                         name="dateFilter"
-                        checked={filters.dateFilter === 'Upcoming'}
+                        checked={dateFilter === 'Upcoming'}
                         onChange={() => {
-                          setFilters(prev => ({ ...prev, dateFilter: 'Upcoming' }));
-                          updateFilterPreference({ time_period: 'upcoming' });
+                          updatePreference({ time_period: 'upcoming' });
                         }}
                         className="mr-2"
                       />
@@ -293,10 +264,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="radio"
                         name="dateFilter"
-                        checked={filters.dateFilter === 'This Week'}
+                        checked={dateFilter === 'This Week'}
                         onChange={() => {
-                          setFilters(prev => ({ ...prev, dateFilter: 'This Week' }));
-                          updateFilterPreference({ time_period: 'week' });
+                          updatePreference({ time_period: 'week' });
                         }}
                         className="mr-2"
                       />
@@ -306,10 +276,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                       <input
                         type="radio"
                         name="dateFilter"
-                        checked={filters.dateFilter === 'This Month'}
+                        checked={dateFilter === 'This Month'}
                         onChange={() => {
-                          setFilters(prev => ({ ...prev, dateFilter: 'This Month' }));
-                          updateFilterPreference({ time_period: 'month' });
+                          updatePreference({ time_period: 'month' });
                         }}
                         className="mr-2"
                       />
@@ -327,7 +296,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                         <label key={category.id} className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
                           <input
                             type="checkbox"
-                            checked={filters.categoryIds.includes(category.id)}
+                            checked={categoryFilter.includes(category.id)}
                             onChange={() => toggleCategoryFilter(category.id)}
                             className="mr-2"
                           />
@@ -346,10 +315,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                     <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
                       <input
                         type="checkbox"
-                        checked={filters.showUndated}
+                        checked={showUndated}
                         onChange={(e) => {
-                          setFilters(prev => ({ ...prev, showUndated: e.target.checked }));
-                          updateFilterPreference({ show_undated: e.target.checked });
+                          updatePreference({ show_undated: e.target.checked });
                         }}
                         className="mr-2"
                       />
@@ -358,10 +326,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                     <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
                       <input
                         type="checkbox"
-                        checked={filters.showUncategorized}
+                        checked={showUncategorized}
                         onChange={(e) => {
-                          setFilters(prev => ({ ...prev, showUncategorized: e.target.checked }));
-                          updateFilterPreference({ show_uncategorized: e.target.checked });
+                          updatePreference({ show_uncategorized: e.target.checked });
                         }}
                         className="mr-2"
                       />
@@ -370,10 +337,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
                     <label className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded">
                       <input
                         type="checkbox"
-                        checked={filters.showOverdue}
+                        checked={showOverdue}
                         onChange={(e) => {
-                          setFilters(prev => ({ ...prev, showOverdue: e.target.checked }));
-                          updateFilterPreference({ show_overdue: e.target.checked });
+                          updatePreference({ show_overdue: e.target.checked });
                         }}
                         className="mr-2"
                       />

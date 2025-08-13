@@ -48,6 +48,7 @@ export interface UserDataLoadedEvent {
   tasks: any[];
   events: any[];
   rules: any[];
+  userData: any;
 }
 
 export interface AuthStatusChangedEvent {
