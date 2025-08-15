@@ -152,8 +152,8 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
               aria-label={isExpanded ? "Collapse task details" : "Expand task details"}
             >
               <svg 
-                className={`w-5 h-5 text-gray-500 group-hover:text-gray-700 transition-all duration-200 ${
-                  isExpanded ? 'transform rotate-180' : ''
+                className={`w-5 h-5 text-gray-500 group-hover:text-gray-400 transition-all duration-200 ${
+                  isExpanded ? '' : 'transform -rotate-90'
                 }`} 
                 fill="none" 
                 stroke="currentColor" 

@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useCategories } from "../hooks/useCategories";
 import WindowsEmoji from "./WindowsEmoji";
+import Category from "./Category";
 
 const Categories: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('📂');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const { categories, addCategory, deleteCategory } = useCategories();
+  const { categories, addCategory, deleteCategory, updateCategory } = useCategories();
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   // Close emoji picker when clicking outside
@@ -204,7 +205,7 @@ const Categories: React.FC = () => {
         
         {/* Add Category Input */}
         <div className="mb-6 relative" ref={emojiPickerRef}>
-          <div className="bg-white/90 rounded-sm shadow-sm border border-gray-100 px-4 py-3">
+          <div className="bg-white rounded-md px-4 py-3">
             <div className="flex items-center gap-3">
               <div 
                 onClick={handleAddCategory}
@@ -270,22 +271,12 @@ const Categories: React.FC = () => {
             </div>
           ) : (
             categories.map((category) => (
-              <div key={category.id} className="bg-white/90 rounded-sm shadow-sm border border-gray-100 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <WindowsEmoji emoji={category.icon || '📂'} size={24} />
-                    <span className="text-lg text-gray-700">{category.name}</span>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteCategory(category.id)}
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              <Category
+                key={category.id}
+                category={category}
+                onDelete={handleDeleteCategory}
+                onUpdate={updateCategory}
+              />
             ))
           )}
         </div>

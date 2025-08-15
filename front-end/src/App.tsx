@@ -135,7 +135,7 @@ function App() {
 
       {/* Mobile Layout */}
       {isMobile && (
-        <div className="w-full h-full flex flex-col bg-gray-100/80">
+        <div className="w-full h-full flex flex-col bg-gray-200/60">
           <div className="bg-white/80 border-b border-gray-400 h-10 flex items-center justify-start px-4">
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>

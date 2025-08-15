@@ -214,7 +214,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const completedCount = filteredTasks.filter(task => task.is_completed).length;
 
   return (
-    <div className="rounded-xl ">
+    <div className="rounded-xl">
       <div className={`w-full ${isMobile ? 'max-w-full px-4' : 'max-w-2xl'} mx-auto ${isMobile ? 'pt-4' : 'pt-8'}`}>
         
         {/* Filter Dropdown */}
@@ -222,16 +222,16 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
           <div className="relative" ref={filterDropdownRef}>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="bg-white/30 rounded-md px-6 py-3 text-gray-800 font-medium transition-all duration-200 cursor-pointer flex items-center gap-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100"
+              className="bg-white rounded-md px-6 py-3 text-gray-800 font-medium transition-all duration-200 cursor-pointer flex items-center gap-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100"
             >
               <span>{dateFilter}</span>
-              <svg className={`w-4 h-4 text-gray-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-4 h-4 text-gray-400 transition-transform ${isFilterOpen ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             
             {isFilterOpen && (
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-md border border-gray-200 p-4 z-50 w-80">
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-md p-4 z-50 w-80">
                 {/* Date Filter */}
                 <div className="mb-4">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Time Period</h3>
@@ -354,7 +354,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
 
         {/* Add Task Input */}
         <div className="mb-2">
-          <div className="bg-white/30 rounded-md border border-white/20 px-4 py-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100">
+          <div className="bg-white rounded-md border border-white/20 px-4 py-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100">
             <div className="flex items-center gap-3">
               <div 
                 onClick={handleAddTask}
