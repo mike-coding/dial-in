@@ -6,6 +6,7 @@ from database import get_db
 from models import UserData
 from schemas import UserDataCreate, UserDataUpdate, UserDataResponse
 from datetime import datetime
+import json
 
 router = APIRouter()
 
@@ -22,7 +23,8 @@ def get_user_data(user_id: int, db: Session = Depends(get_db)):
             time_period="today",
             show_undated=True,
             show_uncategorized=True,
-            show_overdue=True
+            show_overdue=True,
+            show_categories="[]"
         )
         db.add(user_data)
         db.commit()
@@ -55,6 +57,10 @@ def update_user_data(user_id: int, user_data_update: UserDataUpdate, db: Session
     # Update only provided fields
     update_data = user_data_update.dict(exclude_unset=True)
     if update_data:
+        # Handle show_categories JSON serialization
+        if 'show_categories' in update_data:
+            update_data['show_categories'] = json.dumps(update_data['show_categories'])
+        
         update_data["updated_at"] = datetime.utcnow()
         db.execute(
             update(UserData)

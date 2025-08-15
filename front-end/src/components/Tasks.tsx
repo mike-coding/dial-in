@@ -13,7 +13,6 @@ interface TasksProps {
 const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const [newTaskText, setNewTaskText] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<number[]>([]);
   const { tasks, addTask, updateTask, deleteTask } = useTasks();
   const { categories } = useCategories();
   const { userData: authUser } = useUser();
@@ -35,6 +34,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const showUndated = preferences?.show_undated;
   const showUncategorized = preferences?.show_uncategorized;
   const showOverdue = preferences?.show_overdue;
+  const categoryFilter = preferences?.show_categories || [];
 
   // Direct preference updater (no local state sync)
   const updatePreference = (updates: { 
@@ -42,6 +42,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
     show_undated?: boolean;
     show_uncategorized?: boolean; 
     show_overdue?: boolean;
+    show_categories?: number[];
   }) => {
     if (authUser?.id) {
       updateUserData(authUser.id, updates);
@@ -204,11 +205,11 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   }, [tasks, dateFilter, showUndated, showUncategorized, showOverdue, categoryFilter]);
 
   const toggleCategoryFilter = (categoryId: number) => {
-    setCategoryFilter(prev => 
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
+    const newCategoryFilter = categoryFilter.includes(categoryId)
+      ? categoryFilter.filter(id => id !== categoryId)
+      : [...categoryFilter, categoryId];
+    
+    updatePreference({ show_categories: newCategoryFilter });
   };
 
   const completedCount = filteredTasks.filter(task => task.is_completed).length;

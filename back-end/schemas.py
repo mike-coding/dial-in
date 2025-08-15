@@ -137,6 +137,7 @@ class UserDataCreate(BaseModel):
     show_undated: Optional[bool] = True
     show_uncategorized: Optional[bool] = True
     show_overdue: Optional[bool] = True
+    show_categories: Optional[list[int]] = []
 
 class UserDataUpdate(BaseModel):
     theme: Optional[str] = None
@@ -144,6 +145,7 @@ class UserDataUpdate(BaseModel):
     show_undated: Optional[bool] = None
     show_uncategorized: Optional[bool] = None
     show_overdue: Optional[bool] = None
+    show_categories: Optional[list[int]] = None
 
 class UserDataResponse(BaseModel):
     id: int
@@ -153,6 +155,7 @@ class UserDataResponse(BaseModel):
     show_undated: bool
     show_uncategorized: bool
     show_overdue: bool
+    show_categories: list[int]
     created_at: Optional[str]
     updated_at: Optional[str]
 

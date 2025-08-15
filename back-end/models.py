@@ -29,6 +29,7 @@ class UserData(Base):
     show_undated = Column(Boolean, default=True)
     show_uncategorized = Column(Boolean, default=True)
     show_overdue = Column(Boolean, default=True)
+    show_categories = Column(Text, default="[]")  # JSON array of category IDs to show
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -37,6 +38,7 @@ class UserData(Base):
     user = relationship('User')
     
     def to_dict(self):
+        import json
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -45,6 +47,7 @@ class UserData(Base):
             "show_undated": self.show_undated,
             "show_uncategorized": self.show_uncategorized,
             "show_overdue": self.show_overdue,
+            "show_categories": json.loads(getattr(self, 'show_categories', '[]') or "[]"),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

@@ -57,16 +57,19 @@ export interface UserData {
   show_undated: boolean;
   show_uncategorized: boolean;
   show_overdue: boolean;
+  show_categories: number[];
   created_at?: string;
   updated_at?: string;
 }
 
+// TODO: This should really be UserDataUpdate
 export interface UserUpdate {
   theme?: string;
   time_period?: string;
   show_undated?: boolean;
   show_uncategorized?: boolean;
   show_overdue?: boolean;
+  show_categories?: number[];
 }
 
 export interface AuthState {
