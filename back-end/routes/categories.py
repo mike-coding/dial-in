@@ -1,46 +1,62 @@
 """Category routes."""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Optional
 from database import get_db
 from models import Category
-from schemas import CategoryCreate, CategoryUpdate, CategoryResponse
 
 router = APIRouter()
 
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("/")
 async def get_categories(user_id: int, db: Session = Depends(get_db)):
     categories = db.query(Category).filter(Category.user_id == user_id).all()
-    return [CategoryResponse(**category.to_dict()) for category in categories]
+    return [category.to_dict() for category in categories]
 
-@router.post("/", response_model=CategoryResponse)
-async def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)):
-    category = Category(**category_data.dict())
+@router.post("/")
+async def create_category(
+    name: str = Body(...),
+    user_id: int = Body(...),
+    icon: Optional[str] = Body(None),
+    db: Session = Depends(get_db)
+):
+    category = Category(name=name, icon=icon, user_id=user_id)
     db.add(category)
     db.commit()
     db.refresh(category)
-    return CategoryResponse(**category.to_dict())
+    return category.to_dict()
 
-@router.put("/{category_id}", response_model=CategoryResponse)
-async def update_category(category_id: int, category_data: CategoryUpdate, user_id: int, db: Session = Depends(get_db)):
+@router.put("/{category_id}")
+async def update_category(
+    category_id: int,
+    user_id: int,
+    changes: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    """Update category fields from a changes dict in the request body."""
     category = db.query(Category).filter(
         Category.id == category_id,
         Category.user_id == user_id
     ).first()
-    
+
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    
-    update_data = category_data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(category, field, value)
-    
+
+    # Apply updates from changes dict if present
+    if 'name' in changes:
+        category.name = changes.get('name')
+    if 'icon' in changes:
+        category.icon = changes.get('icon')
+
     db.commit()
     db.refresh(category)
-    return CategoryResponse(**category.to_dict())
+    return category.to_dict()
 
 @router.delete("/{category_id}")
-async def delete_category(category_id: int, user_id: int, db: Session = Depends(get_db)):
+async def delete_category(
+    category_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
     category = db.query(Category).filter(
         Category.id == category_id,
         Category.user_id == user_id

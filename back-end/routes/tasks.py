@@ -1,61 +1,81 @@
 """Task routes."""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Optional
 from datetime import datetime
 from database import get_db
 from models import Task
-from schemas import TaskCreate, TaskUpdate, TaskResponse
 
 router = APIRouter()
 
-@router.get("/", response_model=List[TaskResponse])
+@router.get("/")
 async def get_tasks(user_id: int, db: Session = Depends(get_db)):
     tasks = db.query(Task).filter(Task.user_id == user_id).all()
-    return [TaskResponse(**task.to_dict()) for task in tasks]
+    return [task.to_dict() for task in tasks]
 
-@router.post("/", response_model=TaskResponse)
-async def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
-    task = Task(**task_data.dict())
+@router.post("/")
+async def create_task(
+    title: str = Body(...),
+    user_id: int = Body(...),
+    description: Optional[str] = Body(None),
+    category_id: Optional[int] = Body(None),
+    rule_id: Optional[int] = Body(None),
+    is_completed: Optional[bool] = Body(False),
+    due_date: Optional[str] = Body(None),
+    db: Session = Depends(get_db)
+):
+    task = Task(
+        title=title,
+        description=description,
+        category_id=category_id,
+        rule_id=rule_id,
+        user_id=user_id,
+        is_completed=is_completed,
+        due_date=datetime.fromisoformat(due_date.replace('Z', '+00:00')) if due_date else None
+    )
     db.add(task)
     db.commit()
     db.refresh(task)
-    return TaskResponse(**task.to_dict())
+    return task.to_dict()
 
-@router.put("/{task_id}", response_model=TaskResponse)
-async def update_task(task_id: int, task_data: TaskUpdate, user_id: int, db: Session = Depends(get_db)):
+@router.put("/{task_id}")
+async def update_task(
+    task_id: int,
+    user_id: int,
+    changes: dict = Body(...),
+    db: Session = Depends(get_db)
+):
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == user_id
     ).first()
-    
+
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
-    update_data = task_data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        # Handle datetime string conversion for completed_at
-        if field == "completed_at" and value is not None and isinstance(value, str):
-            try:
-                # Parse ISO format datetime string
-                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid datetime format for completed_at")
-        # Handle datetime string conversion for due_date
-        elif field == "due_date" and value is not None and isinstance(value, str):
-            try:
-                # Parse ISO format datetime string
-                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid datetime format for due_date")
-        setattr(task, field, value)
-    
+
+    if 'title' in changes:
+        task.title = changes.get('title')
+    if 'description' in changes:
+        task.description = changes.get('description')
+    if 'category_id' in changes:
+        task.category_id = changes.get('category_id')
+    if 'is_completed' in changes:
+        task.is_completed = changes.get('is_completed')
+    if 'completed_at' in changes and changes.get('completed_at') is not None:
+        task.completed_at = datetime.fromisoformat(changes.get('completed_at').replace('Z', '+00:00'))
+    if 'due_date' in changes and changes.get('due_date') is not None:
+        task.due_date = datetime.fromisoformat(changes.get('due_date').replace('Z', '+00:00'))
+
     db.commit()
     db.refresh(task)
-    return TaskResponse(**task.to_dict())
+    return task.to_dict()
 
 @router.patch("/{task_id}/complete")
-async def complete_task(task_id: int, user_id: int, db: Session = Depends(get_db)):
+async def complete_task(
+    task_id: int,
+    user_id: int = Body(...),
+    db: Session = Depends(get_db)
+):
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == user_id
@@ -69,10 +89,14 @@ async def complete_task(task_id: int, user_id: int, db: Session = Depends(get_db
     
     db.commit()
     db.refresh(task)
-    return TaskResponse(**task.to_dict())
+    return task.to_dict()
 
 @router.patch("/{task_id}/incomplete")
-async def mark_task_incomplete(task_id: int, user_id: int, db: Session = Depends(get_db)):
+async def mark_task_incomplete(
+    task_id: int,
+    user_id: int = Body(...),
+    db: Session = Depends(get_db)
+):
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == user_id
@@ -86,10 +110,14 @@ async def mark_task_incomplete(task_id: int, user_id: int, db: Session = Depends
     
     db.commit()
     db.refresh(task)
-    return TaskResponse(**task.to_dict())
+    return task.to_dict()
 
 @router.delete("/{task_id}")
-async def delete_task(task_id: int, user_id: int, db: Session = Depends(get_db)):
+async def delete_task(
+    task_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == user_id
