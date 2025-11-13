@@ -49,20 +49,20 @@ const MobileNavigation: React.FC = () => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    if (isTasksModule && !showExpanded) {
-      // Expanding: show immediately
+    if (isTasksModule) {
+      // Entering Tasks module: expand immediately
       setShowExpanded(true);
       setIsExiting(false);
-    } else if (!isTasksModule && showExpanded && !isExiting) {
-      // Collapsing: start exit animation
+    } else if (showExpanded) {
+      // Leaving Tasks module: start exit animation
       setIsExiting(true);
       const timer = setTimeout(() => {
         setShowExpanded(false);
         setIsExiting(false);
-      }, 400); // Slightly longer than animation duration
+      }, 320); // Slightly longer than container transition (300ms) to avoid race condition
       return () => clearTimeout(timer);
     }
-  }, [isTasksModule, showExpanded, isExiting]);
+  }, [isTasksModule, showExpanded]);
 
   const mainNavigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "Dashboard", icon: <DashboardIcon />, label: "Dash" },
@@ -102,6 +102,37 @@ const MobileNavigation: React.FC = () => {
               transform: translateY(10px);
             }
           }
+
+          .sub-nav-item-entering {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+
+          .sub-nav-item-enter-0 {
+            animation: fadeInSlideUp 200ms ease-out 0ms forwards;
+          }
+          
+          .sub-nav-item-enter-1 {
+            animation: fadeInSlideUp 200ms ease-out 50ms forwards;
+          }
+          
+          .sub-nav-item-enter-2 {
+            animation: fadeInSlideUp 200ms ease-out 100ms forwards;
+          }
+
+          .sub-nav-item-exiting-0 {
+            /* Tasks icon: no animation, let container collapse handle positioning */
+            opacity: 1;
+            transform: none;
+          }
+          
+          .sub-nav-item-exiting-1 {
+            animation: fadeOutSlideDown 150ms ease-out 30ms forwards;
+          }
+          
+          .sub-nav-item-exiting-2 {
+            animation: fadeOutSlideDown 150ms ease-out 0ms forwards;
+          }
         `}
       </style>
     <div className="fixed bottom-0 left-0 right-0 bg-white/90 shadow-lg z-50 h-20">
@@ -110,34 +141,52 @@ const MobileNavigation: React.FC = () => {
           <div 
             key={page} 
             className={`transition-all duration-300 ease-in-out ${
-              page === "Tasks" && isTasksModule ? "flex-1 max-w-[180px]" : "min-w-[60px] max-w-[60px]"
+              page === "Tasks" && (showExpanded && !isExiting) ? "flex-1 max-w-[180px]" : "min-w-[60px] max-w-[60px]"
             }`}
           >
-            {page === "Tasks" && isTasksModule ? (
-              // Expanded Tasks module with horizontal sub-navigation
-              <div className="flex items-center justify-start gap-1 bg-blue-100 rounded-lg p-1 transition-all duration-300 ease-in-out">
-                {tasksSubNavItems.map(({ page: subPage, icon: subIcon, label: subLabel }, index) => (
+            {page === "Tasks" ? (
+              showExpanded ? (
+                // Expanded Tasks module with horizontal sub-navigation
+                <div className={`flex items-center justify-start gap-1 rounded-lg p-1 transition-all duration-300 ease-in-out ${
+                  isExiting ? "bg-transparent" : "bg-blue-100"
+                }`}>
+                  {tasksSubNavItems.map(({ page: subPage, icon: subIcon, label: subLabel }, index) => (
+                    <button
+                      key={subPage}
+                      onClick={() => navigateTo(subPage)}
+                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 min-w-[45px] ${
+                        navigation.currentPage === subPage
+                          ? "text-blue-600 scale-105"
+                          : "text-gray-500 hover:text-gray-700"
+                      } ${
+                        isExiting 
+                          ? `sub-nav-item-exiting-${index}`
+                          : `sub-nav-item-entering sub-nav-item-enter-${index}`
+                      }`}
+                    >
+                      <div className="mb-1">{subIcon}</div>
+                      <span className="text-xs font-medium">{subLabel}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                // Regular Tasks button - matches expanded layout structure
+                <div className="flex items-center justify-start rounded-lg p-1 transition-all duration-300 ease-in-out">
                   <button
-                    key={subPage}
-                    onClick={() => navigateTo(subPage)}
+                    onClick={() => navigateTo(page)}
                     className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 min-w-[45px] ${
-                      navigation.currentPage === subPage
-                        ? "text-blue-600 scale-105"
-                        : "text-gray-500 hover:text-gray-700"
+                      navigation.currentPage === page
+                        ? "bg-blue-100 text-blue-600 scale-105"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                     }`}
-                    style={{ 
-                      opacity: 0,
-                      transform: 'translateY(10px)',
-                      animation: `fadeInSlideUp 300ms ease-out ${index * 100}ms forwards`
-                    }}
                   >
-                    <div className="mb-1">{subIcon}</div>
-                    <span className="text-xs font-medium">{subLabel}</span>
+                    <div className="mb-1">{icon}</div>
+                    <span className="text-xs font-medium">{label}</span>
                   </button>
-                ))}
-              </div>
+                </div>
+              )
             ) : (
-              // Regular navigation button
+              // Regular navigation button (non-Tasks pages)
               <button
                 onClick={() => navigateTo(page)}
                 className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
