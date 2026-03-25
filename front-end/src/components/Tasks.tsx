@@ -212,7 +212,24 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
     updatePreference({ show_categories: newCategoryFilter });
   };
 
-  const completedCount = filteredTasks.filter(task => task.is_completed).length;
+  const sortedFilteredTasks = useMemo(() => {
+    const getSortTimestamp = (task: TaskType) => {
+      if (task.due_date) {
+        return new Date(task.due_date).getTime();
+      }
+      return new Date(task.created_at).getTime();
+    };
+
+    return [...filteredTasks].sort((leftTask, rightTask) => {
+      const leftTimestamp = getSortTimestamp(leftTask);
+      const rightTimestamp = getSortTimestamp(rightTask);
+      return leftTimestamp - rightTimestamp;
+    });
+  }, [filteredTasks]);
+
+  const incompleteTasks = sortedFilteredTasks.filter(task => !task.is_completed);
+  const completedTasks = sortedFilteredTasks.filter(task => task.is_completed);
+  const completedCount = completedTasks.length;
 
   return (
     <div className="rounded-xl">
@@ -388,7 +405,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
           ) : (
             <>
               {/* Incomplete Tasks */}
-              {filteredTasks.filter(task => !task.is_completed).map((task) => (
+              {incompleteTasks.map((task) => (
                 <Task
                   key={task.id}
                   task={task}
@@ -406,7 +423,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
               )}
 
               {/* Completed Tasks */}
-              {filteredTasks.filter(task => task.is_completed).map((task) => (
+              {completedTasks.map((task) => (
                 <Task
                   key={task.id}
                   task={task}

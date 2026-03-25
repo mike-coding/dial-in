@@ -1,5 +1,5 @@
 """Database configuration and session management."""
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -16,3 +16,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def ensure_schema_updates():
+    """Apply lightweight schema updates for existing SQLite databases."""
+    with engine.connect() as connection:
+        table_info = connection.execute(text("PRAGMA table_info(users)")).fetchall()
+        user_columns = {row[1] for row in table_info}
+
+        if "avatar" not in user_columns:
+            connection.execute(text("ALTER TABLE users ADD COLUMN avatar VARCHAR(10)"))
+            connection.commit()

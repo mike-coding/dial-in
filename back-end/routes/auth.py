@@ -27,7 +27,8 @@ async def register(
     # Create new user
     user = User(
         username=username,
-        password=hashed_password.decode('utf-8')
+        password=hashed_password.decode('utf-8'),
+        avatar="🙂",
     )
     
     db.add(user)
@@ -37,6 +38,7 @@ async def register(
     return {
         "id": user.id,
         "username": user.username,
+        "avatar": user.avatar or "🙂",
         "message": "User registered successfully"
     }
 
@@ -64,6 +66,7 @@ async def login(
     return {
         "id": user.id,
         "username": user.username,
+        "avatar": user.avatar or "🙂",
         "message": "Login successful"
     }
 
@@ -84,6 +87,7 @@ async def validate_user(
     return {
         "id": user.id,
         "username": user.username,
+        "avatar": user.avatar or "🙂",
         "message": "User validation successful"
     }
 

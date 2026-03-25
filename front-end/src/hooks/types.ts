@@ -47,6 +47,7 @@ export interface Event {
 export interface User {
   id: number;
   username: string;
+  avatar?: string;
 }
 
 export interface UserData {

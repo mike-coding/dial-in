@@ -5,12 +5,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from contextlib import asynccontextmanager
-from database import Base, engine
+from database import Base, engine, ensure_schema_updates
 from routes import auth, categories, tasks, events, rules, user, user_data
 from rule_engine import RuleScheduler
 
 # Create the database tables
 Base.metadata.create_all(bind=engine)
+ensure_schema_updates()
 
 rule_scheduler = RuleScheduler(interval_seconds=60, horizon_days=30)
 

@@ -181,6 +181,8 @@ const Rules: React.FC = () => {
         )}
 
         {hasPendingWrites && <div className="text-sm text-gray-500 px-2">Syncing...</div>}
+
+        <div className="h-16"></div>
       </div>
     </div>
   );

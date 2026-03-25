@@ -103,8 +103,8 @@ App Container
 - [ ] **Dedicated Rules creation workflow**
   - [x] Rule creation interface in the Rules area
   - [x] Pattern editor for recurring tasks (daily, weekly, monthly, yearly)
-  - [ ] Generated-task provenance via rule-to-task associations
-  - [ ] Rule preview and testing interface
+  - [x] Generated-task provenance via rule-to-task associations
+  - [x] Rule preview and testing interface
 - [ ] **Enhanced task management**
   - [ ] Advanced task filtering by category, rules, and time (today, week, overdue)
   - [ ] Category-based task organization
@@ -150,8 +150,8 @@ App Container
 
 ### Phase 3: Rules Engine Logic (Sessions 7-9)
 - [ ] **Automated task generation**
-  - [ ] Background processing for rule execution
-  - [ ] Rule scheduling and timing logic
+  - [x] Background processing for rule execution
+  - [x] Rule scheduling and timing logic
   - [ ] Conflict resolution for overlapping rules
 - [ ] **Advanced rule features**
   - [ ] Complex recurring patterns

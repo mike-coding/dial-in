@@ -10,11 +10,13 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(80), unique=True, nullable=False, index=True)
     password = Column(String(120), nullable=False)
+    avatar = Column(String(10), nullable=True, default="🙂")
 
     def to_dict(self):
         return {
             "id": self.id, 
-            "username": self.username
+            "username": self.username,
+            "avatar": self.avatar or "🙂"
         }
 
 class UserData(Base):

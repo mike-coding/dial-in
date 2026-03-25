@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import React from 'react';
 import { Category } from './types';
 import { useUserStore } from './useUser';
+import { useUserDataStore } from './useUserData';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 
@@ -81,6 +82,17 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
           categories: finalCategories,
           hasPendingWrites: stillHasPendingWrites,
         });
+
+        // Ensure newly created categories are active in task filters by default
+        const preferences = useUserDataStore.getState().userData;
+        if (preferences && userData?.id) {
+          const currentCategoryFilter = preferences.show_categories || [];
+          if (!currentCategoryFilter.includes(newCategory.id)) {
+            useUserDataStore.getState().updateUserData(userData.id, {
+              show_categories: [...currentCategoryFilter, newCategory.id],
+            });
+          }
+        }
         
         if (VERBOSE_DEBUG) console.log("✅ Category added successfully:", newCategory);
       })
