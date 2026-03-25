@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import React from 'react';
 import { Rule } from './types';
+import { useUserStore } from './useUser';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 
@@ -12,7 +13,7 @@ interface RulesStore {
   hasPendingWrites: boolean;
   addRule: (rule: Omit<Rule, 'id' | 'created_at'>) => void;
   updateRule: (id: number, updates: Partial<Rule>) => void;
-  deleteRule: (id: number) => void;
+  deleteRule: (id: number, options?: { deleteChildren?: boolean }) => void;
   setRules: (rules: Rule[]) => void;
   clearRules: () => void;
 }
@@ -29,6 +30,12 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
   }),
   
   addRule: (ruleData) => {
+    const userData = useUserStore.getState().userData;
+    if (!userData) {
+      console.error("❌ addRule called but userData is null!");
+      return;
+    }
+
     if (VERBOSE_DEBUG) console.log("➕ Adding rule:", ruleData);
 
     // Optimistic update: Create temporary rule with placeholder ID
@@ -68,6 +75,11 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
           rules: finalRules,
           hasPendingWrites: stillHasPendingWrites,
         });
+
+        // Pull fresh tasks/rules after backend rule execution
+        useUserStore.getState().loadUserData(userData.id).catch((error) => {
+          console.error("❌ Error refreshing user data after rule create:", error);
+        });
         
         if (VERBOSE_DEBUG) console.log("✅ Rule added successfully:", newRule);
       })
@@ -87,6 +99,12 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
   updateRule: (id, updates) => {
     if (VERBOSE_DEBUG) console.log("🔄 Updating rule:", id, updates);
 
+    const userData = useUserStore.getState().userData;
+    if (!userData) {
+      console.error("❌ updateRule called but userData is null!");
+      return;
+    }
+
     const { rules } = get();
     const originalRule = rules.find(r => r.id === id);
     
@@ -99,7 +117,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const apiUrl = createApiUrl(`/rules/${id}`);
+    const apiUrl = createApiUrl(`/rules/${id}?user_id=${userData.id}`);
 
     fetch(apiUrl, {
       method: "PUT",
@@ -116,6 +134,11 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
         set({ 
           rules: finalRules,
           hasPendingWrites: false,
+        });
+
+        // Pull fresh tasks/rules after backend rule execution
+        useUserStore.getState().loadUserData(userData.id).catch((error) => {
+          console.error("❌ Error refreshing user data after rule update:", error);
         });
         
         if (VERBOSE_DEBUG) console.log("✅ Rule updated successfully:", updatedRule);
@@ -136,8 +159,14 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       });
   },
 
-  deleteRule: (id) => {
+  deleteRule: (id, options) => {
     if (VERBOSE_DEBUG) console.log("🗑️ Deleting rule:", id);
+
+    const userData = useUserStore.getState().userData;
+    if (!userData) {
+      console.error("❌ deleteRule called but userData is null!");
+      return;
+    }
 
     const { rules } = get();
     const originalRules = [...rules];
@@ -148,11 +177,22 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       hasPendingWrites: true,
     });
 
-    const apiUrl = createApiUrl(`/rules/${id}`);
+    const deleteChildren = options?.deleteChildren ?? false;
+    const apiUrl = createApiUrl(`/rules/${id}?user_id=${userData.id}&delete_children=${deleteChildren ? 'true' : 'false'}`);
 
-    fetch(apiUrl, { method: "DELETE" })
+    fetch(apiUrl, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ delete_children: deleteChildren }),
+    })
       .then(() => {
         set({ hasPendingWrites: false });
+
+        // Pull fresh tasks/rules after backend delete behavior
+        useUserStore.getState().loadUserData(userData.id).catch((error) => {
+          console.error("❌ Error refreshing user data after rule delete:", error);
+        });
+
         if (VERBOSE_DEBUG) console.log("✅ Rule deleted successfully");
       })
       .catch((err) => {

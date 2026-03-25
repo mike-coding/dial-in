@@ -4,17 +4,32 @@ FastAPI backend for Dial-In Application - Main application file
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+from contextlib import asynccontextmanager
 from database import Base, engine
 from routes import auth, categories, tasks, events, rules, user, user_data
+from rule_engine import RuleScheduler
 
 # Create the database tables
 Base.metadata.create_all(bind=engine)
+
+rule_scheduler = RuleScheduler(interval_seconds=60, horizon_days=30)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    rule_scheduler.start()
+    try:
+        yield
+    finally:
+        rule_scheduler.stop()
+
 
 # Initialize FastAPI app
 app = FastAPI(
     title="Dial-In API",
     description="Backend API for the Dial-In task and event management application",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS

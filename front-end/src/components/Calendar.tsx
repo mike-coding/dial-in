@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import WindowsEmoji from './WindowsEmoji';
+import { useCategories } from '../hooks/useCategories';
+import { useTasks } from '../hooks/useTasks';
+import { Task as TaskType } from '../hooks/types';
 
 interface CalendarProps {
   isMobile?: boolean;
@@ -10,6 +13,36 @@ type ViewMode = 'month' | 'week' | 'day';
 const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const { tasks } = useTasks();
+  const { categories } = useCategories();
+
+  const toDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const scheduledTasks = (tasks || []).filter((task) => task.due_date);
+  const tasksByDate = scheduledTasks.reduce((acc, task) => {
+    const dueDate = new Date(task.due_date as string);
+    const key = toDateKey(dueDate);
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(task);
+    return acc;
+  }, {} as Record<string, TaskType[]>);
+
+  const getTasksForDate = (date: Date) => {
+    const key = toDateKey(date);
+    return tasksByDate[key] || [];
+  };
+
+  const resolveTaskIcon = (task: TaskType) => {
+    const category = categories.find((entry) => entry.id === task.category_id);
+    return category?.icon || '📝';
+  };
 
   // Navigation functions
   const navigatePrevious = () => {
@@ -89,16 +122,39 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       const isCurrentMonth = currentIterDate.getMonth() === currentDate.getMonth();
       const isToday = currentIterDate.toDateString() === today.toDateString();
       
+      const dayTasks = getTasksForDate(currentIterDate);
+
       days.push(
         <div
           key={i}
           className={`
-            h-10 flex items-center justify-center text-sm cursor-pointer transition-colors
+            min-h-24 p-1 text-sm cursor-pointer transition-colors rounded border border-transparent
             ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-            ${isToday ? 'bg-blue-600 text-white rounded-full font-semibold' : 'hover:bg-gray-100 rounded'}
+            ${isToday ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'}
           `}
         >
-          {currentIterDate.getDate()}
+          <div className={`flex justify-center mb-1 ${isToday ? 'font-semibold text-blue-700' : ''}`}>
+            {currentIterDate.getDate()}
+          </div>
+          <div className="space-y-1">
+            {dayTasks.slice(0, 2).map((task) => (
+              <div
+                key={task.id}
+                className={`text-[10px] px-1.5 py-0.5 rounded truncate ${
+                  task.is_completed ? 'bg-gray-200 text-gray-500 line-through' : 'bg-blue-100 text-blue-900'
+                }`}
+                title={task.title}
+              >
+                <div className="flex items-center gap-1">
+                  <WindowsEmoji emoji={resolveTaskIcon(task)} size={11} />
+                  <span className="truncate">{task.title}</span>
+                </div>
+              </div>
+            ))}
+            {dayTasks.length > 2 && (
+              <div className="text-[10px] px-1 text-gray-500">+{dayTasks.length - 2} more</div>
+            )}
+          </div>
         </div>
       );
       
@@ -136,6 +192,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       day.setDate(weekStart.getDate() + i);
       const isToday = day.toDateString() === today.toDateString();
 
+      const dayTasks = getTasksForDate(day);
+
       days.push(
         <div key={i} className="flex-1 min-h-24">
           <div className={`text-center py-2 ${isToday ? 'bg-blue-600 text-white rounded-t' : 'bg-gray-50 rounded-t'}`}>
@@ -146,9 +204,27 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
               {day.getDate()}
             </div>
           </div>
-          <div className="bg-white border-x border-b border-gray-200 h-20 p-2">
-            {/* Placeholder for events */}
-            <div className="text-xs text-gray-400">No events</div>
+          <div className="bg-white border-x border-b border-gray-200 h-28 p-2 overflow-y-auto">
+            {dayTasks.length === 0 ? (
+              <div className="text-xs text-gray-400">No tasks</div>
+            ) : (
+              <div className="space-y-1">
+                {dayTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`text-xs px-2 py-1 rounded truncate ${
+                      task.is_completed ? 'bg-gray-200 text-gray-500 line-through' : 'bg-blue-100 text-blue-900'
+                    }`}
+                    title={task.title}
+                  >
+                    <div className="flex items-center gap-1">
+                      <WindowsEmoji emoji={resolveTaskIcon(task)} size={12} />
+                      <span className="truncate">{task.title}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -167,6 +243,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const renderDayView = () => {
     const today = new Date();
     const isToday = currentDate.toDateString() === today.toDateString();
+    const dayTasks = getTasksForDate(currentDate);
 
     // Generate hourly time slots
     const timeSlots = [];
@@ -209,7 +286,26 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
             )}
           </div>
         </div>
-        <div className="max-h-96 overflow-y-auto">
+        <div className="p-4 border-b border-gray-100">
+          {dayTasks.length === 0 ? (
+            <div className="text-sm text-gray-500">No scheduled tasks</div>
+          ) : (
+            <div className="space-y-2">
+              {dayTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+                    task.is_completed ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-900'
+                  }`}
+                >
+                  <WindowsEmoji emoji={resolveTaskIcon(task)} size={16} />
+                  <span className={`text-sm truncate ${task.is_completed ? 'line-through' : ''}`}>{task.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="max-h-72 overflow-y-auto">
           {timeSlots}
         </div>
       </div>

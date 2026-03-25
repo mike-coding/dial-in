@@ -19,7 +19,6 @@ async def create_task(
     user_id: int = Body(...),
     description: Optional[str] = Body(None),
     category_id: Optional[int] = Body(None),
-    rule_id: Optional[int] = Body(None),
     is_completed: Optional[bool] = Body(False),
     due_date: Optional[str] = Body(None),
     db: Session = Depends(get_db)
@@ -28,7 +27,6 @@ async def create_task(
         title=title,
         description=description,
         category_id=category_id,
-        rule_id=rule_id,
         user_id=user_id,
         is_completed=is_completed,
         due_date=datetime.fromisoformat(due_date.replace('Z', '+00:00')) if due_date else None
@@ -45,6 +43,12 @@ async def update_task(
     changes: dict = Body(...),
     db: Session = Depends(get_db)
 ):
+    if 'rule_id' in changes:
+        raise HTTPException(
+            status_code=400,
+            detail="rule_id cannot be set through manual task updates"
+        )
+
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == user_id

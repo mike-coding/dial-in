@@ -84,7 +84,7 @@ App Container
 ## 🚀 ROADMAP
 
 ### 🚧 IN PROGRESS
-- [ ] **Task filtering system** - By date, category, completion status
+- [x] **Task filtering system** - By date, category, completion status
 - [ ] **Component optimization** - Performance improvements
 
 ### ✅ RECENTLY COMPLETED (July 21, 2025)
@@ -97,18 +97,18 @@ App Container
 #### High Priority
 - [x] **Categories management** - ✅ Complete system with emoji icons and full CRUD
 - [ ] **Categories integration with Tasks**
-  - [ ] Category selection dropdown in task creation/editing
-  - [ ] Category filtering in task views
+  - [x] Category selection dropdown in task creation/editing
+  - [x] Category filtering in task views
   - [ ] Visual category indicators in task cards
-- [ ] **Rules creation UI within Tasks**
-  - [ ] Rule creation interface integrated with task workflow
-  - [ ] Pattern editor for recurring tasks (daily, weekly, monthly, custom)
-  - [ ] Rule-to-category and rule-to-task associations
+- [ ] **Dedicated Rules creation workflow**
+  - [x] Rule creation interface in the Rules area
+  - [x] Pattern editor for recurring tasks (daily, weekly, monthly, yearly)
+  - [ ] Generated-task provenance via rule-to-task associations
   - [ ] Rule preview and testing interface
 - [ ] **Enhanced task management**
   - [ ] Advanced task filtering by category, rules, and time (today, week, overdue)
   - [ ] Category-based task organization
-  - [ ] Rule-based task templates
+  - [ ] Visibility for rule-generated task instances
 - [ ] **Enhanced task attributes**
   - [ ] Additional dates system - attach multiple custom dates to tasks (e.g., "deep work session 3 days before due")
   - [ ] Progress tracking with subtasks or percentage completion

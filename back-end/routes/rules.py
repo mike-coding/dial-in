@@ -1,9 +1,11 @@
 """Rule routes."""
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import datetime, timedelta
 from database import get_db
-from models import Rule
+from models import Rule, Task
+from rule_engine import run_rule_generation
 
 router = APIRouter()
 
@@ -31,6 +33,11 @@ async def create_rule(
     db.add(rule)
     db.commit()
     db.refresh(rule)
+
+    start_date = datetime.utcnow().date()
+    end_date = start_date + timedelta(days=30)
+    run_rule_generation(db, start_date, end_date, user_id=user_id)
+
     return rule.to_dict()
 
 @router.put("/{rule_id}")
@@ -61,12 +68,19 @@ async def update_rule(
 
     db.commit()
     db.refresh(rule)
+
+    start_date = datetime.utcnow().date()
+    end_date = start_date + timedelta(days=30)
+    run_rule_generation(db, start_date, end_date, user_id=user_id)
+
     return rule.to_dict()
 
 @router.delete("/{rule_id}")
 async def delete_rule(
     rule_id: int,
     user_id: int,
+    delete_children: Optional[bool] = Query(None),
+    delete_children_body: Optional[bool] = Body(None, embed=True),
     db: Session = Depends(get_db)
 ):
     rule = db.query(Rule).filter(
@@ -77,6 +91,27 @@ async def delete_rule(
     if not rule:
         raise HTTPException(status_code=404, detail="Rule not found")
     
+    should_delete_children = delete_children if delete_children is not None else bool(delete_children_body)
+
+    if should_delete_children:
+        db.query(Task).filter(Task.rule_id == rule.id).delete()
+    else:
+        db.query(Task).filter(Task.rule_id == rule.id).update({"rule_id": None})
+
     db.delete(rule)
     db.commit()
-    return {"message": "Rule deleted successfully"}
+    return {
+        "message": "Rule deleted successfully",
+        "delete_children": should_delete_children,
+    }
+
+
+@router.post("/run")
+async def run_rules(
+    days_ahead: int = Body(30),
+    db: Session = Depends(get_db),
+):
+    horizon = max(0, min(days_ahead, 90))
+    start_date = datetime.utcnow().date()
+    end_date = start_date + timedelta(days=horizon)
+    return run_rule_generation(db, start_date, end_date)

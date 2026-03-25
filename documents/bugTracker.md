@@ -1,0 +1,1 @@
+- [ ] New categories are unticked to show in task list by default

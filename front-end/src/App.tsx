@@ -112,7 +112,7 @@ function App() {
       <div className="absolute inset-0 backdrop-blur-md backdrop-brightness-180 backdrop-saturate-60 backdrop-contrast-70"></div>
        */}
       {/* Content Layer */}
-      <div className="relative h-full w-full flex flex-row">
+      <div className="relative h-full w-full flex flex-row bg-gray-200/60">
         {/* Desktop Layout */}
       {isDesktop && (
         <>
@@ -135,7 +135,7 @@ function App() {
 
       {/* Mobile Layout */}
       {isMobile && (
-        <div className="w-full h-full flex flex-col bg-gray-200/60">
+        <div className="w-full h-full flex flex-col">
           <div className="bg-white/80 border-b border-gray-400 h-10 flex items-center justify-start px-4">
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>

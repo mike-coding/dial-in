@@ -1,32 +1,186 @@
-import React from "react";
+import React, { useState } from "react";
+import { useCategories, useRules, useUser } from "../hooks/AppContext";
+import { Rule as RuleType } from "../hooks/types";
+import WindowsEmoji from "./WindowsEmoji";
+import { ExistingRuleItem, NewRuleItem } from "./rules/RuleItem";
+import {
+  createDraftFromRule,
+  createEmptyDraft,
+  encodeSegment,
+  getSegmentError,
+  summarizeRatePattern,
+} from "./rules/ruleUtils";
+import { RuleDraft } from "./rules/types";
 
 const Rules: React.FC = () => {
-  return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 p-4">
-        <h1 className="text-2xl font-bold text-gray-900">Rules</h1>
-        <p className="text-sm text-gray-600 mt-1">Automate task creation with smart rules</p>
-      </div>
+  const { userData } = useUser();
+  const { categories } = useCategories();
+  const { rules, addRule, updateRule, deleteRule, hasPendingWrites } = useRules();
+  const [expandedId, setExpandedId] = useState<number | "new" | null>(null);
+  const [newDraft, setNewDraft] = useState<RuleDraft>(createEmptyDraft());
+  const [editDraft, setEditDraft] = useState<RuleDraft | null>(null);
+  const [newError, setNewError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
-      {/* Content */}
-      <div className="flex-1 p-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="text-center py-8">
-            <div className="mb-4">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+  const validateDraft = (draft: RuleDraft): string | null => {
+    if (!userData?.id) {
+      return "You must be signed in to manage rules.";
+    }
+
+    if (!draft.name.trim()) {
+      return "Rule name is required.";
+    }
+
+    if (draft.segments.length === 0) {
+      return "At least one schedule segment is required.";
+    }
+
+    const invalidSegment = draft.segments.find((segment) => getSegmentError(segment));
+    if (invalidSegment) {
+      return getSegmentError(invalidSegment);
+    }
+
+    return null;
+  };
+
+  const buildRatePattern = (draft: RuleDraft) => draft.segments.map((segment) => encodeSegment(segment)).join("; ");
+
+  const toggleNewRule = () => {
+    setDeleteConfirmId(null);
+    setEditDraft(null);
+    setEditError(null);
+    setNewError(null);
+    setExpandedId((currentExpandedId) => (currentExpandedId === "new" ? null : "new"));
+  };
+
+  const toggleExistingRule = (rule: RuleType) => {
+    setDeleteConfirmId(null);
+    setNewError(null);
+
+    if (expandedId === rule.id) {
+      setExpandedId(null);
+      setEditDraft(null);
+      setEditError(null);
+      return;
+    }
+
+    setExpandedId(rule.id);
+    setEditDraft(createDraftFromRule(rule));
+    setEditError(null);
+  };
+
+  const handleCreateRule = () => {
+    const validationError = validateDraft(newDraft);
+    if (validationError || !userData?.id) {
+      setNewError(validationError);
+      return;
+    }
+
+    addRule({
+      name: newDraft.name.trim(),
+      description: newDraft.description.trim() || undefined,
+      category_id: newDraft.categoryId ? Number(newDraft.categoryId) : undefined,
+      user_id: userData.id,
+      rate_pattern: buildRatePattern(newDraft),
+      is_active: newDraft.isActive,
+    });
+
+    setNewDraft(createEmptyDraft());
+    setNewError(null);
+    setExpandedId(null);
+  };
+
+  const handleSaveRule = (ruleId: number) => {
+    if (!editDraft) {
+      return;
+    }
+
+    const validationError = validateDraft(editDraft);
+    if (validationError) {
+      setEditError(validationError);
+      return;
+    }
+
+    updateRule(ruleId, {
+      name: editDraft.name.trim(),
+      description: editDraft.description.trim() || undefined,
+      category_id: editDraft.categoryId ? Number(editDraft.categoryId) : undefined,
+      rate_pattern: buildRatePattern(editDraft),
+      is_active: editDraft.isActive,
+    });
+
+    setEditError(null);
+    setExpandedId(null);
+    setEditDraft(null);
+  };
+
+  const resolveCategory = (ruleCategoryId?: number) => {
+    if (!ruleCategoryId) {
+      return null;
+    }
+    return categories.find((category) => category.id === ruleCategoryId) ?? null;
+  };
+
+  return (
+    <div className="w-full max-w-2xl px-4 mx-auto pt-4">
+      <div className="space-y-3">
+        <NewRuleItem
+          isExpanded={expandedId === "new"}
+          onToggle={toggleNewRule}
+          draft={newDraft}
+          setDraft={setNewDraft}
+          categories={categories}
+          error={newError}
+          onSubmit={handleCreateRule}
+        />
+
+        {rules.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mb-4 opacity-50 flex justify-center">
+              <WindowsEmoji emoji="⚙️" size={64} />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Automation Rules</h3>
-            <p className="text-gray-500 mb-6">Set up intelligent rules to automatically create recurring tasks and streamline your workflow.</p>
-            
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Create Rule
-            </button>
+            <p className="text-gray-500 text-lg">No rules yet</p>
           </div>
-        </div>
+        ) : (
+          rules.map((rule) => {
+            const category = resolveCategory(rule.category_id);
+            const scheduleSummary = summarizeRatePattern(rule.rate_pattern);
+            const isExpanded = expandedId === rule.id;
+
+            return (
+              <ExistingRuleItem
+                key={rule.id}
+                rule={rule}
+                category={category}
+                scheduleSummary={scheduleSummary}
+                isExpanded={isExpanded}
+                editDraft={editDraft}
+                categories={categories}
+                editError={editError}
+                showDeleteConfirm={deleteConfirmId === rule.id}
+                onToggle={() => toggleExistingRule(rule)}
+                setDraft={(value) => {
+                  setEditDraft((currentDraft) => {
+                    const baseDraft = currentDraft ?? createDraftFromRule(rule);
+                    return typeof value === "function" ? value(baseDraft) : value;
+                  });
+                }}
+                onSubmit={() => handleSaveRule(rule.id)}
+                onDeleteRequest={() => setDeleteConfirmId(rule.id)}
+                onDeleteCancel={() => setDeleteConfirmId(null)}
+                onDeleteConfirm={(deleteChildren) => {
+                  deleteRule(rule.id, { deleteChildren });
+                  setDeleteConfirmId(null);
+                  setExpandedId(null);
+                  setEditDraft(null);
+                }}
+              />
+            );
+          })
+        )}
+
+        {hasPendingWrites && <div className="text-sm text-gray-500 px-2">Syncing...</div>}
       </div>
     </div>
   );
