@@ -7,9 +7,12 @@ interface CategoryProps {
   category: CategoryType;
   onDelete: (id: number) => void;
   onUpdate: (id: number, updates: Partial<CategoryType>) => void;
+  children?: React.ReactNode;
+  onExpandChange?: (isExpanded: boolean) => void;
+  headerMeta?: React.ReactNode;
 }
 
-const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => {
+const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, children, onExpandChange, headerMeta }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [name, setName] = useState(category.name);
   const [hasUnsavedName, setHasUnsavedName] = useState(false);
@@ -76,7 +79,9 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
       setShowDeleteConfirm(false);
     }
     
-    setIsExpanded(!isExpanded);
+    const nextExpanded = !isExpanded;
+    setIsExpanded(nextExpanded);
+    onExpandChange?.(nextExpanded);
   };
 
   const handleUpdate = (updates: Partial<CategoryType>) => {
@@ -115,6 +120,7 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
       handleUpdate({ name: name.trim() });
     }
     setIsExpanded(false);
+    onExpandChange?.(false);
     setShowEmojiPicker(false);
   };
 
@@ -142,8 +148,40 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
       >
         <div className="flex items-center gap-4">
           {/* Category Icon */}
-          <div className="flex-shrink-0">
-            <WindowsEmoji emoji={category.icon || '📂'} size={24} />
+          <div className="flex-shrink-0 relative" ref={emojiPickerRef}>
+            <button
+              type="button"
+              onClick={(e) => {
+                if (!isExpanded) {
+                  return;
+                }
+                e.stopPropagation();
+                setShowEmojiPicker(!showEmojiPicker);
+              }}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
+                isExpanded ? 'hover:bg-gray-100 cursor-pointer' : 'cursor-default'
+              }`}
+              aria-label="Select project icon"
+            >
+              <WindowsEmoji emoji={category.icon || '📂'} size={24} />
+            </button>
+
+            {isExpanded && showEmojiPicker && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20 max-h-60 overflow-y-auto w-80">
+                <div className="grid grid-cols-10 gap-2">
+                  {emojiOptions.map((emoji, index) => (
+                    <button
+                      key={`${emoji}-${index}`}
+                      onClick={() => handleEmojiSelect(emoji)}
+                      className="w-8 h-8 flex items-center justify-center hover:bg-blue-100 rounded transition-colors flex-shrink-0"
+                      title={emoji}
+                    >
+                      <WindowsEmoji emoji={emoji} size={20} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Category Content */}
@@ -157,7 +195,7 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
                 onKeyDown={handleNameKeyDown}
                 onClick={(e) => e.stopPropagation()}
                 className="w-full text-lg bg-gray-400/10 rounded-md outline-none transition-all duration-200 focus:bg-gray-400/20 px-2 py-1 text-gray-700"
-                placeholder="Enter category name..."
+                placeholder="Enter project name..."
                 autoFocus={false}
               />
             ) : (
@@ -165,6 +203,9 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
                 {category.name}
               </p>
             )}
+            {headerMeta ? (
+              <div className="px-2 mt-1 text-xs text-gray-500 truncate">{headerMeta}</div>
+            ) : null}
           </div>
           
           {/* Expand/Collapse Controls */}
@@ -176,6 +217,7 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
                   handleCollapseWithAutoSave();
                 } else {
                   setIsExpanded(true);
+                  onExpandChange?.(true);
                 }
               }}
               className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors group"
@@ -199,41 +241,13 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
       {/* Expanded Details */}
       <div 
         className={`transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+          isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}
       >
         <div className="px-4 pb-4">
           <div className="pt-4 space-y-4">
-            {/* Icon Selector */}
-            <div className="relative" ref={emojiPickerRef}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-gray-700">Icon</span>
-              </div>
-              <button
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
-              >
-                <WindowsEmoji emoji={category.icon || '📂'} size={28} />
-              </button>
-              
-              {/* Emoji Picker Dropdown */}
-              {showEmojiPicker && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20 max-h-60 overflow-y-auto w-80">
-                  <div className="grid grid-cols-10 gap-2">
-                    {emojiOptions.map((emoji, index) => (
-                      <button
-                        key={`${emoji}-${index}`}
-                        onClick={() => handleEmojiSelect(emoji)}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-blue-100 rounded transition-colors flex-shrink-0"
-                        title={emoji}
-                      >
-                        <WindowsEmoji emoji={emoji} size={20} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Delete Button */}
+            {children}
 
             {/* Delete Button */}
             <div className="pt-2">
@@ -247,7 +261,7 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate }) => 
                   </button>
                 ) : (
                   <div className="flex items-center justify-between space-x-3 px-1 w-full">
-                    <span className="text-sm font-medium text-gray-700">Delete category?</span>
+                    <span className="text-sm font-medium text-gray-700">Delete project?</span>
                     <button
                       onClick={confirmDelete}
                       className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors confirm-delete-button"

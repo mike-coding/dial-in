@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Category } from "../../hooks/types";
 import WindowsEmoji from "../WindowsEmoji";
 import {
@@ -23,6 +23,8 @@ interface RuleEditorProps {
   error: string | null;
   submitLabel: string;
   onSubmit: () => void;
+  lockCategoryId?: string;
+  hideCategorySelector?: boolean;
   showSubmitButton?: boolean;
   showDeleteConfirm?: boolean;
   onDeleteRequest?: () => void;
@@ -37,6 +39,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   error,
   submitLabel,
   onSubmit,
+  lockCategoryId,
+  hideCategorySelector = false,
   showSubmitButton = true,
   showDeleteConfirm = false,
   onDeleteRequest,
@@ -45,14 +49,20 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 }) => {
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isDropdownAnimating, setIsDropdownAnimating] = useState(false);
+  const [expandedSegmentIds, setExpandedSegmentIds] = useState<number[]>([]);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
-  const ratePattern = useMemo(
-    () => draft.segments.map((segment) => encodeSegment(segment)).join("; "),
-    [draft.segments]
-  );
-  const preview = useMemo(() => summarizeRatePattern(ratePattern), [ratePattern]);
-  const selectedCategory = categories.find((category) => String(category.id) === draft.categoryId) || null;
+  const effectiveCategoryId = lockCategoryId || draft.categoryId;
+  const selectedCategory = categories.find((category) => String(category.id) === effectiveCategoryId) || null;
+
+  useEffect(() => {
+    if (lockCategoryId && draft.categoryId !== lockCategoryId) {
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        categoryId: lockCategoryId,
+      }));
+    }
+  }, [lockCategoryId, draft.categoryId, setDraft]);
 
   const closeDropdown = () => {
     setIsDropdownAnimating(true);
@@ -75,6 +85,17 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
     }
   }, [isCategoryDropdownOpen]);
 
+  useEffect(() => {
+    setExpandedSegmentIds((currentExpanded) => {
+      const validSegmentIds = new Set(draft.segments.map((segment) => segment.id));
+      const nextExpanded = currentExpanded.filter((id) => validSegmentIds.has(id));
+      if (nextExpanded.length === currentExpanded.length) {
+        return currentExpanded;
+      }
+      return nextExpanded;
+    });
+  }, [draft.segments]);
+
   const setSegment = (segmentId: number, updater: (segment: RuleSegment) => RuleSegment) => {
     setDraft((currentDraft) => ({
       ...currentDraft,
@@ -84,6 +105,14 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
   const toggleNumber = (values: number[], value: number) =>
     values.includes(value) ? values.filter((entry) => entry !== value) : sortNumbers([...values, value]);
+
+  const toggleSegmentExpanded = (segmentId: number) => {
+    setExpandedSegmentIds((currentExpanded) =>
+      currentExpanded.includes(segmentId)
+        ? currentExpanded.filter((id) => id !== segmentId)
+        : [...currentExpanded, segmentId]
+    );
+  };
 
   return (
     <div className="px-4 pb-4">
@@ -98,110 +127,80 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
           />
         </div>
 
-        <div className="relative" ref={categoryDropdownRef}>
-          <button
-            type="button"
-            onClick={() => {
-              if (isCategoryDropdownOpen) {
-                closeDropdown();
-              } else {
-                setIsCategoryDropdownOpen(true);
-              }
-            }}
-            className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {selectedCategory ? (
-                <>
-                  <WindowsEmoji emoji={selectedCategory.icon || "📁"} size={18} />
-                  <span className="text-gray-900">{selectedCategory.name}</span>
-                </>
-              ) : (
-                <span className="text-gray-500">No category</span>
-              )}
-            </div>
-            <svg
-              className={`w-5 h-5 text-gray-400 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {(isCategoryDropdownOpen || isDropdownAnimating) && (
-            <div
-              className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden ${
-                isDropdownAnimating
-                  ? "animate-[dropdown-out_0.15s_ease-in_forwards]"
-                  : "animate-[dropdown-in_0.15s_ease-out_forwards]"
-              }`}
-            >
-              <div
-                onClick={() => {
-                  setDraft((currentDraft) => ({ ...currentDraft, categoryId: "" }));
+        {!hideCategorySelector && (
+          <div className="relative" ref={categoryDropdownRef}>
+            <button
+              type="button"
+              onClick={() => {
+                if (isCategoryDropdownOpen) {
                   closeDropdown();
-                }}
-                className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
-                  !draft.categoryId ? "bg-blue-100 text-blue-900" : "text-gray-900"
+                } else {
+                  setIsCategoryDropdownOpen(true);
+                }
+              }}
+              className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                {selectedCategory ? (
+                  <>
+                    <WindowsEmoji emoji={selectedCategory.icon || "📁"} size={18} />
+                    <span className="text-gray-900">{selectedCategory.name}</span>
+                  </>
+                ) : (
+                  <span className="text-gray-500">Select project</span>
+                )}
+              </div>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {(isCategoryDropdownOpen || isDropdownAnimating) && (
+              <div
+                className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden ${
+                  isDropdownAnimating
+                    ? "animate-[dropdown-out_0.15s_ease-in_forwards]"
+                    : "animate-[dropdown-in_0.15s_ease-out_forwards]"
                 }`}
               >
-                <WindowsEmoji emoji="📋" size={18} />
-                <span>No category</span>
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    onClick={() => {
+                      setDraft((currentDraft) => ({ ...currentDraft, categoryId: String(category.id) }));
+                      closeDropdown();
+                    }}
+                    className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
+                      String(category.id) === draft.categoryId ? "bg-blue-100 text-blue-900" : "text-gray-900"
+                    }`}
+                  >
+                    <WindowsEmoji emoji={category.icon || "📁"} size={18} />
+                    <span>{category.name}</span>
+                  </div>
+                ))}
               </div>
-              {categories.map((category) => (
-                <div
-                  key={category.id}
-                  onClick={() => {
-                    setDraft((currentDraft) => ({ ...currentDraft, categoryId: String(category.id) }));
-                    closeDropdown();
-                  }}
-                  className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
-                    String(category.id) === draft.categoryId ? "bg-blue-100 text-blue-900" : "text-gray-900"
-                  }`}
-                >
-                  <WindowsEmoji emoji={category.icon || "📁"} size={18} />
-                  <span>{category.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-gray-700">Status</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setDraft((currentDraft) => ({ ...currentDraft, isActive: true }))}
-              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(draft.isActive)}`}
-            >
-              Active
-            </button>
-            <button
-              type="button"
-              onClick={() => setDraft((currentDraft) => ({ ...currentDraft, isActive: false }))}
-              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(!draft.isActive)}`}
-            >
-              Paused
-            </button>
+            )}
           </div>
-        </div>
-
-        <div className="rounded-md bg-gray-400/10 px-3 py-3 text-sm text-gray-700">{preview || "Set a schedule"}</div>
+        )}
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm font-medium text-gray-700">Schedule</div>
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const newSegment = createEmptySegment();
                 setDraft((currentDraft) => ({
                   ...currentDraft,
-                  segments: [...currentDraft.segments, createEmptySegment()],
-                }))
-              }
+                  segments: [...currentDraft.segments, newSegment],
+                }));
+                setExpandedSegmentIds((currentExpanded) => [...currentExpanded, newSegment.id]);
+              }}
               className="px-3 py-2 bg-gray-400/10 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-400/15 transition-colors"
             >
               Add segment
@@ -210,330 +209,349 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
           {draft.segments.map((segment) => {
             const segmentError = getSegmentError(segment);
+            const segmentSummary = summarizeRatePattern(encodeSegment(segment));
+            const isSegmentExpanded = expandedSegmentIds.includes(segment.id);
 
             return (
               <div key={segment.id} className="rounded-md bg-gray-400/10 p-3 space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="grid flex-1 gap-2 md:grid-cols-5">
-                    {frequencyOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...createEmptySegment(option.value),
-                            id: currentSegment.id,
-                          }))
-                        }
-                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.frequency === option.value)}`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => toggleSegmentExpanded(segment.id)}
+                  className="w-full flex items-center justify-between gap-3 text-left"
+                >
+                  <span className="text-sm font-medium text-gray-700 truncate">{segmentSummary || "Set a schedule"}</span>
+                  <svg
+                    className={`w-5 h-5 text-gray-500 transition-all duration-200 ${isSegmentExpanded ? "" : "-rotate-90"}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                  {draft.segments.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDraft((currentDraft) => ({
-                          ...currentDraft,
-                          segments: currentDraft.segments.filter((entry) => entry.id !== segment.id),
-                        }))
-                      }
-                      className="px-3 py-2 border border-red/40 rounded-md text-sm font-medium text-red-600/70 hover:bg-red-50 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
+                {isSegmentExpanded && (
+                  <>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="grid flex-1 gap-2 md:grid-cols-5">
+                        {frequencyOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...createEmptySegment(option.value),
+                                id: currentSegment.id,
+                              }))
+                            }
+                            className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.frequency === option.value)}`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
 
-                {segment.frequency === "d" && (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      value={segment.dailyInterval}
-                      onChange={(event) =>
-                        setSegment(segment.id, (currentSegment) => ({
-                          ...currentSegment,
-                          dailyInterval: event.target.value,
-                        }))
-                      }
-                      className="w-24 px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
-                    />
-                    <span className="text-sm text-gray-600">day(s)</span>
-                  </div>
-                )}
-
-                {segment.frequency === "w" && (
-                  <div className="grid grid-cols-4 gap-2 md:grid-cols-7">
-                    {weekdayOptions.map((weekday) => (
-                      <button
-                        key={weekday.value}
-                        type="button"
-                        onClick={() =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...currentSegment,
-                            weeklyDays: toggleNumber(currentSegment.weeklyDays, weekday.value),
-                          }))
-                        }
-                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.weeklyDays.includes(weekday.value))}`}
-                      >
-                        {weekday.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {segment.frequency === "m" && (
-                  <div className="grid grid-cols-7 gap-2 md:grid-cols-8 lg:grid-cols-10">
-                    {Array.from({ length: 31 }, (_, offset) => offset + 1).map((dateValue) => (
-                      <button
-                        key={dateValue}
-                        type="button"
-                        onClick={() =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...currentSegment,
-                            monthlyDates: toggleNumber(currentSegment.monthlyDates, dateValue),
-                          }))
-                        }
-                        className={`rounded-md border px-2 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.monthlyDates.includes(dateValue))}`}
-                      >
-                        {dateValue}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {segment.frequency === "mw" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-end">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...currentSegment,
-                            monthlyWeekdays: [
-                              ...currentSegment.monthlyWeekdays,
-                              { id: nextId(), occurrence: "1", weekday: 2 },
-                            ],
-                          }))
-                        }
-                        className="px-3 py-2 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Add row
-                      </button>
-                    </div>
-
-                    {segment.monthlyWeekdays.map((entry) => (
-                      <div key={entry.id} className="grid gap-2 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_auto]">
-                        <select
-                          value={entry.occurrence}
-                          onChange={(event) =>
-                            setSegment(segment.id, (currentSegment) => ({
-                              ...currentSegment,
-                              monthlyWeekdays: currentSegment.monthlyWeekdays.map((currentEntry) =>
-                                currentEntry.id === entry.id
-                                  ? { ...currentEntry, occurrence: event.target.value as OccurrenceCode }
-                                  : currentEntry
-                              ),
-                            }))
-                          }
-                          className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
-                        >
-                          {occurrenceOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={entry.weekday}
-                          onChange={(event) =>
-                            setSegment(segment.id, (currentSegment) => ({
-                              ...currentSegment,
-                              monthlyWeekdays: currentSegment.monthlyWeekdays.map((currentEntry) =>
-                                currentEntry.id === entry.id
-                                  ? { ...currentEntry, weekday: Number(event.target.value) }
-                                  : currentEntry
-                              ),
-                            }))
-                          }
-                          className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
-                        >
-                          {weekdayOptions.map((weekday) => (
-                            <option key={weekday.value} value={weekday.value}>
-                              {weekday.label}
-                            </option>
-                          ))}
-                        </select>
+                      {draft.segments.length > 1 && (
                         <button
                           type="button"
                           onClick={() =>
-                            setSegment(segment.id, (currentSegment) => ({
-                              ...currentSegment,
-                              monthlyWeekdays:
-                                currentSegment.monthlyWeekdays.length === 1
-                                  ? currentSegment.monthlyWeekdays
-                                  : currentSegment.monthlyWeekdays.filter((currentEntry) => currentEntry.id !== entry.id),
+                            setDraft((currentDraft) => ({
+                              ...currentDraft,
+                              segments: currentDraft.segments.filter((entry) => entry.id !== segment.id),
                             }))
                           }
                           className="px-3 py-2 border border-red/40 rounded-md text-sm font-medium text-red-600/70 hover:bg-red-50 transition-colors"
                         >
                           Remove
                         </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {segment.frequency === "y" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-end">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...currentSegment,
-                            yearlyDates: [
-                              ...currentSegment.yearlyDates,
-                              { id: nextId(), month: 1, date: "1" },
-                            ],
-                          }))
-                        }
-                        className="px-3 py-2 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Add row
-                      </button>
+                      )}
                     </div>
 
-                    {segment.yearlyDates.map((entry) => (
-                      <div key={entry.id} className="grid gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto]">
-                        <select
-                          value={entry.month}
-                          onChange={(event) =>
-                            setSegment(segment.id, (currentSegment) => ({
-                              ...currentSegment,
-                              yearlyDates: currentSegment.yearlyDates.map((currentEntry) =>
-                                currentEntry.id === entry.id
-                                  ? { ...currentEntry, month: Number(event.target.value) }
-                                  : currentEntry
-                              ),
-                            }))
-                          }
-                          className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
-                        >
-                          {monthOptions.map((month) => (
-                            <option key={month.value} value={month.value}>
-                              {month.label}
-                            </option>
-                          ))}
-                        </select>
+                    {segment.frequency === "d" && (
+                      <div className="flex items-center gap-2">
                         <input
                           type="number"
                           min="1"
-                          max="31"
-                          value={entry.date}
+                          value={segment.dailyInterval}
                           onChange={(event) =>
                             setSegment(segment.id, (currentSegment) => ({
                               ...currentSegment,
-                              yearlyDates: currentSegment.yearlyDates.map((currentEntry) =>
-                                currentEntry.id === entry.id
-                                  ? { ...currentEntry, date: event.target.value }
-                                  : currentEntry
-                              ),
+                              dailyInterval: event.target.value,
+                            }))
+                          }
+                          className="w-24 px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                        />
+                        <span className="text-sm text-gray-600">day(s)</span>
+                      </div>
+                    )}
+
+                    {segment.frequency === "w" && (
+                      <div className="grid grid-cols-4 gap-2 md:grid-cols-7">
+                        {weekdayOptions.map((weekday) => (
+                          <button
+                            key={weekday.value}
+                            type="button"
+                            onClick={() =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...currentSegment,
+                                weeklyDays: toggleNumber(currentSegment.weeklyDays, weekday.value),
+                              }))
+                            }
+                            className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.weeklyDays.includes(weekday.value))}`}
+                          >
+                            {weekday.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {segment.frequency === "m" && (
+                      <div className="grid grid-cols-7 gap-2 md:grid-cols-8 lg:grid-cols-10">
+                        {Array.from({ length: 31 }, (_, offset) => offset + 1).map((dateValue) => (
+                          <button
+                            key={dateValue}
+                            type="button"
+                            onClick={() =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...currentSegment,
+                                monthlyDates: toggleNumber(currentSegment.monthlyDates, dateValue),
+                              }))
+                            }
+                            className={`rounded-md border px-2 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.monthlyDates.includes(dateValue))}`}
+                          >
+                            {dateValue}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {segment.frequency === "mw" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...currentSegment,
+                                monthlyWeekdays: [
+                                  ...currentSegment.monthlyWeekdays,
+                                  { id: nextId(), occurrence: "1", weekday: 2 },
+                                ],
+                              }))
+                            }
+                            className="px-3 py-2 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            Add row
+                          </button>
+                        </div>
+
+                        {segment.monthlyWeekdays.map((entry) => (
+                          <div key={entry.id} className="grid gap-2 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_auto]">
+                            <select
+                              value={entry.occurrence}
+                              onChange={(event) =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  monthlyWeekdays: currentSegment.monthlyWeekdays.map((currentEntry) =>
+                                    currentEntry.id === entry.id
+                                      ? { ...currentEntry, occurrence: event.target.value as OccurrenceCode }
+                                      : currentEntry
+                                  ),
+                                }))
+                              }
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                            >
+                              {occurrenceOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              value={entry.weekday}
+                              onChange={(event) =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  monthlyWeekdays: currentSegment.monthlyWeekdays.map((currentEntry) =>
+                                    currentEntry.id === entry.id
+                                      ? { ...currentEntry, weekday: Number(event.target.value) }
+                                      : currentEntry
+                                  ),
+                                }))
+                              }
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                            >
+                              {weekdayOptions.map((weekday) => (
+                                <option key={weekday.value} value={weekday.value}>
+                                  {weekday.label}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  monthlyWeekdays:
+                                    currentSegment.monthlyWeekdays.length === 1
+                                      ? currentSegment.monthlyWeekdays
+                                      : currentSegment.monthlyWeekdays.filter((currentEntry) => currentEntry.id !== entry.id),
+                                }))
+                              }
+                              className="px-3 py-2 border border-red/40 rounded-md text-sm font-medium text-red-600/70 hover:bg-red-50 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {segment.frequency === "y" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...currentSegment,
+                                yearlyDates: [...currentSegment.yearlyDates, { id: nextId(), month: 1, date: "1" }],
+                              }))
+                            }
+                            className="px-3 py-2 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            Add row
+                          </button>
+                        </div>
+
+                        {segment.yearlyDates.map((entry) => (
+                          <div key={entry.id} className="grid gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto]">
+                            <select
+                              value={entry.month}
+                              onChange={(event) =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  yearlyDates: currentSegment.yearlyDates.map((currentEntry) =>
+                                    currentEntry.id === entry.id
+                                      ? { ...currentEntry, month: Number(event.target.value) }
+                                      : currentEntry
+                                  ),
+                                }))
+                              }
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                            >
+                              {monthOptions.map((month) => (
+                                <option key={month.value} value={month.value}>
+                                  {month.label}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              min="1"
+                              max="31"
+                              value={entry.date}
+                              onChange={(event) =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  yearlyDates: currentSegment.yearlyDates.map((currentEntry) =>
+                                    currentEntry.id === entry.id
+                                      ? { ...currentEntry, date: event.target.value }
+                                      : currentEntry
+                                  ),
+                                }))
+                              }
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                              placeholder="Day"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  yearlyDates:
+                                    currentSegment.yearlyDates.length === 1
+                                      ? currentSegment.yearlyDates
+                                      : currentSegment.yearlyDates.filter((currentEntry) => currentEntry.id !== entry.id),
+                                }))
+                              }
+                              className="px-3 py-2 border border-red/40 rounded-md text-sm font-medium text-red-600/70 hover:bg-red-50 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-3 border-t border-white/30 pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={segment.hasMonthFilter}
+                            onChange={(event) =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...currentSegment,
+                                hasMonthFilter: event.target.checked,
+                                months: event.target.checked ? currentSegment.months : [],
+                              }))
+                            }
+                          />
+                          Months
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={segment.hasTime}
+                            onChange={(event) =>
+                              setSegment(segment.id, (currentSegment) => ({
+                                ...currentSegment,
+                                hasTime: event.target.checked,
+                              }))
+                            }
+                          />
+                          Time
+                        </label>
+                      </div>
+
+                      {segment.hasMonthFilter && (
+                        <div className="grid grid-cols-4 gap-2 md:grid-cols-6">
+                          {monthOptions.map((month) => (
+                            <button
+                              key={month.value}
+                              type="button"
+                              onClick={() =>
+                                setSegment(segment.id, (currentSegment) => ({
+                                  ...currentSegment,
+                                  months: toggleNumber(currentSegment.months, month.value),
+                                }))
+                              }
+                              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.months.includes(month.value))}`}
+                            >
+                              {month.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {segment.hasTime && (
+                        <input
+                          type="time"
+                          value={segment.time}
+                          onChange={(event) =>
+                            setSegment(segment.id, (currentSegment) => ({
+                              ...currentSegment,
+                              time: event.target.value,
                             }))
                           }
                           className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
-                          placeholder="Day"
                         />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSegment(segment.id, (currentSegment) => ({
-                              ...currentSegment,
-                              yearlyDates:
-                                currentSegment.yearlyDates.length === 1
-                                  ? currentSegment.yearlyDates
-                                  : currentSegment.yearlyDates.filter((currentEntry) => currentEntry.id !== entry.id),
-                            }))
-                          }
-                          className="px-3 py-2 border border-red/40 rounded-md text-sm font-medium text-red-600/70 hover:bg-red-50 transition-colors"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="space-y-3 border-t border-white/30 pt-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={segment.hasMonthFilter}
-                        onChange={(event) =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...currentSegment,
-                            hasMonthFilter: event.target.checked,
-                            months: event.target.checked ? currentSegment.months : [],
-                          }))
-                        }
-                      />
-                      Months
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={segment.hasTime}
-                        onChange={(event) =>
-                          setSegment(segment.id, (currentSegment) => ({
-                            ...currentSegment,
-                            hasTime: event.target.checked,
-                          }))
-                        }
-                      />
-                      Time
-                    </label>
-                  </div>
-
-                  {segment.hasMonthFilter && (
-                    <div className="grid grid-cols-4 gap-2 md:grid-cols-6">
-                      {monthOptions.map((month) => (
-                        <button
-                          key={month.value}
-                          type="button"
-                          onClick={() =>
-                            setSegment(segment.id, (currentSegment) => ({
-                              ...currentSegment,
-                              months: toggleNumber(currentSegment.months, month.value),
-                            }))
-                          }
-                          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${getFieldChrome(segment.months.includes(month.value))}`}
-                        >
-                          {month.label}
-                        </button>
-                      ))}
+                      )}
                     </div>
-                  )}
-
-                  {segment.hasTime && (
-                    <input
-                      type="time"
-                      value={segment.time}
-                      onChange={(event) =>
-                        setSegment(segment.id, (currentSegment) => ({
-                          ...currentSegment,
-                          time: event.target.value,
-                        }))
-                      }
-                      className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
-                    />
-                  )}
-                </div>
+                  </>
+                )}
 
                 {segmentError && <div className="text-sm text-red-600">{segmentError}</div>}
               </div>

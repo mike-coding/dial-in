@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 import re
 import threading
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from sqlalchemy.orm import Session
 
@@ -176,6 +176,226 @@ def parse_rate_pattern(rate_pattern: str) -> List[Dict[str, object]]:
         if parsed:
             segments.append(parsed)
     return segments
+
+
+def _build_due_datetimes_for_pattern(
+    rate_pattern: str,
+    anchor_date: date,
+    start_date: date,
+    end_date: date,
+) -> Set[datetime]:
+    if end_date < start_date:
+        return set()
+
+    due_datetimes: Set[datetime] = set()
+    segments = parse_rate_pattern(rate_pattern)
+    if not segments:
+        return due_datetimes
+
+    current_day = start_date
+    while current_day <= end_date:
+        for segment in segments:
+            if not _segment_matches_date(segment, current_day, anchor_date):
+                continue
+
+            due_time_value = segment.get("due_time")
+            hours, minutes = _parse_time(due_time_value if isinstance(due_time_value, str) else None)
+            due_datetimes.add(
+                datetime(
+                    current_day.year,
+                    current_day.month,
+                    current_day.day,
+                    hours,
+                    minutes,
+                )
+            )
+
+        current_day += timedelta(days=1)
+
+    return due_datetimes
+
+
+def _schedule_preview_summary(delete_count: int, create_count: int) -> Dict[str, int]:
+    return {
+        "delete_count": max(0, delete_count),
+        "create_count": max(0, create_count),
+        "net_change": max(0, create_count) - max(0, delete_count),
+    }
+
+
+def preview_rule_schedule_change(
+    db: Session,
+    rule: Rule,
+    next_rate_pattern: str,
+    horizon_days: int = 30,
+) -> Dict[str, object]:
+    now_utc = datetime.utcnow()
+    start_future = now_utc.date()
+    start_future_dt = datetime.combine(start_future, datetime.min.time())
+    end_future = start_future + timedelta(days=horizon_days)
+
+    existing_tasks = db.query(Task).filter(Task.rule_id == rule.id, Task.user_id == rule.user_id).all()
+    if len(existing_tasks) == 0:
+        return {
+            "has_child_tasks": False,
+            "existing_child_tasks": 0,
+            "previews": {
+                "future_replace_preserve_completed": _schedule_preview_summary(0, 0),
+                "all_replace": _schedule_preview_summary(0, 0),
+                "additive_future": _schedule_preview_summary(0, 0),
+            },
+        }
+
+    created_at_value = getattr(rule, "created_at", None)
+    anchor_date = created_at_value.date() if isinstance(created_at_value, datetime) else start_future
+
+    existing_due_dates = {
+        due_date
+        for task in existing_tasks
+        for due_date in [getattr(task, "due_date", None)]
+        if isinstance(due_date, datetime)
+    }
+
+    existing_future_incomplete = []
+    for task in existing_tasks:
+        due_date = getattr(task, "due_date", None)
+        is_completed = bool(getattr(task, "is_completed", False))
+        if isinstance(due_date, datetime) and due_date >= start_future_dt and not is_completed:
+            existing_future_incomplete.append(task)
+
+    expected_future = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, start_future, end_future)
+    kept_due_dates_for_future_replace = set()
+    for task in existing_tasks:
+        due_date = getattr(task, "due_date", None)
+        is_completed = bool(getattr(task, "is_completed", False))
+        if isinstance(due_date, datetime) and not (due_date >= start_future_dt and not is_completed):
+            kept_due_dates_for_future_replace.add(due_date)
+    future_replace_creates = len(expected_future - kept_due_dates_for_future_replace)
+    future_replace_deletes = len(existing_future_incomplete)
+
+    all_due_dates = [task.due_date for task in existing_tasks if isinstance(task.due_date, datetime)]
+    all_start_date = min((due_date.date() for due_date in all_due_dates), default=anchor_date)
+    expected_all = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, all_start_date, end_future)
+    all_replace_deletes = len(existing_tasks)
+    all_replace_creates = len(expected_all)
+
+    additive_creates = len(expected_future - existing_due_dates)
+
+    return {
+        "has_child_tasks": True,
+        "existing_child_tasks": len(existing_tasks),
+        "previews": {
+            "future_replace_preserve_completed": _schedule_preview_summary(future_replace_deletes, future_replace_creates),
+            "all_replace": _schedule_preview_summary(all_replace_deletes, all_replace_creates),
+            "additive_future": _schedule_preview_summary(0, additive_creates),
+        },
+    }
+
+
+def apply_rule_schedule_change(
+    db: Session,
+    rule: Rule,
+    next_rate_pattern: str,
+    mode: str,
+    horizon_days: int = 30,
+) -> Dict[str, int]:
+    normalized_mode = (mode or "future_replace_preserve_completed").strip().lower()
+    now_utc = datetime.utcnow()
+    start_future = now_utc.date()
+    start_future_dt = datetime.combine(start_future, datetime.min.time())
+    end_future = start_future + timedelta(days=horizon_days)
+
+    created_at_value = getattr(rule, "created_at", None)
+    anchor_date = created_at_value.date() if isinstance(created_at_value, datetime) else start_future
+
+    existing_tasks = db.query(Task).filter(Task.rule_id == rule.id, Task.user_id == rule.user_id).all()
+    deleted_count = 0
+    created_count = 0
+
+    if normalized_mode == "future_replace_preserve_completed":
+        deletable_tasks = []
+        for task in existing_tasks:
+            due_date = getattr(task, "due_date", None)
+            is_completed = bool(getattr(task, "is_completed", False))
+            if isinstance(due_date, datetime) and due_date >= start_future_dt and not is_completed:
+                deletable_tasks.append(task)
+        deletable_ids = [task.id for task in deletable_tasks if task.id is not None]
+        deleted_count = len(deletable_ids)
+        if deletable_ids:
+            db.query(Task).filter(Task.id.in_(deletable_ids)).delete(synchronize_session=False)
+
+        kept_due_dates = {
+            due_date
+            for task in existing_tasks
+            if task.id not in set(deletable_ids)
+            for due_date in [getattr(task, "due_date", None)]
+            if isinstance(due_date, datetime)
+        }
+        expected_due_dates = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, start_future, end_future)
+        for due_datetime in sorted(expected_due_dates - kept_due_dates):
+            db.add(
+                Task(
+                    title=str(getattr(rule, "name", "")),
+                    description=getattr(rule, "description", None),
+                    category_id=getattr(rule, "category_id", None),
+                    rule_id=getattr(rule, "id"),
+                    user_id=getattr(rule, "user_id"),
+                    is_completed=False,
+                    due_date=due_datetime,
+                )
+            )
+            created_count += 1
+
+        return _schedule_preview_summary(deleted_count, created_count)
+
+    if normalized_mode == "all_replace":
+        deleted_count = len(existing_tasks)
+        if deleted_count > 0:
+            db.query(Task).filter(Task.rule_id == rule.id, Task.user_id == rule.user_id).delete(synchronize_session=False)
+
+        all_due_dates = [task.due_date for task in existing_tasks if isinstance(task.due_date, datetime)]
+        all_start_date = min((due_date.date() for due_date in all_due_dates), default=anchor_date)
+        expected_due_dates = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, all_start_date, end_future)
+
+        for due_datetime in sorted(expected_due_dates):
+            db.add(
+                Task(
+                    title=str(getattr(rule, "name", "")),
+                    description=getattr(rule, "description", None),
+                    category_id=getattr(rule, "category_id", None),
+                    rule_id=getattr(rule, "id"),
+                    user_id=getattr(rule, "user_id"),
+                    is_completed=False,
+                    due_date=due_datetime,
+                )
+            )
+            created_count += 1
+
+        return _schedule_preview_summary(deleted_count, created_count)
+
+    expected_due_dates = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, start_future, end_future)
+    existing_due_dates = {
+        due_date
+        for task in existing_tasks
+        for due_date in [getattr(task, "due_date", None)]
+        if isinstance(due_date, datetime)
+    }
+
+    for due_datetime in sorted(expected_due_dates - existing_due_dates):
+        db.add(
+            Task(
+                title=str(getattr(rule, "name", "")),
+                description=getattr(rule, "description", None),
+                category_id=getattr(rule, "category_id", None),
+                rule_id=getattr(rule, "id"),
+                user_id=getattr(rule, "user_id"),
+                is_completed=False,
+                due_date=due_datetime,
+            )
+        )
+        created_count += 1
+
+    return _schedule_preview_summary(0, created_count)
 
 
 def run_rule_generation(

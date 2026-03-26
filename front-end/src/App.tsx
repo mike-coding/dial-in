@@ -4,7 +4,6 @@ import Drawer from './components/Drawer'
 import MobileNavigation from './components/MobileNavigation'
 import Tasks from './components/Tasks'
 import Categories from './components/Categories'
-import Rules from './components/Rules'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import Calendar from './components/Calendar'
@@ -56,8 +55,6 @@ function App() {
         return <Tasks isMobile={isMobile} />;
       case 'Categories':
         return <Categories />;
-      case 'Rules':
-        return <Rules />;
       case 'Dashboard':
         return (
           <div className={`text-center w-full max-w-4xl ${mobilePageClasses}`}>

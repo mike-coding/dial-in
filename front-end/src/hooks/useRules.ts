@@ -12,7 +12,22 @@ interface RulesStore {
   rules: Rule[];
   hasPendingWrites: boolean;
   addRule: (rule: Omit<Rule, 'id' | 'created_at'>) => void;
-  updateRule: (id: number, updates: Partial<Rule>) => void;
+  updateRule: (
+    id: number,
+    updates: Partial<Rule>,
+    options?: {
+      scheduleUpdateMode?: "future_replace_preserve_completed" | "all_replace" | "additive_future";
+    }
+  ) => void;
+  previewScheduleUpdate: (
+    id: number,
+    ratePattern: string
+  ) => Promise<{
+    schedule_changed: boolean;
+    has_child_tasks: boolean;
+    existing_child_tasks: number;
+    previews: Record<string, { delete_count: number; create_count: number; net_change: number }>;
+  } | null>;
   deleteRule: (id: number, options?: { deleteChildren?: boolean }) => void;
   setRules: (rules: Rule[]) => void;
   clearRules: () => void;
@@ -96,7 +111,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
       });
   },
 
-  updateRule: (id, updates) => {
+  updateRule: (id, updates, options) => {
     if (VERBOSE_DEBUG) console.log("🔄 Updating rule:", id, updates);
 
     const userData = useUserStore.getState().userData;
@@ -119,10 +134,15 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
 
     const apiUrl = createApiUrl(`/rules/${id}?user_id=${userData.id}`);
 
+    const payload = {
+      ...updates,
+      schedule_update_mode: options?.scheduleUpdateMode,
+    };
+
     fetch(apiUrl, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(payload),
     })
       .then((res) => res.json())
       .then((updatedRule) => {
@@ -157,6 +177,27 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
           });
         }
       });
+  },
+
+  previewScheduleUpdate: async (id, ratePattern) => {
+    const userData = useUserStore.getState().userData;
+    if (!userData) {
+      console.error("❌ previewScheduleUpdate called but userData is null!");
+      return null;
+    }
+
+    const apiUrl = createApiUrl(`/rules/${id}/schedule-preview?user_id=${userData.id}`);
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rate_pattern: ratePattern }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to preview schedule update");
+    }
+
+    return response.json();
   },
 
   deleteRule: (id, options) => {
@@ -223,6 +264,7 @@ export const useRules = () => {
   const hasPendingWrites = useRulesStore((state) => state.hasPendingWrites);
   const addRule = useRulesStore((state) => state.addRule);
   const updateRule = useRulesStore((state) => state.updateRule);
+  const previewScheduleUpdate = useRulesStore((state) => state.previewScheduleUpdate);
   const deleteRule = useRulesStore((state) => state.deleteRule);
   
   return React.useMemo(
@@ -231,11 +273,12 @@ export const useRules = () => {
       rules,
       addRule,
       updateRule,
+      previewScheduleUpdate,
       deleteRule,
       
       // Debug/sync state (for developer use)
       hasPendingWrites,
     }),
-    [rules, addRule, updateRule, deleteRule, hasPendingWrites]
+    [rules, addRule, updateRule, previewScheduleUpdate, deleteRule, hasPendingWrites]
   );
 };

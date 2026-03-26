@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from typing import Optional
 from database import get_db
-from models import Category
+from models import Category, Rule
 
 router = APIRouter()
 
@@ -64,6 +64,17 @@ async def delete_category(
     
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
+
+    assigned_rules_count = db.query(Rule).filter(
+        Rule.user_id == user_id,
+        Rule.category_id == category_id,
+    ).count()
+
+    if assigned_rules_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete project while rules are assigned to it",
+        )
     
     db.delete(category)
     db.commit()

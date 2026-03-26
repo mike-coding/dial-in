@@ -10,6 +10,7 @@ interface RuleItemProps {
   leading?: React.ReactNode;
   subtitle?: string;
   titleSuffix?: React.ReactNode;
+  headerAction?: React.ReactNode;
   isExpanded: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
@@ -21,14 +22,19 @@ const RuleItem: React.FC<RuleItemProps> = ({
   leading,
   subtitle,
   titleSuffix,
+  headerAction,
   isExpanded,
   onToggle,
   children,
 }) => (
-  <div className="bg-white rounded-md transition-all duration-200">
+  <div className="bg-gray-100 rounded-md transition-all duration-200">
     <div className="px-4 py-3 cursor-pointer" onClick={onToggle}>
-      <div className="flex items-center gap-4">
-        <div className="flex-shrink-0">{leading ?? (icon ? <WindowsEmoji emoji={icon} size={24} /> : null)}</div>
+      <div className={`flex items-center ${leading || icon ? "gap-4" : "gap-2"}`}>
+        {headerAction ? <div className="flex-shrink-0">{headerAction}</div> : null}
+
+        {(leading || icon) ? (
+          <div className="flex-shrink-0">{leading ?? (icon ? <WindowsEmoji emoji={icon} size={24} /> : null)}</div>
+        ) : null}
 
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 px-2 py-1">
@@ -140,13 +146,15 @@ export const NewRuleItem: React.FC<NewRuleItemProps> = ({
 interface ExistingRuleItemProps {
   rule: RuleType;
   category: Category | null;
-  scheduleSummary: string;
   isExpanded: boolean;
   editDraft: RuleDraft | null;
   categories: Category[];
   editError: string | null;
   showDeleteConfirm: boolean;
+  hideCategoryIcon?: boolean;
+  bodyOverride?: React.ReactNode;
   onToggle: () => void;
+  onToggleActive: () => void;
   setDraft: (value: React.SetStateAction<RuleDraft>) => void;
   onSubmit: () => void;
   onDeleteRequest: () => void;
@@ -157,13 +165,15 @@ interface ExistingRuleItemProps {
 export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
   rule,
   category,
-  scheduleSummary,
   isExpanded,
   editDraft,
   categories,
   editError,
   showDeleteConfirm,
+  hideCategoryIcon = false,
+  bodyOverride,
   onToggle,
+  onToggleActive,
   setDraft,
   onSubmit,
   onDeleteRequest,
@@ -186,13 +196,31 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
         <p className="text-lg truncate text-gray-700">{rule.name}</p>
       )
     }
-    icon={category?.icon || "⚙️"}
-    subtitle={scheduleSummary}
-    titleSuffix={!rule.is_active ? <span className="text-xs text-gray-400">Paused</span> : undefined}
+    icon={hideCategoryIcon ? undefined : (category?.icon || "⚙️")}
+    headerAction={
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleActive();
+        }}
+        className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-gray-300/40 transition-colors"
+        aria-label={rule.is_active ? "Set rule inactive" : "Set rule active"}
+      >
+        <img
+          src={rule.is_active ? "/svg/active.svg" : "/svg/inactive.svg"}
+          alt=""
+          className="w-4 h-4"
+        />
+      </button>
+    }
     isExpanded={isExpanded}
     onToggle={onToggle}
   >
-    {isExpanded && editDraft && (
+    {isExpanded && bodyOverride ? (
+      bodyOverride
+    ) : (
+      isExpanded && editDraft && (
       <RuleEditor
         draft={editDraft}
         setDraft={setDraft}
@@ -205,6 +233,7 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
         onDeleteCancel={onDeleteCancel}
         onDeleteConfirm={onDeleteConfirm}
       />
+      )
     )}
   </RuleItem>
 );

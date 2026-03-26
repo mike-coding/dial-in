@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Page, useNavigationContext } from "../hooks/AppContext";
 
 // SVG Components
@@ -32,178 +32,36 @@ const CategoriesIcon = () => (
   </svg>
 );
 
-const RulesIcon = () => (
-  <svg fill="currentColor" width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-    <path d="M440.65 12.57l4 82.77A247.16 247.16 0 0 0 255.83 8C134.73 8 33.91 94.92 12.29 209.82A12 12 0 0 0 24.09 224h49.05a12 12 0 0 0 11.67-9.26 175.91 175.91 0 0 1 317-56.94l-101.46-4.86a12 12 0 0 0-12.57 12v47.41a12 12 0 0 0 12 12H500a12 12 0 0 0 12-12V12a12 12 0 0 0-12-12h-47.37a12 12 0 0 0-11.98 12.57zM255.83 432a175.61 175.61 0 0 1-146-77.8l101.8 4.87a12 12 0 0 0 12.57-12v-47.4a12 12 0 0 0-12-12H12a12 12 0 0 0-12 12V500a12 12 0 0 0 12 12h47.35a12 12 0 0 0 12-12.6l-4.15-82.57A247.17 247.17 0 0 0 255.83 504c121.11 0 221.93-86.92 243.55-201.82a12 12 0 0 0-11.8-14.18h-49.05a12 12 0 0 0-11.67 9.26A175.86 175.86 0 0 1 255.83 432z"/>
-  </svg>
-);
-
 const MobileNavigation: React.FC = () => {
   const { navigation, navigateTo } = useNavigationContext();
-
-  // Check if we're in the Tasks module (Tasks, Categories, or Rules)
-  const isTasksModule = ["Tasks", "Categories", "Rules"].includes(navigation.currentPage);
-  
-  // State to manage delayed unmounting for exit animation
-  const [showExpanded, setShowExpanded] = useState(isTasksModule);
-  const [isExiting, setIsExiting] = useState(false);
-
-  useEffect(() => {
-    if (isTasksModule) {
-      // Entering Tasks module: expand immediately
-      setShowExpanded(true);
-      setIsExiting(false);
-    } else if (showExpanded) {
-      // Leaving Tasks module: start exit animation
-      setIsExiting(true);
-      const timer = setTimeout(() => {
-        setShowExpanded(false);
-        setIsExiting(false);
-      }, 320); // Slightly longer than container transition (300ms) to avoid race condition
-      return () => clearTimeout(timer);
-    }
-  }, [isTasksModule, showExpanded]);
 
   const mainNavigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "Dashboard", icon: <DashboardIcon />, label: "Dash" },
     { page: "Tasks", icon: <TasksIcon />, label: "Tasks" },
+    { page: "Categories", icon: <CategoriesIcon />, label: "Projects" },
     { page: "Calendar", icon: <CalendarIcon />, label: "Calendar" },
     { page: "Users", icon: <UsersIcon />, label: "Profile" },
   ];
 
-  const tasksSubNavItems = [
-    { page: "Tasks" as Page, icon: <TasksIcon />, label: "Tasks" },
-    { page: "Categories" as Page, icon: <CategoriesIcon />, label: "Categories" },
-    { page: "Rules" as Page, icon: <RulesIcon />, label: "Rules" },
-  ];
-
   return (
-    <>
-      <style>
-        {`
-          @keyframes fadeInSlideUp {
-            0% {
-              opacity: 0;
-              transform: translateY(10px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
-          @keyframes fadeOutSlideDown {
-            0% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-            100% {
-              opacity: 0;
-              transform: translateY(10px);
-            }
-          }
-
-          .sub-nav-item-entering {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-
-          .sub-nav-item-enter-0 {
-            animation: fadeInSlideUp 200ms ease-out 0ms forwards;
-          }
-          
-          .sub-nav-item-enter-1 {
-            animation: fadeInSlideUp 200ms ease-out 50ms forwards;
-          }
-          
-          .sub-nav-item-enter-2 {
-            animation: fadeInSlideUp 200ms ease-out 100ms forwards;
-          }
-
-          .sub-nav-item-exiting-0 {
-            /* Tasks icon: no animation, let container collapse handle positioning */
-            opacity: 1;
-            transform: none;
-          }
-          
-          .sub-nav-item-exiting-1 {
-            animation: fadeOutSlideDown 150ms ease-out 30ms forwards;
-          }
-          
-          .sub-nav-item-exiting-2 {
-            animation: fadeOutSlideDown 150ms ease-out 0ms forwards;
-          }
-        `}
-      </style>
     <div className="fixed bottom-0 left-0 right-0 bg-white/90 shadow-lg z-50 h-20">
-      <div className="flex justify-around items-center h-full px-4 max-w-md mx-auto">
+      <div className="flex justify-around items-center h-full px-2 max-w-xl mx-auto">
         {mainNavigationItems.map(({ page, icon, label }) => (
-          <div 
-            key={page} 
-            className={`transition-all duration-300 ease-in-out ${
-              page === "Tasks" && (showExpanded && !isExiting) ? "flex-1 max-w-[180px]" : "min-w-[60px] max-w-[60px]"
+          <button
+            key={page}
+            onClick={() => navigateTo(page)}
+            className={`flex flex-col items-center justify-center py-2 px-2 rounded-lg transition-all duration-200 min-w-[58px] ${
+              navigation.currentPage === page
+                ? "bg-blue-100 text-blue-600 scale-105"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             }`}
           >
-            {page === "Tasks" ? (
-              showExpanded ? (
-                // Expanded Tasks module with horizontal sub-navigation
-                <div className={`flex items-center justify-start gap-1 rounded-lg p-1 transition-all duration-300 ease-in-out ${
-                  isExiting ? "bg-transparent" : "bg-blue-100"
-                }`}>
-                  {tasksSubNavItems.map(({ page: subPage, icon: subIcon, label: subLabel }, index) => (
-                    <button
-                      key={subPage}
-                      onClick={() => navigateTo(subPage)}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 min-w-[45px] ${
-                        navigation.currentPage === subPage
-                          ? "text-blue-600 scale-105"
-                          : "text-gray-500 hover:text-gray-700"
-                      } ${
-                        isExiting 
-                          ? `sub-nav-item-exiting-${index}`
-                          : `sub-nav-item-entering sub-nav-item-enter-${index}`
-                      }`}
-                    >
-                      <div className="mb-1">{subIcon}</div>
-                      <span className="text-xs font-medium">{subLabel}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                // Regular Tasks button - matches expanded layout structure
-                <div className="flex items-center justify-start rounded-lg p-1 transition-all duration-300 ease-in-out">
-                  <button
-                    onClick={() => navigateTo(page)}
-                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 min-w-[45px] ${
-                      navigation.currentPage === page
-                        ? "bg-blue-100 text-blue-600 scale-105"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="mb-1">{icon}</div>
-                    <span className="text-xs font-medium">{label}</span>
-                  </button>
-                </div>
-              )
-            ) : (
-              // Regular navigation button (non-Tasks pages)
-              <button
-                onClick={() => navigateTo(page)}
-                className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
-                  navigation.currentPage === page
-                    ? "bg-blue-100 text-blue-600 scale-105"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <div className="mb-1">{icon}</div>
-                <span className="text-xs font-medium">{label}</span>
-              </button>
-            )}
-          </div>
+            <div className="mb-1">{icon}</div>
+            <span className="text-xs font-medium">{label}</span>
+          </button>
         ))}
       </div>
     </div>
-    </>
   );
 };
 

@@ -1,1 +1,3 @@
 - [x] New categories are unticked to show in task list by default
+- [x] Changing a rule's category should update its child task's categories
+- [ ] updating a rule should function the same way tasks do ; save automatically - no 'save' button
