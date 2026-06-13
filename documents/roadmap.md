@@ -1,268 +1,214 @@
-# DIAL-IN Project Roadmap & UI/UX Guide
+# DIAL-IN Roadmap
 
-## 📋 Project Overview
-**DIAL-IN** is a modern task management and scheduling application with a focus on clean design, mobile-first experience, and powerful automation through rules-based task generation.
+## Overview
 
-### Core Philosophy
-- **Clean, minimal design** with subtle visual effects
-- **Mobile-first approach** with responsive desktop layouts
-- **Intuitive interactions** with smooth animations
-- **Powerful but simple** - advanced features don't compromise usability
+DIAL-IN is a task management and scheduling app built around **projects**, **rules**, and **tasks**. Projects (called "categories" in the data layer) organize work. Rules live inside projects and auto-generate recurring tasks on a schedule. Manual tasks exist independently. The UI is mobile-first with responsive desktop/tablet layouts.
+
+### Design Principles
+- Terse, visual UI — state communicated through layout and visual cues, not labels
+- Mobile-first with responsive breakpoints (mobile < 768px, tablet 768–1024px, desktop > 1024px)
+- Optimistic updates everywhere — instant local state changes, background sync, revert on failure
+- Clean domain separation — rules produce tasks, manual tasks are never retroactively linked to rules
 
 ---
 
-## 📱 Navigation & Layout
+## Tech Stack
 
-### Mobile Navigation
-- **Bottom navigation bar** with 4 primary sections
-- **SVG icons** (24x24px) with labels
-- **Active state**: Blue background with scale effect
-- **Labels**: "Dash", "Tasks", "Calendar", "Profile"
+| Layer | Stack |
+|-------|-------|
+| Frontend | React 19, TypeScript 5.7, Tailwind CSS 4, Zustand 5, Vite 6 |
+| Backend | FastAPI 0.104, SQLAlchemy, SQLite, python-jose (JWT), bcrypt |
+| State | Zustand stores per domain (tasks, categories, rules, events, user, userData) with EventBus coordination |
+| Version | 0.0.3 |
 
-### Desktop Navigation
-- **Left sidebar drawer** with same navigation structure
-- **SVG icons** (20x20px) for compact sidebar
-- **Collapsible design** for future expansion
+---
 
-### Page Structure
+## Data Model
+
+| Entity | Key Fields | Notes |
+|--------|-----------|-------|
+| **User** | id, username, password, avatar (emoji) | Auth via JWT + localStorage |
+| **UserData** | theme, time_period, show_* filter flags, show_categories (JSON) | Per-user preferences, persisted to backend |
+| **Category** (Project) | id, name, icon (emoji), user_id | Product-facing term is "project" |
+| **Rule** | id, name, description, rate_pattern, category_id (required), user_id, is_active | Generates tasks on a schedule; always belongs to a project |
+| **Task** | id, title, description, category_id, rule_id (provenance only), user_id, is_completed, due_date, end_date | rule_id set exclusively by the rule engine; end_date promotes due_date to start semantics |
+| **Event** | id, title, description, category_id, rule_id, user_id, start_time, end_time | Backend CRUD exists; minimal frontend |
+
+---
+
+## Completed Features
+
+### Core
+- [x] Auth — register, login, logout with JWT + bcrypt
+- [x] Responsive layout — mobile bottom nav, desktop/tablet sidebar drawer
+- [x] Background system — nature images with backdrop blur/brightness/contrast
+- [x] Centralized versioning via package.json
+
+### Tasks
+- [x] Full CRUD with due dates, category assignment, completion toggle
+- [x] Expandable task details with inline editing and auto-save (blur, change, collapse)
+- [x] Completed tasks separated by visual divider
+- [x] Task filtering — by date (today/week/month/upcoming), category visibility, show_undated, show_uncategorized, show_overdue flags
+- [x] Filter state persisted in UserData
+- [x] Date/time support — datetime-local inputs; adding an end date promotes due date to start date (task becomes event-like)
+
+### Projects (Categories)
+- [x] Full CRUD with emoji icon picker (400+ emojis)
+- [x] Deletion blocked when rules are assigned
+- [x] New projects default to unticked in task-list category visibility
+- [x] Category selection in task creation/editing
+
+### Rules & Rule Engine
+- [x] Full CRUD with multi-segment rate pattern builder
+- [x] Rate pattern encoding — daily (`d#N`), weekly (`w#DAYS`), monthly by date (`m#DATES`), monthly by weekday (`mw#OCC-DAY`), yearly (`y#MONTH-DATE`), with optional month filter (`M#`) and time (`T#`)
+- [x] Rules require a project — uncategorized legacy rules auto-migrate to "General"
+- [x] Automatic 30-day task generation on rule create/update
+- [x] Background scheduler thread (60s interval) for ongoing generation
+- [x] Schedule update modes on pattern change: `future_replace_preserve_completed` (default), `all_replace`, `additive_future`
+- [x] Schedule preview endpoint — shows delete/create counts before applying
+- [x] Changing a rule's category updates its child tasks' categories
+- [x] rule_id is provenance only — manual tasks cannot carry one
+
+### User Preferences
+- [x] UserData store — theme, time_period, filter flags, category visibility
+- [x] Optimistic sync with hasPendingWrites indicator
+
+### Navigation
+- [x] Mobile: bottom tab bar (Dash, Tasks, Calendar, Profile)
+- [x] Desktop/Tablet: left sidebar drawer
+- [x] Tasks section with horizontal sub-nav (Tasks, Categories, Rules)
+- [x] SVG icons throughout
+
+---
+
+## Roadmap
+
+### ~~Phase 1 — Projects + Rules Convergence~~ ✅
+
+Completed. Projects and rules are unified on a single surface.
+
+- [x] Rename "Categories" to "Projects" in all UI copy
+- [x] Make project cards expandable to show/edit contained rules inline
+- [x] Quick-add rule within a project card
+- [x] Project-level counters (rules count, pending tasks, completed tasks)
+- [x] Standalone Rules nav removed; rules managed entirely within Projects
+
+### Phase 2 — Task Enhancements
+
+- [x] Visual category/project indicators on task cards
+- [ ] Rule-generated task visibility — surface source rule info on generated tasks
+- [ ] Generated task detachment — allow unlinking a task from its source rule
+- [ ] Partial field locking — read-only fields for rule-sourced task attributes
+- [ ] Rule editor auto-save (match task editing pattern; remove explicit save button)
+- [ ] Priority levels (high/medium/low) with visual indicators
+- [ ] Subtasks or progress tracking (percentage completion)
+
+### Phase 3 — Events & Calendar
+
+- [ ] Events frontend — creation and management UI alongside tasks
+- [ ] Event-specific patterns (time-range vs due-date)
+- [ ] Calendar view — month/week/day with task and event visualization
+- [ ] Rules-aware calendar — display generated recurring tasks and future previews
+- [ ] Calendar interactions — drag to reschedule, quick-create from date cells
+- [ ] Rule generation of events (not just tasks)
+
+### Phase 4 — Dashboard & Analytics
+
+- [ ] Dashboard page (currently placeholder)
+- [ ] Task completion metrics across projects
+- [ ] Rule effectiveness tracking — opt-in `track_metrics` flag per rule
+- [ ] Progress charts (completion rate, trends over time)
+- [ ] Project-level analytics and goal tracking
+
+### Phase 5 — Collaboration & Customization
+
+- [ ] Shared calendars (read-only and edit permissions)
+- [ ] Shared projects and rule templates
+- [ ] Team/group task assignment
+- [ ] Theme selector (light, dark, high contrast)
+- [ ] Custom color palette and background image selection
+- [ ] Font size and accessibility options
+
+### Ongoing
+
+- [ ] Component optimization and performance profiling
+- [ ] Conflict resolution for overlapping rules
+- [ ] Rule dependencies and conditional logic
+- [ ] WCAG 2.1 AA accessibility compliance
+
+---
+
+## Architecture
+
+### Frontend Structure
 ```
-App Container
-├── Background Layer (nature image)
-├── Backdrop Effects Layer (blur/brightness/contrast)
-└── Content Layer
-    ├── Navigation (Drawer/Mobile Nav)
-    └── Page Content
+front-end/src/
+├── components/
+│   ├── App.tsx              # Main router + device detection
+│   ├── Auth.tsx             # Login/register
+│   ├── Drawer.tsx           # Desktop/tablet sidebar
+│   ├── MobileNavigation.tsx # Bottom tab nav
+│   ├── Tasks.tsx            # Task list with filtering
+│   ├── Task.tsx             # Task card
+│   ├── TaskDetails.tsx      # Expandable task editor
+│   ├── Categories.tsx       # Project management
+│   ├── Category.tsx         # Project card
+│   ├── Calendar.tsx         # Calendar view (basic)
+│   ├── Profile.tsx          # User settings
+│   ├── WindowsEmoji.tsx     # Emoji picker
+│   └── rules/
+│       ├── RuleEditor.tsx   # Multi-segment rule builder
+│       ├── RuleItem.tsx     # Rule card display
+│       ├── ruleUtils.ts     # Pattern encoding/decoding
+│       └── types.ts         # Rule type definitions
+├── hooks/
+│   ├── useCategories.ts     # Projects store
+│   ├── useTasks.ts          # Tasks store
+│   ├── useRules.ts          # Rules store
+│   ├── useEvents.ts         # Events store
+│   ├── useUser.ts           # Auth + user store
+│   ├── useUserData.ts       # Preferences store
+│   ├── useNavigation.ts     # Navigation context
+│   ├── useDeviceDetection.tsx
+│   ├── AppContext.tsx        # Data loading coordination
+│   ├── eventBus.ts          # Cross-store event coordination
+│   ├── apiConfig.ts         # API base URL config
+│   └── types.ts             # Shared type definitions
+└── utils/
+    ├── sharedEmojiOptions.ts
+    └── version.ts
 ```
 
----
-
-## ✅ Current Implementation Status
-
-### ✅ COMPLETED FEATURES
-
-#### Core Infrastructure
-- [x] **Authentication system** - Login/register with bcrypt password hashing and localStorage-based sessions
-- [x] **Responsive layout** - Mobile, tablet, desktop breakpoints
-- [x] **Background system** - Nature images with backdrop effects
-- [x] **Navigation** - Consistent mobile/desktop navigation
-- [x] **Centralized versioning** - Single source of truth in package.json
-
-#### Task Management
-- [x] **Task CRUD operations** - Create, read, update, delete
-- [x] **Task completion** - Toggle with visual feedback
-- [x] **Expandable task details** - Click to expand with full editing
-- [x] **Task organization** - Completed tasks separated by visual divider
-- [x] **Due date handling** - Full backend/frontend integration
-- [x] **Category assignment** - Optional categorization (defaults to no category)
-- [x] **Modern task cards** - Beautiful card design with hover effects
-- [x] **Inline task editing** - Edit task titles directly with auto-save
-- [x] **Auto-save functionality** - Intelligent saving on blur, change, and collapse events
-
-#### Categories System
-- [x] **Categories backend** - Complete SQLAlchemy models with icon support
-- [x] **Categories API** - Full CRUD endpoints with user ownership
-- [x] **Categories frontend** - Complete UI with emoji selection
-- [x] **Emoji picker** - 400+ organized emojis with proper layout and positioning
-- [x] **Categories management** - Create, delete, and organize categories
-- [x] **Visual category indicators** - Emoji icons for easy recognition
-
-#### Navigation System
-- [x] **Expandable navigation** - Tasks module with horizontal sub-navigation
-- [x] **Categories and Rules pages** - Dedicated components with proper routing
-- [x] **Navigation icons** - Updated with semantic SVG icons for Categories and Rules
-- [x] **Mobile navigation optimization** - Smooth transitions and proper click handling
-
-#### Backend Architecture
-- [x] **FastAPI backend** - RESTful API with automatic documentation
-- [x] **SQLAlchemy models** - Users, Tasks, Categories, Rules with icon support
-- [x] **Decoupled rules/categories** - Flexible relationship structure
-- [x] **Proper datetime handling** - ISO string conversion
-- [x] **Categories API** - Complete CRUD operations with user authentication
-
----
-
-## 🚀 ROADMAP
-
-### 🚧 IN PROGRESS
-- [x] **Task filtering system** - By date, category, completion status
-- [ ] **Component optimization** - Performance improvements
-
-### ✅ RECENTLY COMPLETED (July 21, 2025)
-- [x] **Categories system overhaul** - Complete backend model refactor with icon support
-- [x] **Emoji picker implementation** - 400+ emojis with proper layout and click handling
-- [x] **Navigation enhancement** - Expandable Tasks module with Categories/Rules sub-navigation
-- [x] **Task default behavior** - Updated to default to no category assignment
-- [x] **Categories UI polish** - Full-width dropdown, click-outside handling, visual improvements
-### Phase 1: Rules UI Integration & Task Enhancement (Next 2-3 sessions)
-#### High Priority
-- [x] **Categories management** - ✅ Complete system with emoji icons and full CRUD
-- [ ] **Categories integration with Tasks**
-  - [x] Category selection dropdown in task creation/editing
-  - [x] Category filtering in task views
-  - [ ] Visual category indicators in task cards
-- [ ] **Dedicated Rules creation workflow**
-  - [x] Rule creation interface in the Rules area
-  - [x] Pattern editor for recurring tasks (daily, weekly, monthly, yearly)
-  - [x] Generated-task provenance via rule-to-task associations
-  - [x] Rule preview and testing interface
-- [ ] **Enhanced task management**
-  - [ ] Advanced task filtering by category, rules, and time (today, week, overdue)
-  - [ ] Category-based task organization
-  - [ ] Visibility for rule-generated task instances
-- [ ] **Enhanced task attributes**
-  - [ ] Additional dates system - attach multiple custom dates to tasks (e.g., "deep work session 3 days before due")
-  - [ ] Progress tracking with subtasks or percentage completion
-  - [ ] Priority levels (high, medium, low) with visual indicators
-- [ ] **Events support**
-  - [ ] Event creation and management alongside tasks
-  - [ ] Event-specific UI patterns (time-based vs task-based)
-  - [ ] Integration with task workflow and calendar system
-
-#### Medium Priority
-- [ ] **UI/UX optimization**
-  - [ ] Seamless integration of categories/rules without cluttering task interface
-  - [ ] Intuitive workflows for managing relationships between tasks/categories/rules
-  - [ ] Mobile-optimized category and rule management
-- [ ] **Custom themes and styling**
-  - [ ] Theme selector with predefined color schemes (light, dark, high contrast)
-  - [ ] Custom color palette configuration
-  - [ ] Background image selection and customization
-  - [ ] Font size and accessibility options
-
-### Phase 2: Calendar Integration with Rules Support (Sessions 4-6)
-- [ ] **Calendar view foundation**
-  - [ ] Month/week/day views
-  - [ ] Task scheduling interface
-  - [ ] Due date visualization
-- [ ] **Rules-aware calendar**
-  - [ ] Display of rule-generated recurring tasks
-  - [ ] Future task preview based on existing rules
-  - [ ] Calendar integration with rule patterns
-- [ ] **Calendar interactions**
-  - [ ] Drag tasks to dates
-  - [ ] Quick task creation from calendar
-  - [ ] Rule modification from calendar view
-- [ ] **Shared calendars and categories**
-  - [ ] Share calendars with other users (read-only and edit permissions)
-  - [ ] Shared category creation and management
-  - [ ] Team/group task assignment and collaboration
-  - [ ] Shared rule templates and recurring task patterns
-
-### Phase 3: Rules Engine Logic (Sessions 7-9)
-- [ ] **Automated task generation**
-  - [x] Background processing for rule execution
-  - [x] Rule scheduling and timing logic
-  - [ ] Conflict resolution for overlapping rules
-- [ ] **Advanced rule features**
-  - [ ] Complex recurring patterns
-  - [ ] Rule editing and modification interface
-  - [ ] Rule dependencies and conditions
-  - [ ] Rule templates and sharing
-
-### Phase 4: Dashboard - Synthesis & Analytics (Sessions 10+)
-- [ ] **Rules metrics tracking**
-  - [ ] 'Track metrics' flag for rules to enable dashboard analytics
-  - [ ] Selective rule performance monitoring
-  - [ ] Metrics configuration per rule type
-- [ ] **Comprehensive dashboard**
-  - [ ] Task completion metrics across categories
-  - [ ] Rule effectiveness and pattern analysis
-  - [ ] Calendar integration with productivity insights
-- [ ] **Advanced analytics**
-  - [ ] Progress charts (completion rate, trends)
-  - [ ] Category and rule performance metrics
-  - [ ] Goal tracking and productivity insights
-- [ ] **System integration**
-  - [ ] Unified view of tasks, categories, rules, and calendar
-  - [ ] Cross-feature workflows and optimization
-
----
-
-## 🔧 Technical Architecture
-
-### Frontend Stack
-- **React 19** with TypeScript
-- **Tailwind CSS 4** for styling
-- **Zustand** for state management
-- **Vite** for build tooling
-
-### Backend Stack
-- **FastAPI** with Python
-- **SQLAlchemy** ORM
-- **SQLite** database (development)
-- **bcrypt** password hashing
-- **localStorage-based** authentication
-
-### File Structure
+### Backend Structure
 ```
-dial-in/
-├── front-end/
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── hooks/         # Custom hooks and stores
-│   │   ├── utils/         # Utility functions
-│   │   └── styles/        # Global styles
-│   └── public/
-│       └── bg/           # Background images
-└── back-end/
-    ├── models.py         # Database models
-    ├── schemas.py        # Pydantic schemas
-    ├── routes/           # API endpoints
-    └── app.py           # FastAPI app
+back-end/
+├── app.py           # FastAPI app, middleware, route registration
+├── database.py      # SQLAlchemy engine + session config
+├── models.py        # All ORM models
+├── rule_engine.py   # Pattern parsing, task generation, background scheduler
+└── routes/
+    ├── auth.py      # /auth/* — register, login, me, logout
+    ├── categories.py # /categories/* — project CRUD
+    ├── tasks.py     # /tasks/* — task CRUD, completion toggle
+    ├── events.py    # /events/* — event CRUD
+    ├── rules.py     # /rules/* — rule CRUD, schedule-preview
+    ├── user.py      # /user/* — profile updates
+    └── user_data.py # /user-data/* — preferences CRUD
 ```
 
 ---
 
-## 📋 Component Architecture
+## Known Issues
 
-### Current Components
-- **App.tsx** - Main application container
-- **Auth.tsx** - Authentication interface
-- **Tasks.tsx** - Task list container
-- **Task.tsx** - Individual task card
-- **TaskDetails.tsx** - Expandable task editor
-- **MobileNavigation.tsx** - Bottom navigation
-- **Drawer.tsx** - Desktop sidebar
-
-### Component Design Patterns
-1. **Container/Presenter** - Logic containers with dumb display components
-2. **Compound components** - Related components that work together
-3. **Render props** - For flexible component composition
-4. **Custom hooks** - For shared logic and state management
+- [ ] Rule editor should auto-save like tasks (no explicit save button)
 
 ---
 
-## 🎯 Success Metrics
-
-### User Experience Goals
-- **Task creation** should take < 5 seconds
-- **Task completion** should be one-tap on mobile
-- **Navigation** should be intuitive without instruction
-- **Loading states** should be under 200ms perception
-
-### Technical Goals
-- **Mobile performance** - 60fps animations
-- **Bundle size** - Keep under 500KB gzipped
-- **Accessibility** - WCAG 2.1 AA compliance
-- **Test coverage** - 80%+ for critical paths
+## Version History
+- **v0.0.3** — Rules engine with rate pattern builder, schedule update modes, task filtering, project-scoped rules
+- **v0.0.2** — Task management with expandable details, modern UI, centralized versioning
+- **v0.0.1** — Basic authentication and task CRUD
 
 ---
 
-## 📝 Development Guidelines
-
-### Code Standards
-- **TypeScript strict mode** - No any types
-- **Consistent naming** - PascalCase components, camelCase functions
-- **Component props** - Destructured with TypeScript interfaces
-- **Error handling** - Graceful degradation with user feedback
-
----
-
-## 🔄 Version History
-- **v0.0.2** - Current: Task management with expandable details, modern UI, centralized versioning
-- **v0.0.1** - Initial: Basic authentication and task CRUD
-
----
-
-*Last updated: July 21, 2025*
-*Next review: After Rules UI integration*
+*Last updated: April 2, 2026*

@@ -28,6 +28,14 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE users ADD COLUMN avatar VARCHAR(10)"))
             connection.commit()
 
+        # Add end_date column to tasks if missing
+        task_info = connection.execute(text("PRAGMA table_info(tasks)")).fetchall()
+        task_columns = {row[1] for row in task_info}
+
+        if "end_date" not in task_columns:
+            connection.execute(text("ALTER TABLE tasks ADD COLUMN end_date DATETIME"))
+            connection.commit()
+
         users_with_uncategorized_rules = connection.execute(
             text("SELECT DISTINCT user_id FROM rules WHERE category_id IS NULL")
         ).fetchall()

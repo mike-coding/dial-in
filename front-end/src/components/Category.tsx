@@ -5,19 +5,20 @@ import { sharedEmojiOptions } from '../utils/sharedEmojiOptions';
 
 interface CategoryProps {
   category: CategoryType;
-  onDelete: (id: number) => void;
+  onDelete: (id: number, cascadeTasks: boolean) => void;
   onUpdate: (id: number, updates: Partial<CategoryType>) => void;
   children?: React.ReactNode;
   onExpandChange?: (isExpanded: boolean) => void;
   headerMeta?: React.ReactNode;
+  counts?: { rules: number; pending: number; completed: number };
 }
 
-const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, children, onExpandChange, headerMeta }) => {
+const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, children, onExpandChange, headerMeta, counts }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [name, setName] = useState(category.name);
   const [hasUnsavedName, setHasUnsavedName] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<'hidden' | 'confirm' | 'choose'>('hidden');
   const categoryRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +32,7 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
 
   // Reset delete confirmation when category changes or when collapsed/expanded
   useEffect(() => {
-    setShowDeleteConfirm(false);
+    setDeleteStep('hidden');
   }, [category.id, isExpanded]);
 
   // Handle click outside to collapse category
@@ -75,8 +76,8 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
     }
     
     // If delete confirmation is showing and user clicks outside the actual delete button, cancel
-    if (showDeleteConfirm && !(e.target as HTMLElement).closest('.confirm-delete-button')) {
-      setShowDeleteConfirm(false);
+    if (deleteStep !== 'hidden' && !(e.target as HTMLElement).closest('.confirm-delete-button')) {
+      setDeleteStep('hidden');
     }
     
     const nextExpanded = !isExpanded;
@@ -130,11 +131,17 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
   };
 
   const handleDelete = () => {
-    setShowDeleteConfirm(true);
+    const hasContent = counts && (counts.rules > 0 || counts.pending > 0 || counts.completed > 0);
+    if (hasContent) {
+      setDeleteStep('confirm');
+    } else {
+      // No rules or tasks — delete immediately
+      onDelete(category.id, false);
+    }
   };
 
-  const confirmDelete = () => {
-    onDelete(category.id);
+  const confirmDelete = (cascadeTasks: boolean) => {
+    onDelete(category.id, cascadeTasks);
   };
 
   return (
@@ -252,24 +259,44 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
             {/* Delete Button */}
             <div className="pt-2">
               <div className="flex items-center justify-between delete-action-area">
-                {!showDeleteConfirm ? (
+                {deleteStep === 'hidden' ? (
                   <button
                     onClick={handleDelete}
                     className="px-4 py-2 border-1 border-red/40 text-sm font-medium text-red-600/60 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                   >
                     Delete
                   </button>
-                ) : (
-                  <div className="flex items-center justify-between space-x-3 px-1 w-full">
-                    <span className="text-sm font-medium text-gray-700">Delete project?</span>
-                    <button
-                      onClick={confirmDelete}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors confirm-delete-button"
-                    >
-                      Yes, Really Delete It
-                    </button>
+                ) : deleteStep === 'confirm' ? (
+                  <div className="w-full space-y-2 confirm-delete-button">
+                    <p className="text-sm text-gray-700">
+                      This will delete{' '}
+                      {counts && counts.rules > 0 && (
+                        <span className="font-medium">{counts.rules} {counts.rules === 1 ? 'rule' : 'rules'}</span>
+                      )}
+                      {counts && counts.rules > 0 && (counts.pending + counts.completed) > 0 && ' and '}
+                      {counts && (counts.pending + counts.completed) > 0 && (
+                        <span className="font-medium">{counts.pending + counts.completed} {(counts.pending + counts.completed) === 1 ? 'task' : 'tasks'}</span>
+                      )}
+                      .
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => confirmDelete(true)}
+                        className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors confirm-delete-button"
+                      >
+                        Delete everything
+                      </button>
+                      {counts && (counts.pending + counts.completed) > 0 && (
+                        <button
+                          onClick={() => confirmDelete(false)}
+                          className="flex-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors confirm-delete-button"
+                        >
+                          Keep tasks
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

@@ -109,8 +109,8 @@ const Categories: React.FC = () => {
     setShowEmojiPicker(false);
   };
 
-  const handleDeleteCategory = (id: number) => {
-    deleteCategory(id);
+  const handleDeleteCategory = (id: number, cascadeTasks: boolean) => {
+    deleteCategory(id, cascadeTasks);
   };
 
   const validateRuleDraft = (draft: RuleDraft): string | null => {
@@ -467,6 +467,7 @@ const Categories: React.FC = () => {
                 onDelete={handleDeleteCategory}
                 onUpdate={updateCategory}
                 onExpandChange={(isExpanded) => handleProjectExpandChange(category.id, isExpanded)}
+                counts={projectCounts[category.id]}
                 headerMeta={
                   <span>
                     {projectCounts[category.id]?.rules || 0} {(projectCounts[category.id]?.rules || 0) === 1 ? 'rule' : 'rules'} · {projectCounts[category.id]?.pending || 0} open · {projectCounts[category.id]?.completed || 0} done

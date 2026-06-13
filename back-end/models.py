@@ -119,6 +119,7 @@ class Task(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     is_completed = Column(Boolean, default=False)
     due_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
     
@@ -137,6 +138,7 @@ class Task(Base):
             "user_id": self.user_id,
             "is_completed": self.is_completed,
             "due_date": self.due_date.isoformat() if self.due_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None
         }

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task as TaskType } from '../hooks/types';
+import { useCategories } from '../hooks/useCategories';
+import WindowsEmoji from './WindowsEmoji';
 import TaskDetails from './TaskDetails';
 
 interface TaskProps {
@@ -14,6 +16,10 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   const [title, setTitle] = useState(task.title);
   const [hasUnsavedTitle, setHasUnsavedTitle] = useState(false);
   const taskRef = useRef<HTMLDivElement>(null);
+  const { categories } = useCategories();
+  const projectIcon = task.category_id
+    ? categories.find(c => c.id === task.category_id)?.icon
+    : undefined;
 
   // Update local title when task prop changes
   React.useEffect(() => {
@@ -108,6 +114,11 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
             )}
           </div>
           
+          {/* Project Indicator */}
+          {projectIcon && (
+            <WindowsEmoji emoji={projectIcon} size={20} className="shrink-0 opacity-70" />
+          )}
+
           {/* Task Content */}
           <div className="flex-1 min-w-0">
             {isExpanded ? (
@@ -169,7 +180,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
       {/* Expanded Details */}
       <div 
         className={`transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+          isExpanded ? 'max-h-[40rem] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}
       >
         <TaskDetails

@@ -20,7 +20,7 @@ interface CategoriesStore {
   setCategories: (categories: Category[]) => void;
   addCategory: (category: Omit<Category, 'id' | 'user_id' | 'created_at'>) => void;
   updateCategory: (id: number, updates: Partial<Category>) => void;
-  deleteCategory: (id: number) => void;
+  deleteCategory: (id: number, cascadeTasks?: boolean) => void;
   clearCategories: () => void;
 }
 
@@ -168,7 +168,7 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       });
   },
 
-  deleteCategory: (id) => {
+  deleteCategory: (id, cascadeTasks = false) => {
     const userData = useUserStore.getState().userData;
     if (!userData) {
       console.error("❌ deleteCategory called but userData is null!");
@@ -185,12 +185,17 @@ export const useCategoriesStore = create<CategoriesStore>((set, get) => ({
       categories: filteredCategories,
       hasPendingWrites: true,
     });
-    const apiUrl = createApiUrl(`/categories/${id}?user_id=${userData.id}`);
+    const apiUrl = createApiUrl(`/categories/${id}?user_id=${userData.id}&cascade_tasks=${cascadeTasks}`);
 
     fetch(apiUrl, { method: "DELETE" })
-      .then(() => {
+      .then((res) => {
+        if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
         set({ hasPendingWrites: false });
         if (VERBOSE_DEBUG) console.log("✅ Category deleted successfully");
+        // Refresh all data since rules and tasks may have been deleted or orphaned
+        useUserStore.getState().loadUserData(userData.id).catch((error) => {
+          console.error("❌ Error refreshing data after category delete:", error);
+        });
       })
       .catch((err) => {
         console.error("❌ Error deleting category:", err);

@@ -15,11 +15,20 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
   const { categories } = useCategories();
   const [description, setDescription] = useState(task.description || '');
   const [categoryId, setCategoryId] = useState<number | null>(task.category_id || null);
-  const [dueDate, setDueDate] = useState(() => {
-    if (!task.due_date) return '';
-    // Convert ISO string to YYYY-MM-DD for date input
-    return task.due_date.split('T')[0];
-  });
+
+  // Parse ISO string to datetime-local value (YYYY-MM-DDTHH:MM)
+  const toDateTimeLocal = (iso: string | undefined): string => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [dueDate, setDueDate] = useState(() => toDateTimeLocal(task.due_date));
+  const [endDate, setEndDate] = useState(() => toDateTimeLocal(task.end_date));
+
+  const hasEndDate = endDate !== '';
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isDropdownAnimating, setIsDropdownAnimating] = useState(false);
@@ -75,10 +84,33 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
   };
 
   // Auto-save due date on change
-  const handleDueDateChange = (e: any) => {
-    const newDueDate = e.target.value;
-    setDueDate(newDueDate);
-    autoSave({ due_date: newDueDate ? new Date(newDueDate + 'T00:00:00').toISOString() : undefined });
+  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDueDate(val);
+    onSave({ due_date: val ? new Date(val).toISOString() : (null as any) });
+  };
+
+  // Auto-save end date on change
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEndDate(val);
+    onSave({ end_date: val ? new Date(val).toISOString() : (null as any) });
+  };
+
+  // Add end date — promotes due_date to start semantics
+  const handleAddEndDate = () => {
+    if (dueDate) {
+      setEndDate(dueDate);
+      onSave({ end_date: new Date(dueDate).toISOString() });
+    } else {
+      setEndDate('');
+    }
+  };
+
+  // Remove end date — reverts to single due-date mode
+  const handleRemoveEndDate = () => {
+    setEndDate('');
+    onSave({ end_date: null as any });
   };
 
   const handleDelete = () => {
@@ -192,18 +224,52 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
           )}
         </div>
 
-        {/* Due Date */}
+        {/* Dates */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Due Date
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">
+              {hasEndDate ? 'Start' : 'Due'}
+            </label>
+            {!hasEndDate && dueDate && (
+              <button
+                type="button"
+                onClick={handleAddEndDate}
+                className="text-xs text-blue-500 hover:text-blue-700 transition-colors"
+              >
+                + End date
+              </button>
+            )}
+          </div>
           <input
-            type="date"
+            type="datetime-local"
             value={dueDate}
             onChange={handleDueDateChange}
             className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
           />
         </div>
+
+        {hasEndDate && (
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                End
+              </label>
+              <button
+                type="button"
+                onClick={handleRemoveEndDate}
+                className="text-xs text-red-400 hover:text-red-600 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+            <input
+              type="datetime-local"
+              value={endDate}
+              onChange={handleEndDateChange}
+              className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
+            />
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between delete-action-area">

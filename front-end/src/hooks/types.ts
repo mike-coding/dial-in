@@ -28,6 +28,7 @@ export interface Task {
   user_id: number;
   is_completed: boolean;
   due_date?: string;
+  end_date?: string;
   created_at: string;
   completed_at?: string;
 }

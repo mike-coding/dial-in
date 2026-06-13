@@ -21,6 +21,7 @@ async def create_task(
     category_id: Optional[int] = Body(None),
     is_completed: Optional[bool] = Body(False),
     due_date: Optional[str] = Body(None),
+    end_date: Optional[str] = Body(None),
     db: Session = Depends(get_db)
 ):
     task = Task(
@@ -29,7 +30,8 @@ async def create_task(
         category_id=category_id,
         user_id=user_id,
         is_completed=is_completed,
-        due_date=datetime.fromisoformat(due_date.replace('Z', '+00:00')) if due_date else None
+        due_date=datetime.fromisoformat(due_date.replace('Z', '+00:00')) if due_date else None,
+        end_date=datetime.fromisoformat(end_date.replace('Z', '+00:00')) if end_date else None
     )
     db.add(task)
     db.commit()
@@ -67,8 +69,12 @@ async def update_task(
         task.is_completed = changes.get('is_completed')
     if 'completed_at' in changes and changes.get('completed_at') is not None:
         task.completed_at = datetime.fromisoformat(changes.get('completed_at').replace('Z', '+00:00'))
-    if 'due_date' in changes and changes.get('due_date') is not None:
-        task.due_date = datetime.fromisoformat(changes.get('due_date').replace('Z', '+00:00'))
+    if 'due_date' in changes:
+        val = changes.get('due_date')
+        task.due_date = datetime.fromisoformat(val.replace('Z', '+00:00')) if val else None
+    if 'end_date' in changes:
+        val = changes.get('end_date')
+        task.end_date = datetime.fromisoformat(val.replace('Z', '+00:00')) if val else None
 
     db.commit()
     db.refresh(task)
