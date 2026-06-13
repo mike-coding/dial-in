@@ -9,6 +9,7 @@ interface CalendarProps {
 }
 
 type ViewMode = 'month' | 'week' | 'day';
+const VIEW_MODES: ViewMode[] = ['month', 'week', 'day'];
 
 const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -81,6 +82,12 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     setCurrentDate(new Date());
   };
 
+  const cycleViewMode = () => {
+    setViewMode((mode) => VIEW_MODES[(VIEW_MODES.indexOf(mode) + 1) % VIEW_MODES.length]);
+  };
+
+  const viewModeLabel = viewMode.charAt(0).toUpperCase() + viewMode.slice(1);
+
   // Format display text based on view mode
   const getDisplayText = () => {
     const options: Intl.DateTimeFormatOptions = {};
@@ -128,9 +135,9 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
         <div
           key={i}
           className={`
-            min-h-24 p-1 text-sm cursor-pointer transition-colors rounded border border-transparent
+            min-h-24 p-1 text-sm cursor-pointer rounded transition-all duration-200
             ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-            ${isToday ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'}
+            ${isToday ? 'bg-blue-50' : 'hover:bg-gray-50'}
           `}
         >
           <div className={`flex justify-center mb-1 ${isToday ? 'font-semibold text-blue-700' : ''}`}>
@@ -162,7 +169,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-md bg-white p-3 transition-all duration-200">
         {/* Day headers */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -195,16 +202,16 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       const dayTasks = getTasksForDate(day);
 
       days.push(
-        <div key={i} className="flex-1 min-h-24">
-          <div className={`text-center py-2 ${isToday ? 'bg-blue-600 text-white rounded-t' : 'bg-gray-50 rounded-t'}`}>
+        <div key={i} className="flex-1 min-h-24 overflow-hidden rounded-md bg-white transition-all duration-200">
+          <div className={`text-center py-2 ${isToday ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
             <div className="text-xs font-medium">
               {day.toLocaleDateString('en-US', { weekday: 'short' })}
             </div>
-            <div className={`text-lg font-semibold ${isToday ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`text-lg font-semibold ${isToday ? 'text-blue-700' : 'text-gray-900'}`}>
               {day.getDate()}
             </div>
           </div>
-          <div className="bg-white border-x border-b border-gray-200 h-28 p-2 overflow-y-auto">
+          <div className="h-28 overflow-y-auto p-2">
             {dayTasks.length === 0 ? (
               <div className="text-xs text-gray-400">No tasks</div>
             ) : (
@@ -231,8 +238,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="flex">
+      <div className="rounded-md bg-white p-1 transition-all duration-200">
+        <div className="flex gap-1">
           {days}
         </div>
       </div>
@@ -268,8 +275,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     }
 
     return (
-      <div className="bg-white rounded-lg shadow">
-        <div className={`p-4 border-b border-gray-200 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
+      <div className="rounded-md bg-white transition-all duration-200">
+        <div className={`p-4 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
           <div className="flex items-center justify-center">
             <WindowsEmoji emoji="📅" size={24} className="mr-2" />
             <h3 className="text-lg font-semibold text-gray-900">
@@ -280,13 +287,13 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
               })}
             </h3>
             {isToday && (
-              <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
+              <span className="ml-2 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
                 Today
               </span>
             )}
           </div>
         </div>
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4">
           {dayTasks.length === 0 ? (
             <div className="text-sm text-gray-500">No scheduled tasks</div>
           ) : (
@@ -315,57 +322,47 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   return (
     <div className={`w-full max-w-4xl ${isMobile ? 'px-2' : ''}`}>
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          {/* View Mode Selector */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {(['month', 'week', 'day'] as ViewMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  viewMode === mode
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {mode.charAt(0).toUpperCase() + mode.slice(1)}
-              </button>
-            ))}
-          </div>
-          
-          <button
-            onClick={goToToday}
-            className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            Today
-          </button>
-        </div>
+      <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+        <button
+          onClick={cycleViewMode}
+          aria-label={`Switch calendar view. Current view: ${viewModeLabel}`}
+          className="justify-self-start rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-800 transition-all duration-200 hover:bg-gray-50 sm:px-3 sm:text-sm"
+        >
+          {viewModeLabel}
+        </button>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-center">
+        <div className="inline-flex min-w-0 items-center justify-center gap-1 justify-self-center">
           <button
             onClick={navigatePrevious}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            aria-label="Go to previous period"
+            className="shrink-0 p-1.5 hover:bg-gray-100 rounded transition-colors"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           
-          <h2 className="text-xl font-semibold text-gray-900 min-w-48 text-center mx-4">
+          <h2 className="w-32 truncate text-center text-base font-semibold text-gray-900 sm:w-56 sm:text-xl">
             {getDisplayText()}
           </h2>
           
           <button
             onClick={navigateNext}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            aria-label="Go to next period"
+            className="shrink-0 p-1.5 hover:bg-gray-100 rounded transition-colors"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
+
+        <button
+          onClick={goToToday}
+          className="justify-self-end rounded-md bg-slate-500 px-2.5 py-1 text-xs font-medium text-white transition-all duration-200 hover:bg-slate-600 sm:px-3 sm:text-sm"
+        >
+          Today
+        </button>
       </div>
 
       {/* Calendar Content */}
@@ -373,19 +370,6 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
         {viewMode === 'month' && renderMonthView()}
         {viewMode === 'week' && renderWeekView()}
         {viewMode === 'day' && renderDayView()}
-      </div>
-
-      {/* Coming Soon Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <WindowsEmoji emoji="🚧" size={20} className="mr-2" />
-          <div>
-            <h4 className="font-medium text-blue-900">Calendar Integration Coming Soon</h4>
-            <p className="text-sm text-blue-700 mt-1">
-              Task integration, event creation, and advanced calendar features are in development.
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Bottom spacing for mobile navigation */}
