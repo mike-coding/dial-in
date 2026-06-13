@@ -135,7 +135,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
         <div
           key={i}
           className={`
-            min-h-24 p-1 text-sm cursor-pointer rounded transition-all duration-200
+            min-h-24 p-1 text-sm cursor-pointer rounded transition-all duration-200 sm:min-h-0
             ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
             ${isToday ? 'bg-blue-50' : 'hover:bg-gray-50'}
           `}
@@ -169,9 +169,9 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     }
 
     return (
-      <div className="rounded-md bg-white p-3 transition-all duration-200">
+      <div className="flex h-full min-h-[32rem] flex-col rounded-md bg-white p-3 transition-all duration-200">
         {/* Day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="mb-2 grid shrink-0 grid-cols-7 gap-1">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
               {day}
@@ -179,7 +179,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           ))}
         </div>
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-1">
           {days}
         </div>
       </div>
@@ -202,8 +202,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       const dayTasks = getTasksForDate(day);
 
       days.push(
-        <div key={i} className="flex-1 min-h-24 overflow-hidden rounded-md bg-white transition-all duration-200">
-          <div className={`text-center py-2 ${isToday ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
+        <div key={i} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md bg-white transition-all duration-200">
+          <div className={`shrink-0 text-center py-2 ${isToday ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
             <div className="text-xs font-medium">
               {day.toLocaleDateString('en-US', { weekday: 'short' })}
             </div>
@@ -211,7 +211,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
               {day.getDate()}
             </div>
           </div>
-          <div className="h-28 overflow-y-auto p-2">
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
             {dayTasks.length === 0 ? (
               <div className="text-xs text-gray-400">No tasks</div>
             ) : (
@@ -238,8 +238,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     }
 
     return (
-      <div className="rounded-md bg-white p-1 transition-all duration-200">
-        <div className="flex gap-1">
+      <div className="h-full min-h-[32rem] rounded-md bg-white p-1 transition-all duration-200">
+        <div className="flex h-full gap-1">
           {days}
         </div>
       </div>
@@ -275,8 +275,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     }
 
     return (
-      <div className="rounded-md bg-white transition-all duration-200">
-        <div className={`p-4 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
+      <div className="flex h-full min-h-[32rem] flex-col rounded-md bg-white transition-all duration-200">
+        <div className={`shrink-0 p-4 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
           <div className="flex items-center justify-center">
             <WindowsEmoji emoji="📅" size={24} className="mr-2" />
             <h3 className="text-lg font-semibold text-gray-900">
@@ -293,7 +293,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
             )}
           </div>
         </div>
-        <div className="p-4">
+        <div className="shrink-0 p-4">
           {dayTasks.length === 0 ? (
             <div className="text-sm text-gray-500">No scheduled tasks</div>
           ) : (
@@ -312,7 +312,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
             </div>
           )}
         </div>
-        <div className="max-h-72 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {timeSlots}
         </div>
       </div>
@@ -320,7 +320,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   };
 
   return (
-    <div className={`w-full max-w-4xl ${isMobile ? 'px-2' : ''}`}>
+    <div className={`flex h-full min-h-0 w-full max-w-none flex-1 flex-col ${isMobile ? 'px-2' : ''}`}>
       {/* Header */}
       <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
         <button
@@ -366,7 +366,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       </div>
 
       {/* Calendar Content */}
-      <div className="mb-6">
+      <div className="min-h-0 flex-1">
         {viewMode === 'month' && renderMonthView()}
         {viewMode === 'week' && renderWeekView()}
         {viewMode === 'day' && renderDayView()}

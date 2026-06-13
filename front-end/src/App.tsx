@@ -100,6 +100,8 @@ function App() {
     }
   };
 
+  const isCalendarPage = navigation.currentPage === 'Calendar';
+
   return (
     <div className="h-full w-full relative overflow-hidden">
       {/* Background Image 
@@ -114,7 +116,9 @@ function App() {
       {isDesktop && (
         <>
           <Drawer />
-          <div className="BODY__ w-full flex flex-col items-center mx-10 my-10 p-6 overflow-y-auto">
+          <div className={`BODY__ min-h-0 w-full flex flex-col items-center overflow-y-auto ${
+            isCalendarPage ? 'mx-4 my-4 p-3' : 'mx-10 my-10 p-6'
+          }`}>
             {renderCurrentPage()}
           </div>
         </>
@@ -124,7 +128,9 @@ function App() {
       {isTablet && (
         <>
           <Drawer />
-          <div className="BODY__ w-full flex flex-col items-center mx-6 my-6 p-4 overflow-y-auto">
+          <div className={`BODY__ min-h-0 w-full flex flex-col items-center overflow-y-auto ${
+            isCalendarPage ? 'mx-3 my-3 p-2' : 'mx-6 my-6 p-4'
+          }`}>
             {renderCurrentPage()}
           </div>
         </>
@@ -137,7 +143,7 @@ function App() {
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
           </div>
-          <div className="flex-1 w-full overflow-y-auto px-4 py-8">
+          <div className={`min-h-0 flex-1 w-full overflow-y-auto px-4 ${isCalendarPage ? 'py-3' : 'py-8'}`}>
             {renderCurrentPage()}
           </div>
           <MobileNavigation />
