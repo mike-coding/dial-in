@@ -93,12 +93,12 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   return (
     <div 
       ref={taskRef}
-      className={`rounded-md ${task.is_completed ? 'bg-gray-200/80' : 'bg-white'} transition-all duration-200`}>
+      className={`w-full max-w-full overflow-hidden rounded-md ${task.is_completed ? 'bg-gray-200/80' : 'bg-white'} transition-all duration-200`}>
       <div 
         className="px-4 py-3 cursor-pointer"
         onClick={handleTaskClick}
       >
-        <div className="flex items-center gap-4">
+        <div className={`grid items-center gap-4 ${projectIcon ? 'grid-cols-[1.5rem_1.25rem_minmax(0,1fr)_2rem]' : 'grid-cols-[1.5rem_minmax(0,1fr)_2rem]'}`}>
           {/* Checkbox */}
           <div
             data-action="toggle"
@@ -120,7 +120,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
           )}
 
           {/* Task Content */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 overflow-hidden">
             {isExpanded ? (
               <input
                 type="text"
@@ -138,7 +138,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
                 autoFocus={false}
               />
             ) : (
-              <p className={`text-lg transition-all duration-200 px-2 py-1 truncate ${
+              <p className={`block w-full max-w-full text-lg transition-all duration-200 px-2 py-1 truncate ${
                 task.is_completed 
                   ? 'text-gray-600/80' 
                   : 'text-gray-600/80'
@@ -149,7 +149,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
           </div>
           
           {/* Expand/Collapse Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div
               onClick={(e) => {
                 e.stopPropagation();

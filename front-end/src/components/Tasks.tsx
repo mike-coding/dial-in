@@ -232,8 +232,8 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const completedCount = completedTasks.length;
 
   return (
-    <div className="rounded-xl">
-      <div className={`w-full ${isMobile ? 'max-w-full px-4' : 'max-w-2xl'} mx-auto ${isMobile ? 'pt-4' : 'pt-8'}`}>
+    <div className="w-full min-w-0 rounded-xl">
+      <div className={`w-full min-w-0 ${isMobile ? 'max-w-full px-4' : 'max-w-2xl'} mx-auto ${isMobile ? 'pt-4' : 'pt-8'}`}>
         
         {/* Filter Dropdown */}
         <div className="mb-6 flex justify-center">
@@ -395,7 +395,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
         </div>
 
         {/* Tasks List */}
-        <div className="space-y-2">
+        <div className="w-full min-w-0 space-y-2">
           {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
               <WindowsEmoji emoji="📝" size={72} className="mb-4 opacity-50" />
