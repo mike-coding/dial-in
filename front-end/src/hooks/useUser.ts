@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import React from 'react';
-import { User, UserData, AuthState, LoginCredentials, RegisterCredentials, DataLoadingState } from './types';
+import { User, AuthState, LoginCredentials, RegisterCredentials, DataLoadingState } from './types';
 import { eventBus, UserDataLoadedEvent, AuthStatusChangedEvent, DataLoadingEvent } from './eventBus';
 import { createApiUrl } from './apiConfig';
 

@@ -11,6 +11,21 @@ interface CalendarProps {
 type ViewMode = 'month' | 'week' | 'day';
 const VIEW_MODES: ViewMode[] = ['month', 'week', 'day'];
 
+type TaskRange = {
+  task: TaskType;
+  start: Date;
+  end: Date;
+};
+
+type CalendarTaskSpan = TaskRange & {
+  startColumn: number;
+  endColumn: number;
+};
+
+type PackedCalendarTaskSpan = CalendarTaskSpan & {
+  lane: number;
+};
+
 const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -24,21 +39,112 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     return `${year}-${month}-${day}`;
   };
 
-  const scheduledTasks = (tasks || []).filter((task) => task.due_date);
-  const tasksByDate = scheduledTasks.reduce((acc, task) => {
-    const dueDate = new Date(task.due_date as string);
-    const key = toDateKey(dueDate);
-    if (!acc[key]) {
-      acc[key] = [];
+  const startOfDay = (date: Date) => {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    return result;
+  };
+
+  const endOfDay = (date: Date) => {
+    const result = new Date(date);
+    result.setHours(23, 59, 59, 999);
+    return result;
+  };
+
+  const getTaskRange = (task: TaskType): TaskRange | null => {
+    if (!task.due_date) {
+      return null;
     }
-    acc[key].push(task);
-    return acc;
-  }, {} as Record<string, TaskType[]>);
+
+    const start = new Date(task.due_date);
+    if (Number.isNaN(start.getTime())) {
+      return null;
+    }
+
+    const parsedEnd = task.end_date ? new Date(task.end_date) : null;
+    const end = parsedEnd && !Number.isNaN(parsedEnd.getTime()) && parsedEnd >= start ? parsedEnd : start;
+
+    return { task, start, end };
+  };
+
+  const scheduledTaskRanges = (tasks || [])
+    .map(getTaskRange)
+    .filter((range): range is TaskRange => range !== null)
+    .sort((a, b) => a.start.getTime() - b.start.getTime() || a.end.getTime() - b.end.getTime());
 
   const getTasksForDate = (date: Date) => {
-    const key = toDateKey(date);
-    return tasksByDate[key] || [];
+    const dayStart = startOfDay(date);
+    const dayEnd = endOfDay(date);
+
+    return scheduledTaskRanges.filter((range) => range.start <= dayEnd && range.end >= dayStart);
   };
+
+  const getTaskSpansForRange = (rangeStartDate: Date, dayCount: number): CalendarTaskSpan[] => {
+    const rangeStart = startOfDay(rangeStartDate);
+    const rangeEnd = endOfDay(new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate() + dayCount - 1));
+
+    return scheduledTaskRanges
+      .filter((range) => range.start <= rangeEnd && range.end >= rangeStart)
+      .map((range) => {
+        const spanStart = startOfDay(range.start) < rangeStart ? rangeStart : startOfDay(range.start);
+        const spanEnd = endOfDay(range.end) > rangeEnd ? rangeEnd : endOfDay(range.end);
+
+        return {
+          ...range,
+          startColumn: Math.floor((spanStart.getTime() - rangeStart.getTime()) / 86400000),
+          endColumn: Math.floor((spanEnd.getTime() - rangeStart.getTime()) / 86400000),
+        };
+      });
+  };
+
+  const packTaskSpans = (spans: CalendarTaskSpan[]): PackedCalendarTaskSpan[] => {
+    const lanes: CalendarTaskSpan[][] = [];
+
+    const sortedSpans = [...spans].sort((a, b) => {
+      const aVisibleDays = a.endColumn - a.startColumn;
+      const bVisibleDays = b.endColumn - b.startColumn;
+
+      return (
+        bVisibleDays - aVisibleDays ||
+        a.startColumn - b.startColumn ||
+        a.start.getTime() - b.start.getTime() ||
+        b.end.getTime() - a.end.getTime()
+      );
+    });
+
+    return sortedSpans.map((span) => {
+      const laneIndex = lanes.findIndex((lane) =>
+        lane.every((laneSpan) => span.endColumn < laneSpan.startColumn || span.startColumn > laneSpan.endColumn)
+      );
+      const nextLane = laneIndex === -1 ? lanes.length : laneIndex;
+
+      if (!lanes[nextLane]) {
+        lanes[nextLane] = [];
+      }
+      lanes[nextLane].push(span);
+
+      return { ...span, lane: nextLane };
+    });
+  };
+
+  const formatTaskRange = (range: TaskRange) => {
+    if (!range.task.end_date) {
+      return range.start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    const sameDay = toDateKey(range.start) === toDateKey(range.end);
+    const startTime = range.start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const endTime = range.end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    if (sameDay) {
+      return `${startTime} - ${endTime}`;
+    }
+
+    return `${range.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${range.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  };
+
+  const taskPillClasses = (task: TaskType) =>
+    task.is_completed ? 'bg-gray-200 text-gray-500 line-through' : 'bg-blue-100 text-blue-900';
 
   const resolveTaskIcon = (task: TaskType) => {
     const category = categories.find((entry) => entry.id === task.category_id);
@@ -121,51 +227,86 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     const startDate = new Date(firstDayOfMonth);
     startDate.setDate(startDate.getDate() - firstDayOfMonth.getDay());
 
-    const days = [];
+    const weeks = [];
     const currentIterDate = new Date(startDate);
 
     // Generate 6 weeks of days (42 days total)
-    for (let i = 0; i < 42; i++) {
-      const isCurrentMonth = currentIterDate.getMonth() === currentDate.getMonth();
-      const isToday = currentIterDate.toDateString() === today.toDateString();
-      
-      const dayTasks = getTasksForDate(currentIterDate);
+    for (let weekIndex = 0; weekIndex < 6; weekIndex++) {
+      const weekStart = new Date(currentIterDate);
+      const weekDays = [];
+      const weekSpans = packTaskSpans(getTaskSpansForRange(weekStart, 7));
+      const visibleWeekSpans = weekSpans.filter((span) => span.lane < 3);
+      const hiddenWeekSpans = weekSpans.filter((span) => span.lane >= 3);
 
-      days.push(
+      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + dayIndex);
+
+        const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+        const isToday = day.toDateString() === today.toDateString();
+        const hiddenDayCount = hiddenWeekSpans.filter(
+          (span) => span.startColumn <= dayIndex && span.endColumn >= dayIndex
+        ).length;
+
+        weekDays.push(
+          <div
+            key={toDateKey(day)}
+            style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1 / -1' }}
+            className={`
+              rounded transition-all duration-200
+              ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
+              ${isToday ? 'bg-blue-50' : 'hover:bg-gray-50'}
+            `}
+          />
+        );
+
+        weekDays.push(
+          <div
+            key={`${toDateKey(day)}-label`}
+            style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1' }}
+            className={`z-10 flex items-center justify-center text-sm ${isToday ? 'font-semibold text-blue-700' : ''}`}
+          >
+            {day.getDate()}
+          </div>
+        );
+
+        if (hiddenDayCount > 0) {
+          weekDays.push(
+            <div
+              key={`${toDateKey(day)}-more`}
+              style={{ gridColumn: `${dayIndex + 1}`, gridRow: '5' }}
+              className="z-10 min-w-0 px-1 text-[10px] text-gray-500"
+            >
+              +{hiddenDayCount} more
+            </div>
+          );
+        }
+      }
+
+      weeks.push(
         <div
-          key={i}
-          className={`
-            min-h-24 p-1 text-sm cursor-pointer rounded transition-all duration-200 sm:min-h-0
-            ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-            ${isToday ? 'bg-blue-50' : 'hover:bg-gray-50'}
-          `}
+          key={weekIndex}
+          className="grid min-h-0 grid-cols-7 gap-x-1 gap-y-1"
+          style={{ gridTemplateRows: '1.5rem repeat(3, minmax(1rem, auto)) minmax(0, 1fr)' }}
         >
-          <div className={`flex justify-center mb-1 ${isToday ? 'font-semibold text-blue-700' : ''}`}>
-            {currentIterDate.getDate()}
-          </div>
-          <div className="space-y-1">
-            {dayTasks.slice(0, 2).map((task) => (
-              <div
-                key={task.id}
-                className={`text-[10px] px-1.5 py-0.5 rounded truncate ${
-                  task.is_completed ? 'bg-gray-200 text-gray-500 line-through' : 'bg-blue-100 text-blue-900'
-                }`}
-                title={task.title}
-              >
-                <div className="flex items-center gap-1">
-                  <WindowsEmoji emoji={resolveTaskIcon(task)} size={11} />
-                  <span className="truncate">{task.title}</span>
-                </div>
+          {weekDays}
+          {visibleWeekSpans.map((span) => (
+            <div
+              key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
+              className={`z-20 min-w-0 rounded px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
+              style={{ gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`, gridRow: span.lane + 2 }}
+              title={span.task.title}
+            >
+              <div className="flex min-w-0 items-center gap-1">
+                <WindowsEmoji emoji={resolveTaskIcon(span.task)} size={11} />
+                <span className="truncate">{span.task.title}</span>
               </div>
-            ))}
-            {dayTasks.length > 2 && (
-              <div className="text-[10px] px-1 text-gray-500">+{dayTasks.length - 2} more</div>
-            )}
-          </div>
+            </div>
+          ))}
         </div>
       );
-      
-      currentIterDate.setDate(currentIterDate.getDate() + 1);
+
+      currentIterDate.setDate(currentIterDate.getDate() + 7);
     }
 
     return (
@@ -179,8 +320,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           ))}
         </div>
         {/* Calendar grid */}
-        <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-1">
-          {days}
+        <div className="grid min-h-0 flex-1 grid-rows-6 gap-1">
+          {weeks}
         </div>
       </div>
     );
@@ -191,56 +332,71 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     const weekStart = new Date(currentDate);
     weekStart.setDate(currentDate.getDate() - currentDate.getDay());
     
-    const days = [];
+    const dayCells = [];
     const today = new Date();
+    const weekSpans = packTaskSpans(getTaskSpansForRange(weekStart, 7));
+    const laneCount = Math.max(1, ...weekSpans.map((span) => span.lane + 1));
 
     for (let i = 0; i < 7; i++) {
       const day = new Date(weekStart);
       day.setDate(weekStart.getDate() + i);
       const isToday = day.toDateString() === today.toDateString();
+      const hasTasks = getTasksForDate(day).length > 0;
 
-      const dayTasks = getTasksForDate(day);
+      dayCells.push(
+        <div
+          key={`${toDateKey(day)}-background`}
+          style={{ gridColumn: `${i + 1}`, gridRow: '1 / -1' }}
+          className={`rounded-md transition-all duration-200 ${isToday ? 'bg-blue-50' : 'bg-white'}`}
+        />
+      );
 
-      days.push(
-        <div key={i} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md bg-white transition-all duration-200">
-          <div className={`shrink-0 text-center py-2 ${isToday ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
-            <div className="text-xs font-medium">
-              {day.toLocaleDateString('en-US', { weekday: 'short' })}
-            </div>
-            <div className={`text-lg font-semibold ${isToday ? 'text-blue-700' : 'text-gray-900'}`}>
-              {day.getDate()}
-            </div>
+      dayCells.push(
+        <div
+          key={`${toDateKey(day)}-header`}
+          style={{ gridColumn: `${i + 1}`, gridRow: '1' }}
+          className={`z-10 flex flex-col items-center justify-center rounded-t-md py-2 ${isToday ? 'text-blue-700' : 'text-gray-900'}`}
+        >
+          <div className="text-xs font-medium">
+            {day.toLocaleDateString('en-US', { weekday: 'short' })}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-2">
-            {dayTasks.length === 0 ? (
-              <div className="text-xs text-gray-400">No tasks</div>
-            ) : (
-              <div className="space-y-1">
-                {dayTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className={`text-xs px-2 py-1 rounded truncate ${
-                      task.is_completed ? 'bg-gray-200 text-gray-500 line-through' : 'bg-blue-100 text-blue-900'
-                    }`}
-                    title={task.title}
-                  >
-                    <div className="flex items-center gap-1">
-                      <WindowsEmoji emoji={resolveTaskIcon(task)} size={12} />
-                      <span className="truncate">{task.title}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="text-lg font-semibold">
+            {day.getDate()}
           </div>
+        </div>
+      );
+
+      dayCells.push(
+        <div
+          key={`${toDateKey(day)}-body`}
+          style={{ gridColumn: `${i + 1}`, gridRow: `${laneCount + 2}` }}
+          className="z-10 min-h-0 rounded-b-md p-2 hover:bg-gray-50"
+        >
+          {!hasTasks && <div className="text-xs text-gray-400">No tasks</div>}
         </div>
       );
     }
 
     return (
       <div className="h-full min-h-[32rem] rounded-md bg-white p-1 transition-all duration-200">
-        <div className="flex h-full gap-1">
-          {days}
+        <div
+          className="grid h-full min-h-0 grid-cols-7 gap-x-1 gap-y-1"
+          style={{ gridTemplateRows: `4.5rem repeat(${laneCount}, minmax(1.75rem, auto)) minmax(0, 1fr)` }}
+        >
+          {dayCells}
+          {weekSpans.map((span) => (
+            <div
+              key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
+              className={`z-20 min-w-0 rounded px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
+              style={{ gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`, gridRow: span.lane + 2 }}
+              title={span.task.title}
+            >
+              <div className="flex min-w-0 items-center gap-1">
+                <WindowsEmoji emoji={resolveTaskIcon(span.task)} size={12} />
+                <span className="truncate">{span.task.title}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -250,7 +406,15 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const renderDayView = () => {
     const today = new Date();
     const isToday = currentDate.toDateString() === today.toDateString();
-    const dayTasks = getTasksForDate(currentDate);
+    const dayTaskRanges = getTasksForDate(currentDate);
+    const timedTaskRanges = dayTaskRanges.filter(
+      (range) =>
+        range.task.end_date &&
+        toDateKey(range.start) === toDateKey(currentDate) &&
+        toDateKey(range.end) === toDateKey(currentDate) &&
+        range.end > range.start
+    );
+    const rowHeight = 48;
 
     // Generate hourly time slots
     const timeSlots = [];
@@ -294,26 +458,54 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           </div>
         </div>
         <div className="shrink-0 p-4">
-          {dayTasks.length === 0 ? (
+          {dayTaskRanges.length === 0 ? (
             <div className="text-sm text-gray-500">No scheduled tasks</div>
           ) : (
             <div className="space-y-2">
-              {dayTasks.map((task) => (
+              {dayTaskRanges.map((range) => (
                 <div
-                  key={task.id}
+                  key={range.task.id}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-                    task.is_completed ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-900'
+                    range.task.is_completed ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-900'
                   }`}
                 >
-                  <WindowsEmoji emoji={resolveTaskIcon(task)} size={16} />
-                  <span className={`text-sm truncate ${task.is_completed ? 'line-through' : ''}`}>{task.title}</span>
+                  <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={16} />
+                  <span className={`min-w-0 flex-1 truncate text-sm ${range.task.is_completed ? 'line-through' : ''}`}>{range.task.title}</span>
+                  <span className="shrink-0 text-xs opacity-70">{formatTaskRange(range)}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {timeSlots}
+          <div className="relative">
+            {timeSlots}
+            <div className="pointer-events-none absolute left-16 right-2 top-0">
+              {timedTaskRanges.map((range, index) => {
+                const startMinutes = range.start.getHours() * 60 + range.start.getMinutes();
+                const durationMinutes = Math.max(30, (range.end.getTime() - range.start.getTime()) / 60000);
+
+                return (
+                  <div
+                    key={range.task.id}
+                    className={`absolute left-2 right-2 min-w-0 rounded-md px-2 py-1 text-xs shadow-sm ${taskPillClasses(range.task)}`}
+                    style={{
+                      top: (startMinutes / 60) * rowHeight,
+                      height: (durationMinutes / 60) * rowHeight,
+                      transform: `translateX(${index % 3 * 6}px)`,
+                    }}
+                    title={range.task.title}
+                  >
+                    <div className="flex min-w-0 items-center gap-1">
+                      <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={12} />
+                      <span className="truncate">{range.task.title}</span>
+                    </div>
+                    <div className="truncate text-[10px] opacity-75">{formatTaskRange(range)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );
