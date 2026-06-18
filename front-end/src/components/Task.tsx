@@ -3,12 +3,10 @@ import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
 import { useRules } from '../hooks/useRules';
 import {
-  resolveInheritedTaskColor,
   resolveInheritedTaskIcon,
   resolveTaskColor,
   resolveTaskIcon,
 } from '../utils/presentationResolver';
-import ColorPicker from './ColorPicker';
 import EmojiIconPicker from './EmojiIconPicker';
 import TaskDetails from './TaskDetails';
 
@@ -29,7 +27,6 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   const taskIcon = resolveTaskIcon(task, rules, categories);
   const inheritedTaskIcon = resolveInheritedTaskIcon(task, rules, categories);
   const taskColor = resolveTaskColor(task, rules, categories);
-  const inheritedTaskColor = resolveInheritedTaskColor(task, rules, categories);
 
   // Update local title when task prop changes
   React.useEffect(() => {
@@ -109,7 +106,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
         className="px-4 py-3 cursor-pointer"
         onClick={handleTaskClick}
       >
-        <div className="grid grid-cols-[1.5rem_1.25rem_1.25rem_minmax(0,1fr)_2rem] items-center gap-4">
+        <div className="grid grid-cols-[1.5rem_1.25rem_minmax(0,1fr)_2rem] items-center gap-4">
           {/* Checkbox */}
           <div
             data-action="toggle"
@@ -133,18 +130,6 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
             showClear
             emojiSize={20}
             ariaLabel="Select task icon"
-            buttonClassName={`flex h-6 w-6 items-center justify-center rounded-lg transition-colors ${
-              isExpanded ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default'
-            }`}
-          />
-
-          <ColorPicker
-            value={task.color}
-            fallbackColor={inheritedTaskColor}
-            onChange={(color) => handleUpdate({ color })}
-            disabled={!isExpanded}
-            showClear
-            ariaLabel="Select task color"
             buttonClassName={`flex h-6 w-6 items-center justify-center rounded-lg transition-colors ${
               isExpanded ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default'
             }`}

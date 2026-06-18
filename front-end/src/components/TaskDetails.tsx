@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
+import { useRules } from '../hooks/useRules';
+import { resolveInheritedTaskColor } from '../utils/presentationResolver';
 import { toDateOnlyValue, toTimeOnlyValue } from '../utils/taskSchedule';
+import ColorPicker from './ColorPicker';
 import WindowsEmoji from './WindowsEmoji';
 
 interface TaskDetailsProps {
@@ -40,6 +43,8 @@ const ClockFieldIcon = () => (
 
 const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onDelete, onClose }) => {
   const { categories } = useCategories();
+  const { rules } = useRules();
+  const inheritedTaskColor = resolveInheritedTaskColor(task, rules, categories);
   const [description, setDescription] = useState(task.description || '');
   const [categoryId, setCategoryId] = useState<number | null>(task.category_id || null);
   const [dueDate, setDueDate] = useState(() => toDateOnlyValue(task.due_date));
@@ -207,76 +212,92 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
           />
         </div>
 
-        {/* Category */}
-        <div className="relative" ref={categoryDropdownRef}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              if (isCategoryDropdownOpen) {
-                closeDropdown();
-              } else {
-                setIsCategoryDropdownOpen(true);
-              }
-            }}
-            className="w-full px-3 py-2 mb-1 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {categoryId ? (
-                <>
-                  <WindowsEmoji 
-                    emoji={categories?.find(cat => cat.id === categoryId)?.icon || '📁'} 
-                    size={18} 
-                  />
-                  <span className="text-gray-900">
-                    {categories?.find(cat => cat.id === categoryId)?.name || 'No category'}
-                  </span>
-                </>
-              ) : (
-                <span className="text-gray-500">No category</span>
-              )}
-            </div>
-            <svg
-              className={`w-5 h-5 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="grid gap-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Color
+            </label>
+            <ColorPicker
+              value={task.color}
+              fallbackColor={inheritedTaskColor}
+              onChange={(color) => onSave({ color })}
+              showClear
+              fieldSize
+              ariaLabel="Select task color"
+            />
+          </div>
+
+          {/* Category */}
+          <div className="relative" ref={categoryDropdownRef}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                if (isCategoryDropdownOpen) {
+                  closeDropdown();
+                } else {
+                  setIsCategoryDropdownOpen(true);
+                }
+              }}
+              className="w-full px-3 py-2 mb-1 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          
-          {(isCategoryDropdownOpen || isDropdownAnimating) && (
-            <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden ${
-              isDropdownAnimating 
-                ? 'animate-[dropdown-out_0.15s_ease-in_forwards]' 
-                : 'animate-[dropdown-in_0.15s_ease-out_forwards]'
-            }`}>
-              <div
-                onClick={() => handleCategoryChange(null)}
-                className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
-                  !categoryId ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
-                }`}
-              >
-                <WindowsEmoji emoji="📋" size={18} />
-                <span>No category</span>
+              <div className="flex min-w-0 items-center gap-2">
+                {categoryId ? (
+                  <>
+                    <WindowsEmoji 
+                      emoji={categories?.find(cat => cat.id === categoryId)?.icon || '📁'} 
+                      size={18} 
+                    />
+                    <span className="truncate text-gray-900">
+                      {categories?.find(cat => cat.id === categoryId)?.name || 'No category'}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-gray-500">No category</span>
+                )}
               </div>
-              {categories?.map((category) => (
+              <svg
+                className={`w-5 h-5 shrink-0 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {(isCategoryDropdownOpen || isDropdownAnimating) && (
+              <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden ${
+                isDropdownAnimating 
+                  ? 'animate-[dropdown-out_0.15s_ease-in_forwards]' 
+                  : 'animate-[dropdown-in_0.15s_ease-out_forwards]'
+              }`}>
                 <div
-                  key={category.id}
-                  onClick={() => handleCategoryChange(category.id)}
+                  onClick={() => handleCategoryChange(null)}
                   className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
-                    categoryId === category.id ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
+                    !categoryId ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
                   }`}
                 >
-                  <WindowsEmoji emoji={category.icon || '📁'} size={18} />
-                  <span>{category.name}</span>
+                  <WindowsEmoji emoji="📋" size={18} />
+                  <span>No category</span>
                 </div>
-              ))}
-            </div>
-          )}
+                {categories?.map((category) => (
+                  <div
+                    key={category.id}
+                    onClick={() => handleCategoryChange(category.id)}
+                    className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
+                      categoryId === category.id ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
+                    }`}
+                  >
+                    <WindowsEmoji emoji={category.icon || '📁'} size={18} />
+                    <span>{category.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Dates */}

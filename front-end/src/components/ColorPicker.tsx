@@ -22,12 +22,20 @@ interface ColorPickerProps {
   clearLabel?: string;
   ariaLabel?: string;
   buttonClassName?: string;
+  fieldSize?: boolean;
 }
 
 const normalizeColor = (color?: string | null) =>
   typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color.trim())
     ? color.trim().toLowerCase()
     : "";
+
+const darkenColor = (color: string, amount = 36) => {
+  const red = Math.max(0, parseInt(color.slice(1, 3), 16) - amount);
+  const green = Math.max(0, parseInt(color.slice(3, 5), 16) - amount);
+  const blue = Math.max(0, parseInt(color.slice(5, 7), 16) - amount);
+  return `#${[red, green, blue].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+};
 
 const ColorPicker: React.FC<ColorPickerProps> = ({
   value,
@@ -38,12 +46,14 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   clearLabel = "Inherit",
   ariaLabel = "Select color",
   buttonClassName,
+  fieldSize = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const normalizedValue = normalizeColor(value);
   const normalizedFallback = normalizeColor(fallbackColor);
   const displayedColor = normalizedValue || normalizedFallback || "#9ca3af";
+  const displayedBorderColor = darkenColor(displayedColor);
 
   useEffect(() => {
     if (!isOpen) {
@@ -78,21 +88,24 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         disabled={disabled}
         className={
           buttonClassName ||
-          `flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
-            disabled ? "cursor-default" : "cursor-pointer hover:bg-gray-100"
-          }`
+          `flex items-center rounded-md transition-colors ${
+            fieldSize ? "h-10 w-10 justify-center bg-gray-400/10" : "h-8 w-8 justify-center"
+          } ${disabled ? "cursor-default" : "cursor-pointer hover:bg-gray-100"}`
         }
         aria-label={ariaLabel}
       >
         <span
-          className="block h-5 w-5 rounded-full border-2 border-white shadow ring-1 ring-gray-300"
-          style={{ backgroundColor: displayedColor }}
+          className="block h-6 w-6 shrink-0 rounded-sm"
+          style={{ backgroundColor: displayedColor, borderColor: displayedBorderColor }}
         />
       </button>
 
       {isOpen && !disabled ? (
         <div
-          className="absolute left-0 top-full z-50 mt-2 w-44 rounded-md border border-gray-200 bg-white p-2 shadow-lg"
+          className={`absolute left-0 top-full z-50 mt-2 rounded-md border border-gray-200 bg-white p-2 shadow-lg ${
+            fieldSize ? "w-44" : "w-44"
+          }`
+        }
           onClick={(event) => event.stopPropagation()}
         >
           <div className="grid grid-cols-5 gap-2">
@@ -101,7 +114,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                 key={color}
                 type="button"
                 onClick={() => handleSelect(color)}
-                className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${
+                className={`h-7 w-7 rounded-md border-2 transition-transform hover:scale-110 ${
                   normalizedValue === color ? "border-gray-800" : "border-white"
                 }`}
                 style={{ backgroundColor: color }}

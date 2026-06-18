@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Category } from "../../hooks/types";
+import ColorPicker from "../ColorPicker";
 import WindowsEmoji from "../WindowsEmoji";
 import {
   createEmptySegment,
@@ -127,66 +128,85 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
           />
         </div>
 
-        {!hideCategorySelector && (
-          <div className="relative" ref={categoryDropdownRef}>
-            <button
-              type="button"
-              onClick={() => {
-                if (isCategoryDropdownOpen) {
-                  closeDropdown();
-                } else {
-                  setIsCategoryDropdownOpen(true);
-                }
-              }}
-              className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                {selectedCategory ? (
-                  <>
-                    <WindowsEmoji emoji={selectedCategory.icon || "📁"} size={18} />
-                    <span className="text-gray-900">{selectedCategory.name}</span>
-                  </>
-                ) : (
-                  <span className="text-gray-500">Select project</span>
-                )}
-              </div>
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {(isCategoryDropdownOpen || isDropdownAnimating) && (
-              <div
-                className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden ${
-                  isDropdownAnimating
-                    ? "animate-[dropdown-out_0.15s_ease-in_forwards]"
-                    : "animate-[dropdown-in_0.15s_ease-out_forwards]"
-                }`}
-              >
-                {categories.map((category) => (
-                  <div
-                    key={category.id}
-                    onClick={() => {
-                      setDraft((currentDraft) => ({ ...currentDraft, categoryId: String(category.id) }));
-                      closeDropdown();
-                    }}
-                    className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
-                      String(category.id) === draft.categoryId ? "bg-blue-100 text-blue-900" : "text-gray-900"
-                    }`}
-                  >
-                    <WindowsEmoji emoji={category.icon || "📁"} size={18} />
-                    <span>{category.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className={`grid gap-3 ${hideCategorySelector ? "" : "sm:grid-cols-[2.5rem_minmax(0,1fr)]"}`}>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Color
+            </label>
+            <ColorPicker
+              value={draft.color}
+              fallbackColor={selectedCategory?.color}
+              onChange={(color) => setDraft((currentDraft) => ({ ...currentDraft, color: color || "" }))}
+              showClear
+              fieldSize
+              ariaLabel="Select rule color"
+            />
           </div>
-        )}
+
+          {!hideCategorySelector && (
+            <div className="relative" ref={categoryDropdownRef}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Project
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  if (isCategoryDropdownOpen) {
+                    closeDropdown();
+                  } else {
+                    setIsCategoryDropdownOpen(true);
+                  }
+                }}
+                className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  {selectedCategory ? (
+                    <>
+                      <WindowsEmoji emoji={selectedCategory.icon || "📁"} size={18} />
+                      <span className="truncate text-gray-900">{selectedCategory.name}</span>
+                    </>
+                  ) : (
+                    <span className="text-gray-500">Select project</span>
+                  )}
+                </div>
+                <svg
+                  className={`w-5 h-5 shrink-0 text-gray-400 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {(isCategoryDropdownOpen || isDropdownAnimating) && (
+                <div
+                  className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden ${
+                    isDropdownAnimating
+                      ? "animate-[dropdown-out_0.15s_ease-in_forwards]"
+                      : "animate-[dropdown-in_0.15s_ease-out_forwards]"
+                  }`}
+                >
+                  {categories.map((category) => (
+                    <div
+                      key={category.id}
+                      onClick={() => {
+                        setDraft((currentDraft) => ({ ...currentDraft, categoryId: String(category.id) }));
+                        closeDropdown();
+                      }}
+                      className={`px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors flex items-center gap-2 ${
+                        String(category.id) === draft.categoryId ? "bg-blue-100 text-blue-900" : "text-gray-900"
+                      }`}
+                    >
+                      <WindowsEmoji emoji={category.icon || "📁"} size={18} />
+                      <span>{category.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">

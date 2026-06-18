@@ -143,18 +143,6 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
             />
           </div>
 
-          <ColorPicker
-            value={category.color}
-            onChange={(color) => handleUpdate({ color })}
-            disabled={!isExpanded}
-            showClear
-            clearLabel="Clear"
-            ariaLabel="Select project color"
-            buttonClassName={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
-              isExpanded ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default'
-            }`}
-          />
-          
           {/* Category Content */}
           <div className="flex-1 min-w-0">
             {isExpanded ? (
@@ -217,7 +205,19 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
       >
         <div className="px-4 pb-4">
           <div className="pt-4 space-y-4">
-            {/* Delete Button */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Color
+              </label>
+              <ColorPicker
+                value={category.color}
+                onChange={(color) => handleUpdate({ color })}
+                showClear
+                clearLabel="Clear"
+                ariaLabel="Select project color"
+              />
+            </div>
+
             {children}
 
             {/* Delete Button */}

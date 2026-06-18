@@ -3,7 +3,6 @@ import { useCategories, useRules, useTasks, useUser } from "../hooks/AppContext"
 import WindowsEmoji from "./WindowsEmoji";
 import Category from "./Category";
 import EmojiIconPicker from "./EmojiIconPicker";
-import ColorPicker from "./ColorPicker";
 import RuleEditor from "./rules/RuleEditor";
 import { ExistingRuleItem } from "./rules/RuleItem";
 import { RuleDraft } from "./rules/types";
@@ -37,7 +36,6 @@ interface SchedulePromptState {
 const Categories: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('📂');
-  const [selectedColor, setSelectedColor] = useState('');
   const { categories, addCategory, deleteCategory, updateCategory } = useCategories();
   const { userData } = useUser();
   const { rules, addRule, updateRule, deleteRule, previewScheduleUpdate } = useRules();
@@ -83,12 +81,10 @@ const Categories: React.FC = () => {
     addCategory({
       name: newCategoryName.trim(),
       icon: selectedEmoji,
-      color: selectedColor || undefined,
     });
     
     setNewCategoryName('');
     setSelectedEmoji('📂');
-    setSelectedColor('');
   };
 
   const handleDeleteCategory = (id: number, cascadeTasks: boolean) => {
@@ -456,14 +452,6 @@ const Categories: React.FC = () => {
                 ariaLabel="Select project icon"
               />
 
-              <ColorPicker
-                value={selectedColor}
-                onChange={(color) => setSelectedColor(color || "")}
-                showClear
-                clearLabel="Clear"
-                ariaLabel="Select project color"
-              />
-              
               <input
                 type="text"
                 value={newCategoryName}
@@ -605,7 +593,6 @@ const Categories: React.FC = () => {
                               }
                             }}
                             onIconChange={(icon) => updateRule(rule.id, { icon })}
-                            onColorChange={(color) => updateRule(rule.id, { color })}
                             setDraft={(value) => {
                               setEditRuleDraft((currentDraft) => {
                                 const baseDraft = currentDraft ?? createDraftFromRule(rule);
@@ -647,18 +634,6 @@ const Categories: React.FC = () => {
                         }
                         showClear
                         ariaLabel="Select rule icon"
-                      />
-                      <ColorPicker
-                        value={getProjectRuleDraft(category.id).color}
-                        fallbackColor={category.color}
-                        onChange={(color) =>
-                          setProjectRuleDraft(category.id, (currentDraft) => ({
-                            ...currentDraft,
-                            color: color || "",
-                          }))
-                        }
-                        showClear
-                        ariaLabel="Select rule color"
                       />
                       <input
                         type="text"
