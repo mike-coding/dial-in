@@ -165,7 +165,6 @@ interface ExistingRuleItemProps {
   onToggleActive: () => void;
   onIconChange: (icon: string | null) => void;
   setDraft: (value: React.SetStateAction<RuleDraft>) => void;
-  onSubmit: () => void;
   onDeleteRequest: () => void;
   onDeleteCancel: () => void;
   onDeleteConfirm: (deleteChildren: boolean) => void;
@@ -184,7 +183,6 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
   onToggleActive,
   onIconChange,
   setDraft,
-  onSubmit,
   onDeleteRequest,
   onDeleteCancel,
   onDeleteConfirm,
@@ -250,7 +248,8 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
         categories={categories}
         error={editError}
         submitLabel="Save"
-        onSubmit={onSubmit}
+        onSubmit={() => {}}
+        showSubmitButton={false}
         showDeleteConfirm={showDeleteConfirm}
         onDeleteRequest={onDeleteRequest}
         onDeleteCancel={onDeleteCancel}

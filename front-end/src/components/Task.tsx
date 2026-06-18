@@ -141,8 +141,8 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
                 onClick={(e) => e.stopPropagation()}
                 className={`w-full text-lg bg-gray-400/10 rounded-md outline-none transition-all duration-200 focus:bg-gray-400/20 px-2 py-1 ${
                   task.is_completed 
-                    ? 'text-gray-600/80' 
-                    : 'text-gray-600/80'
+                    ? 'text-gray-600/90' 
+                    : 'text-gray-600/90'
                 }`}
                 placeholder="Enter task title..."
                 autoFocus={false}
@@ -150,8 +150,8 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
             ) : (
               <p className={`block w-full max-w-full text-lg transition-all duration-200 px-2 py-1 truncate ${
                 task.is_completed 
-                  ? 'text-gray-600/80' 
-                  : 'text-gray-600/80'
+                  ? 'text-gray-600/90' 
+                  : 'text-gray-600/90'
               }`}>
                 {task.title}
               </p>

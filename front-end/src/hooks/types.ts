@@ -12,7 +12,7 @@ export interface Rule {
   id: number;
   name: string;
   icon?: string | null;
-  description?: string;
+  description?: string | null;
   category_id?: number; // Now optional
   user_id: number; // Add user_id
   rate_pattern: string;

@@ -287,6 +287,45 @@ const Categories: React.FC = () => {
     setOpenProjectRuleEditors((current) => ({ ...current, [projectId]: false }));
   };
 
+  const buildRuleUpdates = (rule: RuleType, draft: RuleDraft) => {
+    const updates: Partial<RuleType> = {};
+    const nextName = draft.name.trim();
+    const nextIcon = draft.icon.trim() || null;
+    const nextDescription = draft.description.trim() || null;
+    const nextCategoryId = Number(draft.categoryId);
+    const nextRatePattern = draft.segments.map((segment) => encodeSegment(segment)).join('; ');
+
+    if (nextName && nextName !== rule.name) {
+      updates.name = nextName;
+    }
+
+    if (nextIcon !== (rule.icon || null)) {
+      updates.icon = nextIcon;
+    }
+
+    if (nextDescription !== (rule.description || null)) {
+      updates.description = nextDescription;
+    }
+
+    if (Number.isFinite(nextCategoryId) && nextCategoryId !== rule.category_id) {
+      updates.category_id = nextCategoryId;
+    }
+
+    if (nextRatePattern !== rule.rate_pattern) {
+      updates.rate_pattern = nextRatePattern;
+    }
+
+    if (draft.isActive !== rule.is_active) {
+      updates.is_active = draft.isActive;
+    }
+
+    return {
+      updates,
+      scheduleChanged: updates.rate_pattern !== undefined,
+      hasChanges: Object.keys(updates).length > 0,
+    };
+  };
+
   const toggleProjectExistingRule = (rule: RuleType) => {
     setDeleteConfirmRuleId(null);
     setEditRuleError(null);
@@ -302,8 +341,17 @@ const Categories: React.FC = () => {
     setEditRuleDraft(createDraftFromRule(rule));
   };
 
-  const handleSaveProjectExistingRule = async (rule: RuleType, projectId: number) => {
-    if (!editRuleDraft) {
+  useEffect(() => {
+    if (!expandedRuleId || !editRuleDraft) {
+      return;
+    }
+
+    const rule = rules.find((entry) => entry.id === expandedRuleId);
+    if (!rule) {
+      return;
+    }
+
+    if (schedulePrompt?.ruleId === rule.id) {
       return;
     }
 
@@ -313,43 +361,40 @@ const Categories: React.FC = () => {
       return;
     }
 
-    const updates: Partial<RuleType> = {
-      name: editRuleDraft.name.trim(),
-      icon: editRuleDraft.icon.trim() || null,
-      description: editRuleDraft.description.trim() || undefined,
-      category_id: Number(editRuleDraft.categoryId),
-      rate_pattern: editRuleDraft.segments.map((segment) => encodeSegment(segment)).join('; '),
-      is_active: editRuleDraft.isActive,
-    };
-
-    const scheduleChanged = updates.rate_pattern !== rule.rate_pattern;
-    if (scheduleChanged) {
-      try {
-        const preview = await previewScheduleUpdate(rule.id, updates.rate_pattern || "");
-        if (preview?.schedule_changed && preview.has_child_tasks) {
-          setSchedulePrompt({
-            ruleId: rule.id,
-            projectId,
-            updates,
-            preview: {
-              existing_child_tasks: preview.existing_child_tasks,
-              previews: preview.previews || {},
-            },
-            selectedMode: "future_replace_preserve_completed",
-          });
-          return;
-        }
-      } catch (error) {
-        setEditRuleError(error instanceof Error ? error.message : "Failed to preview schedule changes.");
-        return;
-      }
+    const { updates, scheduleChanged, hasChanges } = buildRuleUpdates(rule, editRuleDraft);
+    if (!hasChanges) {
+      setEditRuleError(null);
+      return;
     }
 
-    updateRule(rule.id, updates, scheduleChanged ? { scheduleUpdateMode: "future_replace_preserve_completed" } : undefined);
-    setEditRuleError(null);
-    setExpandedRuleId(null);
-    setEditRuleDraft(null);
-  };
+    const autosaveTimeout = window.setTimeout(async () => {
+      try {
+        if (scheduleChanged) {
+          const preview = await previewScheduleUpdate(rule.id, updates.rate_pattern || "");
+          if (preview?.schedule_changed && preview.has_child_tasks) {
+            setSchedulePrompt({
+              ruleId: rule.id,
+              projectId: Number(editRuleDraft.categoryId) || rule.category_id || 0,
+              updates,
+              preview: {
+                existing_child_tasks: preview.existing_child_tasks,
+                previews: preview.previews || {},
+              },
+              selectedMode: "future_replace_preserve_completed",
+            });
+            return;
+          }
+        }
+
+        updateRule(rule.id, updates, scheduleChanged ? { scheduleUpdateMode: "future_replace_preserve_completed" } : undefined);
+        setEditRuleError(null);
+      } catch (error) {
+        setEditRuleError(error instanceof Error ? error.message : "Failed to preview schedule changes.");
+      }
+    }, 600);
+
+    return () => window.clearTimeout(autosaveTimeout);
+  }, [editRuleDraft, expandedRuleId, rules, schedulePrompt?.ruleId, previewScheduleUpdate, updateRule]);
 
   const applySchedulePrompt = () => {
     if (!schedulePrompt) {
@@ -362,8 +407,6 @@ const Categories: React.FC = () => {
 
     setSchedulePrompt(null);
     setEditRuleError(null);
-    setExpandedRuleId(null);
-    setEditRuleDraft(null);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -511,7 +554,10 @@ const Categories: React.FC = () => {
                                   <div className="flex items-center justify-end gap-2">
                                     <button
                                       type="button"
-                                      onClick={() => setSchedulePrompt(null)}
+                                      onClick={() => {
+                                        setSchedulePrompt(null);
+                                        setEditRuleDraft(createDraftFromRule(rule));
+                                      }}
                                       className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                                     >
                                       Cancel
@@ -544,7 +590,6 @@ const Categories: React.FC = () => {
                                 return typeof value === "function" ? value(baseDraft) : value;
                               });
                             }}
-                            onSubmit={() => handleSaveProjectExistingRule(rule, category.id)}
                             onDeleteRequest={() => setDeleteConfirmRuleId(rule.id)}
                             onDeleteCancel={() => setDeleteConfirmRuleId(null)}
                             onDeleteConfirm={(deleteChildren) => {

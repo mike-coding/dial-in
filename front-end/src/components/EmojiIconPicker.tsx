@@ -72,7 +72,7 @@ const EmojiIconPicker: React.FC<EmojiIconPickerProps> = ({
           }
           aria-label={ariaLabel}
         >
-          <WindowsEmoji emoji={displayIcon} size={emojiSize} className={selectedIcon ? "" : "opacity-60"} />
+          <WindowsEmoji emoji={displayIcon} size={emojiSize} />
         </button>
 
       </div>
