@@ -93,6 +93,7 @@ export const createEmptySegment = (frequency: FrequencyCode = "d"): RuleSegment 
 
 export const createEmptyDraft = (): RuleDraft => ({
   name: "",
+  icon: "",
   description: "",
   categoryId: "",
   isActive: true,
@@ -356,6 +357,7 @@ const parseRatePattern = (ratePattern: string): RuleSegment[] => {
 
 export const createDraftFromRule = (rule: RuleType): RuleDraft => ({
   name: rule.name,
+  icon: rule.icon || "",
   description: rule.description || "",
   categoryId: rule.category_id ? String(rule.category_id) : "",
   isActive: rule.is_active,

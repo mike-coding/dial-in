@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import WindowsEmoji from './WindowsEmoji';
 import { useCategories } from '../hooks/useCategories';
 import { useTasks } from '../hooks/useTasks';
+import { useRules } from '../hooks/useRules';
+import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
+import { resolveTaskIcon as resolveTaskDisplayIcon } from '../utils/iconResolver';
 
 interface CalendarProps {
   isMobile?: boolean;
@@ -28,9 +31,14 @@ type PackedCalendarTaskSpan = CalendarTaskSpan & {
 
 const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const { tasks } = useTasks();
+  const { rules } = useRules();
   const { categories } = useCategories();
+  const { userData: authUser } = useUser();
+  const { userData: preferences, updateUserData } = useUserData();
+  const viewMode = VIEW_MODES.includes(preferences?.calendar_view as ViewMode)
+    ? (preferences?.calendar_view as ViewMode)
+    : 'month';
 
   const toDateKey = (date: Date) => {
     const year = date.getFullYear();
@@ -147,8 +155,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     task.is_completed ? 'bg-gray-200 text-gray-500 line-through' : 'bg-blue-100 text-blue-900';
 
   const resolveTaskIcon = (task: TaskType) => {
-    const category = categories.find((entry) => entry.id === task.category_id);
-    return category?.icon || '📝';
+    return resolveTaskDisplayIcon(task, rules, categories);
   };
 
   // Navigation functions
@@ -189,7 +196,11 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   };
 
   const cycleViewMode = () => {
-    setViewMode((mode) => VIEW_MODES[(VIEW_MODES.indexOf(mode) + 1) % VIEW_MODES.length]);
+    const nextViewMode = VIEW_MODES[(VIEW_MODES.indexOf(viewMode) + 1) % VIEW_MODES.length];
+
+    if (authUser?.id) {
+      updateUserData(authUser.id, { calendar_view: nextViewMode });
+    }
   };
 
   const viewModeLabel = viewMode.charAt(0).toUpperCase() + viewMode.slice(1);
@@ -488,7 +499,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
                 return (
                   <div
                     key={range.task.id}
-                    className={`absolute left-2 right-2 min-w-0 rounded-md px-2 py-1 text-xs shadow-sm ${taskPillClasses(range.task)}`}
+                    className={`absolute left-2 right-2 min-w-0 rounded-md px-2 py-1 text-xs ${taskPillClasses(range.task)}`}
                     style={{
                       top: (startMinutes / 60) * rowHeight,
                       height: (durationMinutes / 60) * rowHeight,

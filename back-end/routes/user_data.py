@@ -21,6 +21,7 @@ def get_user_data(user_id: int, db: Session = Depends(get_db)):
             user_id=user_id,
             theme="light",
             time_period="today",
+            calendar_view="month",
             show_undated=True,
             show_uncategorized=True,
             show_overdue=True,
@@ -37,6 +38,7 @@ def create_user_data(
     user_id: int = Body(...),
     theme: Optional[str] = Body("light"),
     time_period: Optional[str] = Body("today"),
+    calendar_view: Optional[str] = Body("month"),
     show_undated: Optional[bool] = Body(True),
     show_uncategorized: Optional[bool] = Body(True),
     show_overdue: Optional[bool] = Body(True),
@@ -56,6 +58,7 @@ def create_user_data(
         user_id=user_id,
         theme=theme,
         time_period=time_period,
+        calendar_view=calendar_view,
         show_undated=show_undated,
         show_uncategorized=show_uncategorized,
         show_overdue=show_overdue,
@@ -71,6 +74,7 @@ def update_user_data(
     user_id: int,
     theme: Optional[str] = Body(None),
     time_period: Optional[str] = Body(None),
+    calendar_view: Optional[str] = Body(None),
     show_undated: Optional[bool] = Body(None),
     show_uncategorized: Optional[bool] = Body(None),
     show_overdue: Optional[bool] = Body(None),
@@ -87,6 +91,8 @@ def update_user_data(
         user_data.theme = theme
     if time_period is not None:
         user_data.time_period = time_period
+    if calendar_view is not None:
+        user_data.calendar_view = calendar_view
     if show_undated is not None:
         user_data.show_undated = show_undated
     if show_uncategorized is not None:

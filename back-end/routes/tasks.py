@@ -5,6 +5,7 @@ from typing import Optional
 from datetime import datetime
 from database import get_db
 from models import Task
+from route_utils import normalize_icon
 
 router = APIRouter()
 
@@ -17,6 +18,7 @@ async def get_tasks(user_id: int, db: Session = Depends(get_db)):
 async def create_task(
     title: str = Body(...),
     user_id: int = Body(...),
+    icon: Optional[str] = Body(None),
     description: Optional[str] = Body(None),
     category_id: Optional[int] = Body(None),
     is_completed: Optional[bool] = Body(False),
@@ -26,6 +28,7 @@ async def create_task(
 ):
     task = Task(
         title=title,
+        icon=normalize_icon(icon),
         description=description,
         category_id=category_id,
         user_id=user_id,
@@ -61,6 +64,8 @@ async def update_task(
 
     if 'title' in changes:
         task.title = changes.get('title')
+    if 'icon' in changes:
+        task.icon = normalize_icon(changes.get('icon'))
     if 'description' in changes:
         task.description = changes.get('description')
     if 'category_id' in changes:

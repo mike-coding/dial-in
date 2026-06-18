@@ -1,5 +1,7 @@
 import React from "react";
 import { Category, Rule as RuleType } from "../../hooks/types";
+import { resolveRuleIcon } from "../../utils/iconResolver";
+import EmojiIconPicker from "../EmojiIconPicker";
 import WindowsEmoji from "../WindowsEmoji";
 import RuleEditor from "./RuleEditor";
 import { RuleDraft } from "./types";
@@ -103,6 +105,13 @@ export const NewRuleItem: React.FC<NewRuleItemProps> = ({
             <path strokeLinecap="square" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
           </svg>
         </div>
+        <EmojiIconPicker
+          value={draft.icon}
+          fallbackIcon={categories.find((category) => String(category.id) === draft.categoryId)?.icon || "⚙️"}
+          onChange={(icon) => setDraft((currentDraft) => ({ ...currentDraft, icon: icon || "" }))}
+          showClear
+          ariaLabel="Select rule icon"
+        />
         <input
           type="text"
           value={draft.name}
@@ -151,10 +160,10 @@ interface ExistingRuleItemProps {
   categories: Category[];
   editError: string | null;
   showDeleteConfirm: boolean;
-  hideCategoryIcon?: boolean;
   bodyOverride?: React.ReactNode;
   onToggle: () => void;
   onToggleActive: () => void;
+  onIconChange: (icon: string | null) => void;
   setDraft: (value: React.SetStateAction<RuleDraft>) => void;
   onSubmit: () => void;
   onDeleteRequest: () => void;
@@ -170,10 +179,10 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
   categories,
   editError,
   showDeleteConfirm,
-  hideCategoryIcon = false,
   bodyOverride,
   onToggle,
   onToggleActive,
+  onIconChange,
   setDraft,
   onSubmit,
   onDeleteRequest,
@@ -196,7 +205,21 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
         <p className="text-lg truncate text-gray-700">{rule.name}</p>
       )
     }
-    icon={hideCategoryIcon ? undefined : (category?.icon || "⚙️")}
+    icon={isExpanded && editDraft ? undefined : (rule.icon || category?.icon || resolveRuleIcon(rule, categories))}
+    leading={
+      isExpanded && editDraft ? (
+        <EmojiIconPicker
+          value={editDraft.icon}
+          fallbackIcon={category?.icon || resolveRuleIcon(rule, categories)}
+          onChange={(icon) => {
+            setDraft((currentDraft) => ({ ...currentDraft, icon: icon || "" }));
+            onIconChange(icon);
+          }}
+          showClear
+          ariaLabel="Select rule icon"
+        />
+      ) : undefined
+    }
     headerAction={
       <button
         type="button"

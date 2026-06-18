@@ -28,6 +28,7 @@ class UserData(Base):
     # Simple user preferences
     theme = Column(String(20), default="light")  # light, dark
     time_period = Column(String(20), default="today")  # Today, This Week, This Month, Upcoming
+    calendar_view = Column(String(20), default="month")  # month, week, day
     show_undated = Column(Boolean, default=True)
     show_uncategorized = Column(Boolean, default=True)
     show_overdue = Column(Boolean, default=True)
@@ -46,6 +47,7 @@ class UserData(Base):
             "user_id": self.user_id,
             "theme": self.theme,
             "time_period": self.time_period,
+            "calendar_view": self.calendar_view or "month",
             "show_undated": self.show_undated,
             "show_uncategorized": self.show_uncategorized,
             "show_overdue": self.show_overdue,
@@ -83,6 +85,7 @@ class Rule(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
+    icon = Column(String(10), nullable=True)
     description = Column(Text)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)  # Now optional
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Add user_id for ownership
@@ -100,6 +103,7 @@ class Rule(Base):
         return {
             "id": self.id,
             "name": self.name,
+            "icon": self.icon,
             "description": self.description,
             "category_id": self.category_id,
             "user_id": self.user_id,
@@ -113,6 +117,7 @@ class Task(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
+    icon = Column(String(10), nullable=True)
     description = Column(Text)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
     rule_id = Column(Integer, ForeignKey('rules.id'), nullable=True)  # Optional rule assignment
@@ -132,6 +137,7 @@ class Task(Base):
         return {
             "id": self.id,
             "title": self.title,
+            "icon": self.icon,
             "description": self.description,
             "category_id": self.category_id,
             "rule_id": self.rule_id,

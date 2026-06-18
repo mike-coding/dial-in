@@ -26,19 +26,21 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
 
   const [dueDate, setDueDate] = useState(() => toDateTimeLocal(task.due_date));
   const [endDate, setEndDate] = useState(() => toDateTimeLocal(task.end_date));
-
   const hasEndDate = endDate !== '';
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isDropdownAnimating, setIsDropdownAnimating] = useState(false);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const openDatePickerFieldRef = useRef<'due' | 'end' | null>(null);
 
   // Reset delete confirmation when task changes or when collapsed/expanded
   useEffect(() => {
     setShowDeleteConfirm(false);
     setIsCategoryDropdownOpen(false);
     setIsDropdownAnimating(false);
+    setDescription(task.description || '');
+    setCategoryId(task.category_id || null);
   }, [task.id, isExpanded]);
 
   // Handle dropdown closing with animation
@@ -97,20 +99,35 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
     onSave({ end_date: val ? new Date(val).toISOString() : (null as any) });
   };
 
-  // Add end date — promotes due_date to start semantics
-  const handleAddEndDate = () => {
-    if (dueDate) {
-      setEndDate(dueDate);
-      onSave({ end_date: new Date(dueDate).toISOString() });
-    } else {
-      setEndDate('');
+  const handleDatePickerMouseDown = (
+    field: 'due' | 'end',
+    e: React.MouseEvent<HTMLInputElement>
+  ) => {
+    const input = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+    const isSameOpenField = document.activeElement === input && openDatePickerFieldRef.current === field;
+
+    e.preventDefault();
+
+    if (isSameOpenField) {
+      openDatePickerFieldRef.current = null;
+      input.blur();
+      return;
+    }
+
+    openDatePickerFieldRef.current = field;
+    input.focus({ preventScroll: true });
+
+    try {
+      input.showPicker?.();
+    } catch {
+      // Browsers can reject showPicker outside direct user activation.
     }
   };
 
-  // Remove end date — reverts to single due-date mode
-  const handleRemoveEndDate = () => {
-    setEndDate('');
-    onSave({ end_date: null as any });
+  const handleDatePickerBlur = (field: 'due' | 'end') => {
+    if (openDatePickerFieldRef.current === field) {
+      openDatePickerFieldRef.current = null;
+    }
   };
 
   const handleDelete = () => {
@@ -136,7 +153,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
   return (
     <div className="p-4" onClick={handleContainerClick}>
       <div className="space-y-4">
-
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -226,50 +242,32 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
 
         {/* Dates */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">
-              {hasEndDate ? 'Start' : 'Due'}
-            </label>
-            {!hasEndDate && dueDate && (
-              <button
-                type="button"
-                onClick={handleAddEndDate}
-                className="text-xs text-blue-500 hover:text-blue-700 transition-colors"
-              >
-                + End date
-              </button>
-            )}
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {hasEndDate ? 'Start' : 'Due'}
+          </label>
           <input
             type="datetime-local"
             value={dueDate}
             onChange={handleDueDateChange}
-            className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
+            onMouseDown={(e) => handleDatePickerMouseDown('due', e)}
+            onBlur={() => handleDatePickerBlur('due')}
+            className={`w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!dueDate ? 'empty-datetime-input' : ''}`}
           />
         </div>
 
-        {hasEndDate && (
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">
-                End
-              </label>
-              <button
-                type="button"
-                onClick={handleRemoveEndDate}
-                className="text-xs text-red-400 hover:text-red-600 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-            <input
-              type="datetime-local"
-              value={endDate}
-              onChange={handleEndDateChange}
-              className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
-            />
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            End
+          </label>
+          <input
+            type="datetime-local"
+            value={endDate}
+            onChange={handleEndDateChange}
+            onMouseDown={(e) => handleDatePickerMouseDown('end', e)}
+            onBlur={() => handleDatePickerBlur('end')}
+            className={`w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!endDate ? 'empty-datetime-input' : ''}`}
+          />
+        </div>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between delete-action-area">

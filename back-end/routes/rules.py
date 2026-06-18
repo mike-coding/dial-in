@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from database import get_db
 from models import Rule, Task, Category
 from rule_engine import run_rule_generation, preview_rule_schedule_change, apply_rule_schedule_change
+from route_utils import normalize_icon
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ async def create_rule(
     name: str = Body(...),
     rate_pattern: str = Body(...),
     user_id: int = Body(...),
+    icon: Optional[str] = Body(None),
     description: Optional[str] = Body(None),
     category_id: int = Body(...),
     db: Session = Depends(get_db)
@@ -38,6 +40,7 @@ async def create_rule(
 
     rule = Rule(
         name=name,
+        icon=normalize_icon(icon),
         description=description,
         category_id=category_id,
         user_id=user_id,
@@ -95,6 +98,9 @@ async def update_rule(
         next_name = changes.get('name', '').strip()
         if next_name:
             rule.name = next_name
+
+    if 'icon' in changes:
+        setattr(rule, 'icon', normalize_icon(changes.get('icon')))
 
     if 'description' in changes:
         raw_description = changes.get('description')

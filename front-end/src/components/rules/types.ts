@@ -29,6 +29,7 @@ export interface RuleSegment {
 
 export interface RuleDraft {
   name: string;
+  icon: string;
   description: string;
   categoryId: string;
   isActive: boolean;

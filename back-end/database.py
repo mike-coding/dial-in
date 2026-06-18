@@ -36,6 +36,24 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE tasks ADD COLUMN end_date DATETIME"))
             connection.commit()
 
+        if "icon" not in task_columns:
+            connection.execute(text("ALTER TABLE tasks ADD COLUMN icon VARCHAR(10)"))
+            connection.commit()
+
+        rule_info = connection.execute(text("PRAGMA table_info(rules)")).fetchall()
+        rule_columns = {row[1] for row in rule_info}
+
+        if "icon" not in rule_columns:
+            connection.execute(text("ALTER TABLE rules ADD COLUMN icon VARCHAR(10)"))
+            connection.commit()
+
+        user_data_info = connection.execute(text("PRAGMA table_info(user_data)")).fetchall()
+        user_data_columns = {row[1] for row in user_data_info}
+
+        if "calendar_view" not in user_data_columns:
+            connection.execute(text("ALTER TABLE user_data ADD COLUMN calendar_view VARCHAR(20) DEFAULT 'month'"))
+            connection.commit()
+
         users_with_uncategorized_rules = connection.execute(
             text("SELECT DISTINCT user_id FROM rules WHERE category_id IS NULL")
         ).fetchall()

@@ -1,2 +1,22 @@
 @import "tailwindcss";
 
+input.empty-datetime-input::-webkit-datetime-edit {
+  color: transparent;
+}
+
+input.empty-datetime-input::-webkit-datetime-edit-fields-wrapper,
+input.empty-datetime-input::-webkit-datetime-edit-text,
+input.empty-datetime-input::-webkit-datetime-edit-month-field,
+input.empty-datetime-input::-webkit-datetime-edit-day-field,
+input.empty-datetime-input::-webkit-datetime-edit-year-field,
+input.empty-datetime-input::-webkit-datetime-edit-hour-field,
+input.empty-datetime-input::-webkit-datetime-edit-minute-field,
+input.empty-datetime-input::-webkit-datetime-edit-ampm-field {
+  color: transparent;
+}
+
+input.empty-datetime-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+}
+

@@ -11,6 +11,7 @@ export interface Category {
 export interface Rule {
   id: number;
   name: string;
+  icon?: string | null;
   description?: string;
   category_id?: number; // Now optional
   user_id: number; // Add user_id
@@ -22,6 +23,7 @@ export interface Rule {
 export interface Task {
   id: number;
   title: string;
+  icon?: string | null;
   description?: string;
   category_id: number | null; // Allow null category
   rule_id?: number;
@@ -56,6 +58,7 @@ export interface UserData {
   user_id: number;
   theme: string;
   time_period: string;
+  calendar_view?: "month" | "week" | "day";
   show_undated: boolean;
   show_uncategorized: boolean;
   show_overdue: boolean;
@@ -68,6 +71,7 @@ export interface UserData {
 export interface UserUpdate {
   theme?: string;
   time_period?: string;
+  calendar_view?: "month" | "week" | "day";
   show_undated?: boolean;
   show_uncategorized?: boolean;
   show_overdue?: boolean;

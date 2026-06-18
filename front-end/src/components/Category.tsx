@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Category as CategoryType } from '../hooks/types';
-import WindowsEmoji from './WindowsEmoji';
-import { sharedEmojiOptions } from '../utils/sharedEmojiOptions';
+import EmojiIconPicker from './EmojiIconPicker';
 
 interface CategoryProps {
   category: CategoryType;
@@ -17,12 +16,8 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
   const [isExpanded, setIsExpanded] = useState(false);
   const [name, setName] = useState(category.name);
   const [hasUnsavedName, setHasUnsavedName] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [deleteStep, setDeleteStep] = useState<'hidden' | 'confirm' | 'choose'>('hidden');
   const categoryRef = useRef<HTMLDivElement>(null);
-  const emojiPickerRef = useRef<HTMLDivElement>(null);
-
-  const emojiOptions = sharedEmojiOptions;
 
   // Update local name when category prop changes
   React.useEffect(() => {
@@ -51,23 +46,6 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isExpanded, hasUnsavedName, name, category.name]);
-
-  // Handle emoji picker click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
-        setShowEmojiPicker(false);
-      }
-    };
-
-    if (showEmojiPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showEmojiPicker]);
 
   const handleCategoryClick = (e: React.MouseEvent) => {
     // Don't expand if clicking on actionable elements
@@ -122,12 +100,6 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
     }
     setIsExpanded(false);
     onExpandChange?.(false);
-    setShowEmojiPicker(false);
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    handleUpdate({ icon: emoji });
-    setShowEmojiPicker(false);
   };
 
   const handleDelete = () => {
@@ -155,40 +127,18 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
       >
         <div className="flex items-center gap-4">
           {/* Category Icon */}
-          <div className="flex-shrink-0 relative" ref={emojiPickerRef}>
-            <button
-              type="button"
-              onClick={(e) => {
-                if (!isExpanded) {
-                  return;
+          <div className="flex-shrink-0">
+            <EmojiIconPicker
+              value={category.icon}
+              fallbackIcon="📂"
+              onChange={(icon) => {
+                if (icon) {
+                  handleUpdate({ icon });
                 }
-                e.stopPropagation();
-                setShowEmojiPicker(!showEmojiPicker);
               }}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
-                isExpanded ? 'hover:bg-gray-100 cursor-pointer' : 'cursor-default'
-              }`}
-              aria-label="Select project icon"
-            >
-              <WindowsEmoji emoji={category.icon || '📂'} size={24} />
-            </button>
-
-            {isExpanded && showEmojiPicker && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20 max-h-60 overflow-y-auto w-80">
-                <div className="grid grid-cols-10 gap-2">
-                  {emojiOptions.map((emoji, index) => (
-                    <button
-                      key={`${emoji}-${index}`}
-                      onClick={() => handleEmojiSelect(emoji)}
-                      className="w-8 h-8 flex items-center justify-center hover:bg-blue-100 rounded transition-colors flex-shrink-0"
-                      title={emoji}
-                    >
-                      <WindowsEmoji emoji={emoji} size={20} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              disabled={!isExpanded}
+              ariaLabel="Select project icon"
+            />
           </div>
           
           {/* Category Content */}

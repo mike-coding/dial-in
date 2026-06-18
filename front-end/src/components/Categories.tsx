@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useCategories, useRules, useTasks, useUser } from "../hooks/AppContext";
 import WindowsEmoji from "./WindowsEmoji";
 import Category from "./Category";
-import { sharedEmojiOptions } from "../utils/sharedEmojiOptions";
+import EmojiIconPicker from "./EmojiIconPicker";
 import RuleEditor from "./rules/RuleEditor";
 import { ExistingRuleItem } from "./rules/RuleItem";
 import { RuleDraft } from "./rules/types";
@@ -36,12 +36,10 @@ interface SchedulePromptState {
 const Categories: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('📂');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { categories, addCategory, deleteCategory, updateCategory } = useCategories();
   const { userData } = useUser();
   const { rules, addRule, updateRule, deleteRule, previewScheduleUpdate } = useRules();
   const { tasks } = useTasks();
-  const emojiPickerRef = useRef<HTMLDivElement>(null);
   const [projectRuleDrafts, setProjectRuleDrafts] = useState<Record<number, RuleDraft>>({});
   const [projectRuleErrors, setProjectRuleErrors] = useState<Record<number, string | null>>({});
   const [openProjectRuleEditors, setOpenProjectRuleEditors] = useState<Record<number, boolean>>({});
@@ -50,25 +48,6 @@ const Categories: React.FC = () => {
   const [editRuleError, setEditRuleError] = useState<string | null>(null);
   const [deleteConfirmRuleId, setDeleteConfirmRuleId] = useState<number | null>(null);
   const [schedulePrompt, setSchedulePrompt] = useState<SchedulePromptState | null>(null);
-
-  // Close emoji picker when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
-        setShowEmojiPicker(false);
-      }
-    };
-
-    if (showEmojiPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showEmojiPicker]);
-
-  const emojiOptions = sharedEmojiOptions;
 
   const projectCounts = React.useMemo(() => {
     const counts: Record<number, { rules: number; pending: number; completed: number }> = {};
@@ -106,7 +85,6 @@ const Categories: React.FC = () => {
     
     setNewCategoryName('');
     setSelectedEmoji('📂');
-    setShowEmojiPicker(false);
   };
 
   const handleDeleteCategory = (id: number, cascadeTasks: boolean) => {
@@ -138,6 +116,7 @@ const Categories: React.FC = () => {
     return (
       projectRuleDrafts[projectId] || {
         name: '',
+        icon: '',
         description: '',
         categoryId: String(projectId),
         isActive: true,
@@ -190,6 +169,7 @@ const Categories: React.FC = () => {
       openProjectIds.forEach((projectId) => {
         nextDrafts[projectId] = {
           name: '',
+          icon: '',
           description: '',
           categoryId: String(projectId),
           isActive: true,
@@ -284,6 +264,7 @@ const Categories: React.FC = () => {
     const ratePattern = draft.segments.map((segment) => encodeSegment(segment)).join('; ');
     addRule({
       name: draft.name.trim(),
+      icon: draft.icon.trim() || undefined,
       description: draft.description.trim() || undefined,
       category_id: projectId,
       user_id: userData.id,
@@ -295,6 +276,7 @@ const Categories: React.FC = () => {
       ...current,
       [projectId]: {
         name: '',
+        icon: '',
         description: '',
         categoryId: String(projectId),
         isActive: true,
@@ -333,6 +315,7 @@ const Categories: React.FC = () => {
 
     const updates: Partial<RuleType> = {
       name: editRuleDraft.name.trim(),
+      icon: editRuleDraft.icon.trim() || null,
       description: editRuleDraft.description.trim() || undefined,
       category_id: Number(editRuleDraft.categoryId),
       rate_pattern: editRuleDraft.segments.map((segment) => encodeSegment(segment)).join('; '),
@@ -394,7 +377,7 @@ const Categories: React.FC = () => {
       <div className="w-full max-w-full px-4 mx-auto pt-4">
         
         {/* Add Category Input */}
-        <div className="mb-6 relative" ref={emojiPickerRef}>
+        <div className="mb-6 relative">
           <div className="bg-white rounded-md px-4 py-3">
             <div className="flex items-center gap-3">
               <div 
@@ -406,15 +389,16 @@ const Categories: React.FC = () => {
                 </svg>
               </div>
               
-              {/* Emoji Selector */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <WindowsEmoji emoji={selectedEmoji} size={24} />
-                </button>
-              </div>
+              <EmojiIconPicker
+                value={selectedEmoji}
+                fallbackIcon="📂"
+                onChange={(icon) => {
+                  if (icon) {
+                    setSelectedEmoji(icon);
+                  }
+                }}
+                ariaLabel="Select project icon"
+              />
               
               <input
                 type="text"
@@ -426,27 +410,6 @@ const Categories: React.FC = () => {
               />
             </div>
           </div>
-          
-          {/* Emoji Picker Dropdown - positioned relative to container */}
-          {showEmojiPicker && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-10 max-h-60 overflow-y-auto">
-              <div className="grid grid-cols-10 gap-2">
-                {emojiOptions.map((emoji, index) => (
-                  <button
-                    key={`${emoji}-${index}`}
-                    onClick={() => {
-                      setSelectedEmoji(emoji);
-                      setShowEmojiPicker(false);
-                    }}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-blue-100 rounded transition-colors flex-shrink-0"
-                    title={emoji}
-                  >
-                    <WindowsEmoji emoji={emoji} size={20} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Categories List */}
@@ -490,7 +453,6 @@ const Categories: React.FC = () => {
                             key={rule.id}
                             rule={rule}
                             category={category}
-                            hideCategoryIcon
                             isExpanded={expandedRuleId === rule.id}
                             editDraft={editRuleDraft}
                             categories={categories}
@@ -575,6 +537,7 @@ const Categories: React.FC = () => {
                                 );
                               }
                             }}
+                            onIconChange={(icon) => updateRule(rule.id, { icon })}
                             setDraft={(value) => {
                               setEditRuleDraft((currentDraft) => {
                                 const baseDraft = currentDraft ?? createDraftFromRule(rule);
@@ -606,6 +569,18 @@ const Categories: React.FC = () => {
                           <path strokeLinecap="square" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                         </svg>
                       </div>
+                      <EmojiIconPicker
+                        value={getProjectRuleDraft(category.id).icon}
+                        fallbackIcon={category.icon || "⚙️"}
+                        onChange={(icon) =>
+                          setProjectRuleDraft(category.id, (currentDraft) => ({
+                            ...currentDraft,
+                            icon: icon || "",
+                          }))
+                        }
+                        showClear
+                        ariaLabel="Select rule icon"
+                      />
                       <input
                         type="text"
                         value={getProjectRuleDraft(category.id).name}

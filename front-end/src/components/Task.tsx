@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
-import WindowsEmoji from './WindowsEmoji';
+import { useRules } from '../hooks/useRules';
+import { resolveInheritedTaskIcon, resolveTaskIcon } from '../utils/iconResolver';
+import EmojiIconPicker from './EmojiIconPicker';
 import TaskDetails from './TaskDetails';
 
 interface TaskProps {
@@ -17,9 +19,9 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   const [hasUnsavedTitle, setHasUnsavedTitle] = useState(false);
   const taskRef = useRef<HTMLDivElement>(null);
   const { categories } = useCategories();
-  const projectIcon = task.category_id
-    ? categories.find(c => c.id === task.category_id)?.icon
-    : undefined;
+  const { rules } = useRules();
+  const taskIcon = resolveTaskIcon(task, rules, categories);
+  const inheritedTaskIcon = resolveInheritedTaskIcon(task, rules, categories);
 
   // Update local title when task prop changes
   React.useEffect(() => {
@@ -98,7 +100,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
         className="px-4 py-3 cursor-pointer"
         onClick={handleTaskClick}
       >
-        <div className={`grid items-center gap-4 ${projectIcon ? 'grid-cols-[1.5rem_1.25rem_minmax(0,1fr)_2rem]' : 'grid-cols-[1.5rem_minmax(0,1fr)_2rem]'}`}>
+        <div className="grid grid-cols-[1.5rem_1.25rem_minmax(0,1fr)_2rem] items-center gap-4">
           {/* Checkbox */}
           <div
             data-action="toggle"
@@ -114,10 +116,18 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
             )}
           </div>
           
-          {/* Project Indicator */}
-          {projectIcon && (
-            <WindowsEmoji emoji={projectIcon} size={20} className="shrink-0 opacity-70" />
-          )}
+          <EmojiIconPicker
+            value={task.icon}
+            fallbackIcon={task.icon ? taskIcon : inheritedTaskIcon}
+            onChange={(icon) => handleUpdate({ icon })}
+            disabled={!isExpanded}
+            showClear
+            emojiSize={20}
+            ariaLabel="Select task icon"
+            buttonClassName={`flex h-6 w-6 items-center justify-center rounded-lg transition-colors ${
+              isExpanded ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default'
+            }`}
+          />
 
           {/* Task Content */}
           <div className="min-w-0 overflow-hidden">

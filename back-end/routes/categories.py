@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from database import get_db
 from models import Category, Rule, Task
+from route_utils import normalize_icon
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ async def create_category(
     icon: Optional[str] = Body(None),
     db: Session = Depends(get_db)
 ):
-    category = Category(name=name, icon=icon, user_id=user_id)
+    category = Category(name=name, icon=normalize_icon(icon), user_id=user_id)
     db.add(category)
     db.commit()
     db.refresh(category)
@@ -45,7 +46,7 @@ async def update_category(
     if 'name' in changes:
         category.name = changes.get('name')
     if 'icon' in changes:
-        category.icon = changes.get('icon')
+        category.icon = normalize_icon(changes.get('icon'))
 
     db.commit()
     db.refresh(category)
