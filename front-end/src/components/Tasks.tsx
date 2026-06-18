@@ -3,6 +3,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useCategories } from '../hooks/useCategories';
 import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
+import { getTaskStart } from '../utils/taskSchedule';
 import Task from './Task';
 import WindowsEmoji from './WindowsEmoji';
 
@@ -124,16 +125,24 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
     }
 
     return tasks.filter(task => {
-      // Check if task is overdue
-      const isOverdue = task.due_date && new Date(task.due_date) < now && !task.is_completed;
+      const taskStart = getTaskStart(task);
+      const taskDateOnly = taskStart
+        ? new Date(taskStart.getFullYear(), taskStart.getMonth(), taskStart.getDate())
+        : null;
+
+      // Date-only tasks become overdue after their due date has passed; timed tasks compare exact time.
+      const isOverdue = Boolean(
+        taskStart &&
+        !task.is_completed &&
+        (task.due_time ? taskStart < now : taskDateOnly !== null && taskDateOnly < today)
+      );
       
       // If task is overdue and we don't want to show overdue tasks, filter it out
       if (isOverdue && !showOverdue) return false;
       
       // Date filter (only apply to non-overdue, incomplete tasks)
-      if (task.due_date && !isOverdue && !task.is_completed) {
-        const dueDate = new Date(task.due_date);
-        const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+      if (taskStart && !isOverdue && !task.is_completed && taskDateOnly) {
+        const dueDateOnly = taskDateOnly;
         
         switch (dateFilter) {
           case 'Today':
@@ -151,10 +160,9 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
             if (dueDateOnly < today) return false;
             break;
         }
-      } else if (task.due_date && task.is_completed) {
+      } else if (taskStart && task.is_completed && taskDateOnly) {
         // For completed tasks, apply more lenient date filtering
-        const dueDate = new Date(task.due_date);
-        const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+        const dueDateOnly = taskDateOnly;
         
         switch (dateFilter) {
           case 'Today':
@@ -174,7 +182,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
             if (dueDateOnly < today) return false;
             break;
         }
-      } else if (!task.due_date) {
+      } else if (!taskStart) {
         // Task has no due date - respect showUndated setting for all date filters
         if (!showUndated) return false;
       }
@@ -215,7 +223,7 @@ const Tasks: React.FC<TasksProps> = ({ isMobile = false }) => {
   const sortedFilteredTasks = useMemo(() => {
     const getSortTimestamp = (task: TaskType) => {
       if (task.due_date) {
-        return new Date(task.due_date).getTime();
+        return getTaskStart(task)?.getTime() || 0;
       }
       return new Date(task.created_at).getTime();
     };

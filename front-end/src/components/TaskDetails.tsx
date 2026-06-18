@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
+import { toDateOnlyValue, toTimeOnlyValue } from '../utils/taskSchedule';
 import WindowsEmoji from './WindowsEmoji';
 
 interface TaskDetailsProps {
@@ -11,28 +12,47 @@ interface TaskDetailsProps {
   onClose: () => void;
 }
 
+type PickerField = 'due-date' | 'due-time' | 'end-date' | 'end-time';
+
+const CalendarFieldIcon = () => (
+  <svg
+    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3M5 11h14M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+  </svg>
+);
+
+const ClockFieldIcon = () => (
+  <svg
+    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onDelete, onClose }) => {
   const { categories } = useCategories();
   const [description, setDescription] = useState(task.description || '');
   const [categoryId, setCategoryId] = useState<number | null>(task.category_id || null);
-
-  // Parse ISO string to datetime-local value (YYYY-MM-DDTHH:MM)
-  const toDateTimeLocal = (iso: string | undefined): string => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
-
-  const [dueDate, setDueDate] = useState(() => toDateTimeLocal(task.due_date));
-  const [endDate, setEndDate] = useState(() => toDateTimeLocal(task.end_date));
+  const [dueDate, setDueDate] = useState(() => toDateOnlyValue(task.due_date));
+  const [dueTime, setDueTime] = useState(() => toTimeOnlyValue(task.due_time));
+  const [endDate, setEndDate] = useState(() => toDateOnlyValue(task.end_date));
+  const [endTime, setEndTime] = useState(() => toTimeOnlyValue(task.end_time));
   const hasEndDate = endDate !== '';
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isDropdownAnimating, setIsDropdownAnimating] = useState(false);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
-  const openDatePickerFieldRef = useRef<'due' | 'end' | null>(null);
+  const openPickerFieldRef = useRef<PickerField | null>(null);
 
   // Reset delete confirmation when task changes or when collapsed/expanded
   useEffect(() => {
@@ -41,6 +61,10 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
     setIsDropdownAnimating(false);
     setDescription(task.description || '');
     setCategoryId(task.category_id || null);
+    setDueDate(toDateOnlyValue(task.due_date));
+    setDueTime(toTimeOnlyValue(task.due_time));
+    setEndDate(toDateOnlyValue(task.end_date));
+    setEndTime(toTimeOnlyValue(task.end_time));
   }, [task.id, isExpanded]);
 
   // Handle dropdown closing with animation
@@ -89,32 +113,47 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
   const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDueDate(val);
-    onSave({ due_date: val ? new Date(val).toISOString() : (null as any) });
+    if (!val) {
+      setDueTime('');
+    }
+    onSave({ due_date: val || (null as any), due_time: val ? dueTime || null : null });
+  };
+
+  const handleDueTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDueTime(val);
+    onSave({ due_time: val || null });
   };
 
   // Auto-save end date on change
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setEndDate(val);
-    onSave({ end_date: val ? new Date(val).toISOString() : (null as any) });
+    if (!val) {
+      setEndTime('');
+    }
+    onSave({ end_date: val || (null as any), end_time: val ? endTime || null : null });
   };
 
-  const handleDatePickerMouseDown = (
-    field: 'due' | 'end',
-    e: React.MouseEvent<HTMLInputElement>
-  ) => {
+  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEndTime(val);
+    onSave({ end_time: val || null });
+  };
+
+  const handlePickerMouseDown = (field: PickerField, e: React.MouseEvent<HTMLInputElement>) => {
     const input = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
-    const isSameOpenField = document.activeElement === input && openDatePickerFieldRef.current === field;
+    const isSameOpenField = document.activeElement === input && openPickerFieldRef.current === field;
 
     e.preventDefault();
 
     if (isSameOpenField) {
-      openDatePickerFieldRef.current = null;
+      openPickerFieldRef.current = null;
       input.blur();
       return;
     }
 
-    openDatePickerFieldRef.current = field;
+    openPickerFieldRef.current = field;
     input.focus({ preventScroll: true });
 
     try {
@@ -124,9 +163,9 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
     }
   };
 
-  const handleDatePickerBlur = (field: 'due' | 'end') => {
-    if (openDatePickerFieldRef.current === field) {
-      openDatePickerFieldRef.current = null;
+  const handlePickerBlur = (field: PickerField) => {
+    if (openPickerFieldRef.current === field) {
+      openPickerFieldRef.current = null;
     }
   };
 
@@ -241,32 +280,78 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
         </div>
 
         {/* Dates */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {hasEndDate ? 'Start' : 'Due'}
-          </label>
-          <input
-            type="datetime-local"
-            value={dueDate}
-            onChange={handleDueDateChange}
-            onMouseDown={(e) => handleDatePickerMouseDown('due', e)}
-            onBlur={() => handleDatePickerBlur('due')}
-            className={`w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!dueDate ? 'empty-datetime-input' : ''}`}
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {hasEndDate ? 'Start date' : 'Due date'}
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={handleDueDateChange}
+                onMouseDown={(e) => handlePickerMouseDown('due-date', e)}
+                onBlur={() => handlePickerBlur('due-date')}
+                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!dueDate ? 'empty-datetime-input' : ''}`}
+              />
+              <CalendarFieldIcon />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {hasEndDate ? 'Start time' : 'Due time'}
+            </label>
+            <div className="relative">
+              <input
+                type="time"
+                value={dueTime}
+                onChange={handleDueTimeChange}
+                onMouseDown={(e) => handlePickerMouseDown('due-time', e)}
+                onBlur={() => handlePickerBlur('due-time')}
+                disabled={!dueDate}
+                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-50 ${!dueTime ? 'empty-datetime-input' : ''}`}
+              />
+              <ClockFieldIcon />
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            End
-          </label>
-          <input
-            type="datetime-local"
-            value={endDate}
-            onChange={handleEndDateChange}
-            onMouseDown={(e) => handleDatePickerMouseDown('end', e)}
-            onBlur={() => handleDatePickerBlur('end')}
-            className={`w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!endDate ? 'empty-datetime-input' : ''}`}
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End date
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                value={endDate}
+                onChange={handleEndDateChange}
+                onMouseDown={(e) => handlePickerMouseDown('end-date', e)}
+                onBlur={() => handlePickerBlur('end-date')}
+                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!endDate ? 'empty-datetime-input' : ''}`}
+              />
+              <CalendarFieldIcon />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End time
+            </label>
+            <div className="relative">
+              <input
+                type="time"
+                value={endTime}
+                onChange={handleEndTimeChange}
+                onMouseDown={(e) => handlePickerMouseDown('end-time', e)}
+                onBlur={() => handlePickerBlur('end-time')}
+                disabled={!endDate}
+                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-50 ${!endTime ? 'empty-datetime-input' : ''}`}
+              />
+              <ClockFieldIcon />
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}

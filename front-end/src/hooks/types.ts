@@ -30,7 +30,9 @@ export interface Task {
   user_id: number;
   is_completed: boolean;
   due_date?: string;
+  due_time?: string | null;
   end_date?: string;
+  end_time?: string | null;
   created_at: string;
   completed_at?: string;
 }

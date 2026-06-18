@@ -9,6 +9,26 @@ from route_utils import normalize_icon
 
 router = APIRouter()
 
+def parse_date_only(value: Optional[str]):
+    if not value:
+        return None
+    parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    return parsed.date()
+
+def parse_time_only(value: Optional[str], fallback_datetime: Optional[str] = None):
+    if isinstance(value, str) and value.strip():
+        parsed = value.strip()
+        if len(parsed) >= 5:
+            return parsed[:5]
+        return parsed
+
+    if fallback_datetime and "T" in fallback_datetime:
+        parsed = datetime.fromisoformat(fallback_datetime.replace('Z', '+00:00'))
+        fallback = parsed.strftime("%H:%M")
+        return fallback if fallback != "00:00" else None
+
+    return None
+
 @router.get("/")
 async def get_tasks(user_id: int, db: Session = Depends(get_db)):
     tasks = db.query(Task).filter(Task.user_id == user_id).all()
@@ -23,9 +43,13 @@ async def create_task(
     category_id: Optional[int] = Body(None),
     is_completed: Optional[bool] = Body(False),
     due_date: Optional[str] = Body(None),
+    due_time: Optional[str] = Body(None),
     end_date: Optional[str] = Body(None),
+    end_time: Optional[str] = Body(None),
     db: Session = Depends(get_db)
 ):
+    parsed_due_date = parse_date_only(due_date)
+    parsed_end_date = parse_date_only(end_date)
     task = Task(
         title=title,
         icon=normalize_icon(icon),
@@ -33,8 +57,10 @@ async def create_task(
         category_id=category_id,
         user_id=user_id,
         is_completed=is_completed,
-        due_date=datetime.fromisoformat(due_date.replace('Z', '+00:00')) if due_date else None,
-        end_date=datetime.fromisoformat(end_date.replace('Z', '+00:00')) if end_date else None
+        due_date=parsed_due_date,
+        due_time=parse_time_only(due_time, due_date) if parsed_due_date else None,
+        end_date=parsed_end_date,
+        end_time=parse_time_only(end_time, end_date) if parsed_end_date else None
     )
     db.add(task)
     db.commit()
@@ -76,10 +102,22 @@ async def update_task(
         task.completed_at = datetime.fromisoformat(changes.get('completed_at').replace('Z', '+00:00'))
     if 'due_date' in changes:
         val = changes.get('due_date')
-        task.due_date = datetime.fromisoformat(val.replace('Z', '+00:00')) if val else None
+        task.due_date = parse_date_only(val)
+        if not val:
+            task.due_time = None
+        elif 'due_time' not in changes:
+            task.due_time = parse_time_only(None, val)
+    if 'due_time' in changes:
+        task.due_time = parse_time_only(changes.get('due_time')) if task.due_date else None
     if 'end_date' in changes:
         val = changes.get('end_date')
-        task.end_date = datetime.fromisoformat(val.replace('Z', '+00:00')) if val else None
+        task.end_date = parse_date_only(val)
+        if not val:
+            task.end_time = None
+        elif 'end_time' not in changes:
+            task.end_time = parse_time_only(None, val)
+    if 'end_time' in changes:
+        task.end_time = parse_time_only(changes.get('end_time')) if task.end_date else None
 
     db.commit()
     db.refresh(task)

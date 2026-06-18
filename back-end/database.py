@@ -36,6 +36,30 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE tasks ADD COLUMN end_date DATETIME"))
             connection.commit()
 
+        if "due_time" not in task_columns:
+            connection.execute(text("ALTER TABLE tasks ADD COLUMN due_time VARCHAR(5)"))
+            connection.execute(
+                text(
+                    "UPDATE tasks SET due_time = CASE "
+                    "WHEN due_date IS NOT NULL AND substr(due_date, 12, 5) != '00:00' "
+                    "THEN substr(due_date, 12, 5) ELSE NULL END"
+                )
+            )
+            connection.execute(text("UPDATE tasks SET due_date = substr(due_date, 1, 10) WHERE due_date IS NOT NULL"))
+            connection.commit()
+
+        if "end_time" not in task_columns:
+            connection.execute(text("ALTER TABLE tasks ADD COLUMN end_time VARCHAR(5)"))
+            connection.execute(
+                text(
+                    "UPDATE tasks SET end_time = CASE "
+                    "WHEN end_date IS NOT NULL AND substr(end_date, 12, 5) != '00:00' "
+                    "THEN substr(end_date, 12, 5) ELSE NULL END"
+                )
+            )
+            connection.execute(text("UPDATE tasks SET end_date = substr(end_date, 1, 10) WHERE end_date IS NOT NULL"))
+            connection.commit()
+
         if "icon" not in task_columns:
             connection.execute(text("ALTER TABLE tasks ADD COLUMN icon VARCHAR(10)"))
             connection.commit()

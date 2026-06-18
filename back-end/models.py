@@ -1,5 +1,5 @@
 """SQLAlchemy database models."""
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, DateTime, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -123,8 +123,10 @@ class Task(Base):
     rule_id = Column(Integer, ForeignKey('rules.id'), nullable=True)  # Optional rule assignment
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     is_completed = Column(Boolean, default=False)
-    due_date = Column(DateTime, nullable=True)
-    end_date = Column(DateTime, nullable=True)
+    due_date = Column(Date, nullable=True)
+    due_time = Column(String(5), nullable=True)
+    end_date = Column(Date, nullable=True)
+    end_time = Column(String(5), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
     
@@ -144,7 +146,9 @@ class Task(Base):
             "user_id": self.user_id,
             "is_completed": self.is_completed,
             "due_date": self.due_date.isoformat() if self.due_date else None,
+            "due_time": self.due_time,
             "end_date": self.end_date.isoformat() if self.end_date else None,
+            "end_time": self.end_time,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None
         }

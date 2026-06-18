@@ -6,6 +6,7 @@ import { useRules } from '../hooks/useRules';
 import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
 import { resolveTaskIcon as resolveTaskDisplayIcon } from '../utils/iconResolver';
+import { getTaskEnd, getTaskStart, hasTaskTime } from '../utils/taskSchedule';
 
 interface CalendarProps {
   isMobile?: boolean;
@@ -64,12 +65,12 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       return null;
     }
 
-    const start = new Date(task.due_date);
-    if (Number.isNaN(start.getTime())) {
+    const start = getTaskStart(task);
+    if (!start || Number.isNaN(start.getTime())) {
       return null;
     }
 
-    const parsedEnd = task.end_date ? new Date(task.end_date) : null;
+    const parsedEnd = getTaskEnd(task);
     const end = parsedEnd && !Number.isNaN(parsedEnd.getTime()) && parsedEnd >= start ? parsedEnd : start;
 
     return { task, start, end };
@@ -136,15 +137,25 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   };
 
   const formatTaskRange = (range: TaskRange) => {
+    if (!range.task.end_date && !range.task.due_time) {
+      return 'All day';
+    }
+
     if (!range.task.end_date) {
       return range.start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     }
 
     const sameDay = toDateKey(range.start) === toDateKey(range.end);
-    const startTime = range.start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    const endTime = range.end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const hasStartTime = Boolean(range.task.due_time);
+    const hasEndTime = Boolean(range.task.end_time);
 
-    if (sameDay) {
+    if (sameDay && !hasStartTime && !hasEndTime) {
+      return 'All day';
+    }
+
+    if (sameDay && (hasStartTime || hasEndTime)) {
+      const startTime = hasStartTime ? range.start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Start';
+      const endTime = hasEndTime ? range.end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'End';
       return `${startTime} - ${endTime}`;
     }
 
@@ -420,7 +431,10 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     const dayTaskRanges = getTasksForDate(currentDate);
     const timedTaskRanges = dayTaskRanges.filter(
       (range) =>
+        hasTaskTime(range.task) &&
+        range.task.due_time &&
         range.task.end_date &&
+        range.task.end_time &&
         toDateKey(range.start) === toDateKey(currentDate) &&
         toDateKey(range.end) === toDateKey(currentDate) &&
         range.end > range.start

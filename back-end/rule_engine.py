@@ -6,6 +6,7 @@ import re
 import threading
 from typing import Dict, List, Optional, Set
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
@@ -215,6 +216,29 @@ def _build_due_datetimes_for_pattern(
     return due_datetimes
 
 
+def _combine_task_datetime(task: Task) -> Optional[datetime]:
+    due_date = getattr(task, "due_date", None)
+    if isinstance(due_date, datetime):
+        due_date_value = due_date.date()
+    elif isinstance(due_date, date):
+        due_date_value = due_date
+    else:
+        return None
+
+    due_time = getattr(task, "due_time", None)
+    hours, minutes = _parse_time(due_time if isinstance(due_time, str) else None)
+    return datetime(due_date_value.year, due_date_value.month, due_date_value.day, hours, minutes)
+
+
+def _date_part(value: datetime) -> date:
+    return value.date()
+
+
+def _time_part_string(value: datetime) -> Optional[str]:
+    time_value = value.strftime("%H:%M")
+    return time_value if time_value != "00:00" else None
+
+
 def _schedule_preview_summary(delete_count: int, create_count: int) -> Dict[str, int]:
     return {
         "delete_count": max(0, delete_count),
@@ -250,30 +274,30 @@ def preview_rule_schedule_change(
     anchor_date = created_at_value.date() if isinstance(created_at_value, datetime) else start_future
 
     existing_due_dates = {
-        due_date
+        due_datetime
         for task in existing_tasks
-        for due_date in [getattr(task, "due_date", None)]
-        if isinstance(due_date, datetime)
+        for due_datetime in [_combine_task_datetime(task)]
+        if due_datetime is not None
     }
 
     existing_future_incomplete = []
     for task in existing_tasks:
-        due_date = getattr(task, "due_date", None)
+        due_date = _combine_task_datetime(task)
         is_completed = bool(getattr(task, "is_completed", False))
-        if isinstance(due_date, datetime) and due_date >= start_future_dt and not is_completed:
+        if due_date is not None and due_date >= start_future_dt and not is_completed:
             existing_future_incomplete.append(task)
 
     expected_future = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, start_future, end_future)
     kept_due_dates_for_future_replace = set()
     for task in existing_tasks:
-        due_date = getattr(task, "due_date", None)
+        due_date = _combine_task_datetime(task)
         is_completed = bool(getattr(task, "is_completed", False))
-        if isinstance(due_date, datetime) and not (due_date >= start_future_dt and not is_completed):
+        if due_date is not None and not (due_date >= start_future_dt and not is_completed):
             kept_due_dates_for_future_replace.add(due_date)
     future_replace_creates = len(expected_future - kept_due_dates_for_future_replace)
     future_replace_deletes = len(existing_future_incomplete)
 
-    all_due_dates = [task.due_date for task in existing_tasks if isinstance(task.due_date, datetime)]
+    all_due_dates = [due_datetime for task in existing_tasks for due_datetime in [_combine_task_datetime(task)] if due_datetime is not None]
     all_start_date = min((due_date.date() for due_date in all_due_dates), default=anchor_date)
     expected_all = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, all_start_date, end_future)
     all_replace_deletes = len(existing_tasks)
@@ -315,9 +339,9 @@ def apply_rule_schedule_change(
     if normalized_mode == "future_replace_preserve_completed":
         deletable_tasks = []
         for task in existing_tasks:
-            due_date = getattr(task, "due_date", None)
+            due_date = _combine_task_datetime(task)
             is_completed = bool(getattr(task, "is_completed", False))
-            if isinstance(due_date, datetime) and due_date >= start_future_dt and not is_completed:
+            if due_date is not None and due_date >= start_future_dt and not is_completed:
                 deletable_tasks.append(task)
         deletable_ids = [task.id for task in deletable_tasks if task.id is not None]
         deleted_count = len(deletable_ids)
@@ -325,11 +349,11 @@ def apply_rule_schedule_change(
             db.query(Task).filter(Task.id.in_(deletable_ids)).delete(synchronize_session=False)
 
         kept_due_dates = {
-            due_date
+            due_datetime
             for task in existing_tasks
             if task.id not in set(deletable_ids)
-            for due_date in [getattr(task, "due_date", None)]
-            if isinstance(due_date, datetime)
+            for due_datetime in [_combine_task_datetime(task)]
+            if due_datetime is not None
         }
         expected_due_dates = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, start_future, end_future)
         for due_datetime in sorted(expected_due_dates - kept_due_dates):
@@ -341,7 +365,8 @@ def apply_rule_schedule_change(
                     rule_id=getattr(rule, "id"),
                     user_id=getattr(rule, "user_id"),
                     is_completed=False,
-                    due_date=due_datetime,
+                    due_date=_date_part(due_datetime),
+                    due_time=_time_part_string(due_datetime),
                 )
             )
             created_count += 1
@@ -353,7 +378,7 @@ def apply_rule_schedule_change(
         if deleted_count > 0:
             db.query(Task).filter(Task.rule_id == rule.id, Task.user_id == rule.user_id).delete(synchronize_session=False)
 
-        all_due_dates = [task.due_date for task in existing_tasks if isinstance(task.due_date, datetime)]
+        all_due_dates = [due_datetime for task in existing_tasks for due_datetime in [_combine_task_datetime(task)] if due_datetime is not None]
         all_start_date = min((due_date.date() for due_date in all_due_dates), default=anchor_date)
         expected_due_dates = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, all_start_date, end_future)
 
@@ -366,7 +391,8 @@ def apply_rule_schedule_change(
                     rule_id=getattr(rule, "id"),
                     user_id=getattr(rule, "user_id"),
                     is_completed=False,
-                    due_date=due_datetime,
+                    due_date=_date_part(due_datetime),
+                    due_time=_time_part_string(due_datetime),
                 )
             )
             created_count += 1
@@ -375,10 +401,10 @@ def apply_rule_schedule_change(
 
     expected_due_dates = _build_due_datetimes_for_pattern(next_rate_pattern, anchor_date, start_future, end_future)
     existing_due_dates = {
-        due_date
+        due_datetime
         for task in existing_tasks
-        for due_date in [getattr(task, "due_date", None)]
-        if isinstance(due_date, datetime)
+        for due_datetime in [_combine_task_datetime(task)]
+        if due_datetime is not None
     }
 
     for due_datetime in sorted(expected_due_dates - existing_due_dates):
@@ -390,7 +416,8 @@ def apply_rule_schedule_change(
                 rule_id=getattr(rule, "id"),
                 user_id=getattr(rule, "user_id"),
                 is_completed=False,
-                due_date=due_datetime,
+                due_date=_date_part(due_datetime),
+                due_time=_time_part_string(due_datetime),
             )
         )
         created_count += 1
@@ -419,24 +446,21 @@ def run_rule_generation(
         if not segments:
             continue
 
-        range_start = datetime.combine(start_date, datetime.min.time())
-        range_end = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
-
         existing_tasks = (
             db.query(Task)
             .filter(
                 Task.rule_id == rule.id,
-                Task.due_date >= range_start,
-                Task.due_date < range_end,
+                func.date(Task.due_date) >= start_date.isoformat(),
+                func.date(Task.due_date) <= end_date.isoformat(),
             )
             .all()
         )
 
         existing_due_dates = {
-            due_date
+            due_datetime
             for task in existing_tasks
-            for due_date in [getattr(task, "due_date", None)]
-            if isinstance(due_date, datetime)
+            for due_datetime in [_combine_task_datetime(task)]
+            if due_datetime is not None
         }
 
         created_at_value = getattr(rule, "created_at", None)
@@ -468,7 +492,8 @@ def run_rule_generation(
                     rule_id=getattr(rule, "id"),
                     user_id=getattr(rule, "user_id"),
                     is_completed=False,
-                    due_date=due_datetime,
+                    due_date=_date_part(due_datetime),
+                    due_time=_time_part_string(due_datetime),
                 )
                 db.add(generated_task)
                 existing_due_dates.add(due_datetime)
