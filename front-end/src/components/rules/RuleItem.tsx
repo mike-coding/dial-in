@@ -1,6 +1,7 @@
 import React from "react";
 import { Category, Rule as RuleType } from "../../hooks/types";
-import { resolveRuleIcon } from "../../utils/iconResolver";
+import { getTintedColorStyle, resolveRuleColor, resolveRuleIcon } from "../../utils/presentationResolver";
+import ColorPicker from "../ColorPicker";
 import EmojiIconPicker from "../EmojiIconPicker";
 import WindowsEmoji from "../WindowsEmoji";
 import RuleEditor from "./RuleEditor";
@@ -13,6 +14,7 @@ interface RuleItemProps {
   subtitle?: string;
   titleSuffix?: React.ReactNode;
   headerAction?: React.ReactNode;
+  color?: string;
   isExpanded: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
@@ -25,11 +27,15 @@ const RuleItem: React.FC<RuleItemProps> = ({
   subtitle,
   titleSuffix,
   headerAction,
+  color,
   isExpanded,
   onToggle,
   children,
 }) => (
-  <div className="bg-gray-100 rounded-md transition-all duration-200">
+  <div
+    className="rounded-md border-l-4 bg-gray-100 transition-all duration-200"
+    style={{ ...getTintedColorStyle(color, "10"), borderLeftColor: color || "transparent" }}
+  >
     <div className="px-4 py-3 cursor-pointer" onClick={onToggle}>
       <div className={`flex items-center ${leading || icon ? "gap-4" : "gap-2"}`}>
         {headerAction ? <div className="flex-shrink-0">{headerAction}</div> : null}
@@ -112,6 +118,13 @@ export const NewRuleItem: React.FC<NewRuleItemProps> = ({
           showClear
           ariaLabel="Select rule icon"
         />
+        <ColorPicker
+          value={draft.color}
+          fallbackColor={categories.find((category) => String(category.id) === draft.categoryId)?.color}
+          onChange={(color) => setDraft((currentDraft) => ({ ...currentDraft, color: color || "" }))}
+          showClear
+          ariaLabel="Select rule color"
+        />
         <input
           type="text"
           value={draft.name}
@@ -164,6 +177,7 @@ interface ExistingRuleItemProps {
   onToggle: () => void;
   onToggleActive: () => void;
   onIconChange: (icon: string | null) => void;
+  onColorChange: (color: string | null) => void;
   setDraft: (value: React.SetStateAction<RuleDraft>) => void;
   onDeleteRequest: () => void;
   onDeleteCancel: () => void;
@@ -182,6 +196,7 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
   onToggle,
   onToggleActive,
   onIconChange,
+  onColorChange,
   setDraft,
   onDeleteRequest,
   onDeleteCancel,
@@ -204,18 +219,31 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
       )
     }
     icon={isExpanded && editDraft ? undefined : (rule.icon || category?.icon || resolveRuleIcon(rule, categories))}
+    color={resolveRuleColor(rule, categories)}
     leading={
       isExpanded && editDraft ? (
-        <EmojiIconPicker
-          value={editDraft.icon}
-          fallbackIcon={category?.icon || resolveRuleIcon(rule, categories)}
-          onChange={(icon) => {
-            setDraft((currentDraft) => ({ ...currentDraft, icon: icon || "" }));
-            onIconChange(icon);
-          }}
-          showClear
-          ariaLabel="Select rule icon"
-        />
+        <div className="flex shrink-0 items-center gap-2">
+          <EmojiIconPicker
+            value={editDraft.icon}
+            fallbackIcon={category?.icon || resolveRuleIcon(rule, categories)}
+            onChange={(icon) => {
+              setDraft((currentDraft) => ({ ...currentDraft, icon: icon || "" }));
+              onIconChange(icon);
+            }}
+            showClear
+            ariaLabel="Select rule icon"
+          />
+          <ColorPicker
+            value={editDraft.color}
+            fallbackColor={category?.color}
+            onChange={(color) => {
+              setDraft((currentDraft) => ({ ...currentDraft, color: color || "" }));
+              onColorChange(color);
+            }}
+            showClear
+            ariaLabel="Select rule color"
+          />
+        </div>
       ) : undefined
     }
     headerAction={

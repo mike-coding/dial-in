@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Category as CategoryType } from '../hooks/types';
 import EmojiIconPicker from './EmojiIconPicker';
+import ColorPicker from './ColorPicker';
 
 interface CategoryProps {
   category: CategoryType;
@@ -119,7 +120,8 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
   return (
     <div 
       ref={categoryRef}
-      className="bg-white rounded-md transition-all duration-200"
+      className="rounded-md border-l-4 bg-white transition-all duration-200"
+      style={{ borderLeftColor: category.color || 'transparent' }}
     >
       <div 
         className="px-4 py-3 cursor-pointer"
@@ -140,6 +142,18 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
               ariaLabel="Select project icon"
             />
           </div>
+
+          <ColorPicker
+            value={category.color}
+            onChange={(color) => handleUpdate({ color })}
+            disabled={!isExpanded}
+            showClear
+            clearLabel="Clear"
+            ariaLabel="Select project color"
+            buttonClassName={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+              isExpanded ? 'cursor-pointer hover:bg-gray-100' : 'cursor-default'
+            }`}
+          />
           
           {/* Category Content */}
           <div className="flex-1 min-w-0">

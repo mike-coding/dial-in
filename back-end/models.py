@@ -62,6 +62,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     icon = Column(String(10), nullable=True)  # Store emoji character
+    color = Column(String(7), nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -76,6 +77,7 @@ class Category(Base):
             "id": self.id,
             "name": self.name,
             "icon": self.icon,
+            "color": self.color,
             "user_id": self.user_id,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
@@ -86,6 +88,7 @@ class Rule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     icon = Column(String(10), nullable=True)
+    color = Column(String(7), nullable=True)
     description = Column(Text)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)  # Now optional
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Add user_id for ownership
@@ -104,6 +107,7 @@ class Rule(Base):
             "id": self.id,
             "name": self.name,
             "icon": self.icon,
+            "color": self.color,
             "description": self.description,
             "category_id": self.category_id,
             "user_id": self.user_id,
@@ -118,6 +122,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
     icon = Column(String(10), nullable=True)
+    color = Column(String(7), nullable=True)
     description = Column(Text)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
     rule_id = Column(Integer, ForeignKey('rules.id'), nullable=True)  # Optional rule assignment
@@ -140,6 +145,7 @@ class Task(Base):
             "id": self.id,
             "title": self.title,
             "icon": self.icon,
+            "color": self.color,
             "description": self.description,
             "category_id": self.category_id,
             "rule_id": self.rule_id,

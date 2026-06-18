@@ -4,6 +4,7 @@ export interface Category {
   id: number;
   name: string;
   icon?: string;
+  color?: string | null;
   user_id: number;
   created_at: string;
 }
@@ -12,6 +13,7 @@ export interface Rule {
   id: number;
   name: string;
   icon?: string | null;
+  color?: string | null;
   description?: string | null;
   category_id?: number; // Now optional
   user_id: number; // Add user_id
@@ -24,6 +26,7 @@ export interface Task {
   id: number;
   title: string;
   icon?: string | null;
+  color?: string | null;
   description?: string;
   category_id: number | null; // Allow null category
   rule_id?: number;

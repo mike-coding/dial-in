@@ -5,7 +5,7 @@ from typing import Optional
 from datetime import datetime
 from database import get_db
 from models import Task
-from route_utils import normalize_icon
+from route_utils import normalize_color, normalize_icon
 
 router = APIRouter()
 
@@ -39,6 +39,7 @@ async def create_task(
     title: str = Body(...),
     user_id: int = Body(...),
     icon: Optional[str] = Body(None),
+    color: Optional[str] = Body(None),
     description: Optional[str] = Body(None),
     category_id: Optional[int] = Body(None),
     is_completed: Optional[bool] = Body(False),
@@ -53,6 +54,7 @@ async def create_task(
     task = Task(
         title=title,
         icon=normalize_icon(icon),
+        color=normalize_color(color),
         description=description,
         category_id=category_id,
         user_id=user_id,
@@ -92,6 +94,8 @@ async def update_task(
         task.title = changes.get('title')
     if 'icon' in changes:
         task.icon = normalize_icon(changes.get('icon'))
+    if 'color' in changes:
+        task.color = normalize_color(changes.get('color'))
     if 'description' in changes:
         task.description = changes.get('description')
     if 'category_id' in changes:

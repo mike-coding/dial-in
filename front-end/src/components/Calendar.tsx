@@ -5,7 +5,11 @@ import { useTasks } from '../hooks/useTasks';
 import { useRules } from '../hooks/useRules';
 import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
-import { resolveTaskIcon as resolveTaskDisplayIcon } from '../utils/iconResolver';
+import {
+  getTintedColorStyle,
+  resolveTaskColor as resolveTaskDisplayColor,
+  resolveTaskIcon as resolveTaskDisplayIcon,
+} from '../utils/presentationResolver';
 import { getTaskEnd, getTaskStart, hasTaskTime } from '../utils/taskSchedule';
 
 interface CalendarProps {
@@ -169,6 +173,20 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     return resolveTaskDisplayIcon(task, rules, categories);
   };
 
+  const resolveTaskColor = (task: TaskType) => {
+    return resolveTaskDisplayColor(task, rules, categories);
+  };
+
+  const taskPillStyle = (task: TaskType) => {
+    const color = resolveTaskColor(task);
+    return color
+      ? {
+          ...(!task.is_completed ? getTintedColorStyle(color, '22') : {}),
+          borderLeftColor: color,
+        }
+      : {};
+  };
+
   // Navigation functions
   const navigatePrevious = () => {
     const newDate = new Date(currentDate);
@@ -315,8 +333,12 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           {visibleWeekSpans.map((span) => (
             <div
               key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`z-20 min-w-0 rounded px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
-              style={{ gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`, gridRow: span.lane + 2 }}
+              className={`z-20 min-w-0 rounded border-l-4 px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
+              style={{
+                gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
+                gridRow: span.lane + 2,
+                ...taskPillStyle(span.task),
+              }}
               title={span.task.title}
             >
               <div className="flex min-w-0 items-center gap-1">
@@ -409,8 +431,12 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           {weekSpans.map((span) => (
             <div
               key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`z-20 min-w-0 rounded px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
-              style={{ gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`, gridRow: span.lane + 2 }}
+              className={`z-20 min-w-0 rounded border-l-4 px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
+              style={{
+                gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
+                gridRow: span.lane + 2,
+                ...taskPillStyle(span.task),
+              }}
               title={span.task.title}
             >
               <div className="flex min-w-0 items-center gap-1">
@@ -490,9 +516,10 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
               {dayTaskRanges.map((range) => (
                 <div
                   key={range.task.id}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+                  className={`flex items-center gap-2 rounded-md border-l-4 px-3 py-2 ${
                     range.task.is_completed ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-900'
                   }`}
+                  style={taskPillStyle(range.task)}
                 >
                   <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={16} />
                   <span className={`min-w-0 flex-1 truncate text-sm ${range.task.is_completed ? 'line-through' : ''}`}>{range.task.title}</span>
@@ -513,11 +540,12 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
                 return (
                   <div
                     key={range.task.id}
-                    className={`absolute left-2 right-2 min-w-0 rounded-md px-2 py-1 text-xs ${taskPillClasses(range.task)}`}
+                    className={`absolute left-2 right-2 min-w-0 rounded-md border-l-4 px-2 py-1 text-xs ${taskPillClasses(range.task)}`}
                     style={{
                       top: (startMinutes / 60) * rowHeight,
                       height: (durationMinutes / 60) * rowHeight,
                       transform: `translateX(${index % 3 * 6}px)`,
+                      ...taskPillStyle(range.task),
                     }}
                     title={range.task.title}
                   >

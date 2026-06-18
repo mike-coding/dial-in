@@ -64,11 +64,26 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE tasks ADD COLUMN icon VARCHAR(10)"))
             connection.commit()
 
+        if "color" not in task_columns:
+            connection.execute(text("ALTER TABLE tasks ADD COLUMN color VARCHAR(7)"))
+            connection.commit()
+
+        category_info = connection.execute(text("PRAGMA table_info(categories)")).fetchall()
+        category_columns = {row[1] for row in category_info}
+
+        if "color" not in category_columns:
+            connection.execute(text("ALTER TABLE categories ADD COLUMN color VARCHAR(7)"))
+            connection.commit()
+
         rule_info = connection.execute(text("PRAGMA table_info(rules)")).fetchall()
         rule_columns = {row[1] for row in rule_info}
 
         if "icon" not in rule_columns:
             connection.execute(text("ALTER TABLE rules ADD COLUMN icon VARCHAR(10)"))
+            connection.commit()
+
+        if "color" not in rule_columns:
+            connection.execute(text("ALTER TABLE rules ADD COLUMN color VARCHAR(7)"))
             connection.commit()
 
         user_data_info = connection.execute(text("PRAGMA table_info(user_data)")).fetchall()
