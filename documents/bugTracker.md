@@ -9,11 +9,13 @@
 - [ ] 'complete task after end date' tickbox in Task; db field support
     - [ ] Rules should also be able to govern whether tasks are created with this toggled
 
-- [ ] settings panel
-    - [ ] By default, should tasks with end dates auto-complete after window passes?
-    - [ ] Menu bar orientation {'desktop': ['top', 'left', 'bottom', 'right'], 'mobile': ['top', 'bottom']}
-    - [ ] theme
-    - [ ] tickbox: Allow Dark Entity
+- [x] settings panel
+    - [ ] By default, should tasks with end dates auto-complete after window passes? [on/off]
+    - [ ] Menu bar orientation {'desktop': ['top', 'left', 'bottom', 'right'], 'mobile': ['top', 'bottom']} [picklist]
+    - [ ] theme [picklist]
+    - [ ] change object bgs based on color value [on/off]
+    - [ ] show border color indicator on object elements that support color [on/off]
+    - [ ] Allow Dark Entity [on/off]
 
 - [ ] sub-task support
 

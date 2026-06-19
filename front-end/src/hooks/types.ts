@@ -1,4 +1,4 @@
-export type Page = "Tasks" | "Calendar" | "Categories" | "Users" | "Dashboard";
+export type Page = "Tasks" | "Calendar" | "Categories" | "Users" | "Dashboard" | "Settings";
 
 export interface Category {
   id: number;

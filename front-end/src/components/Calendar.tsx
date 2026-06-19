@@ -440,8 +440,6 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
 
   // Render day view
   const renderDayView = () => {
-    const today = new Date();
-    const isToday = currentDate.toDateString() === today.toDateString();
     const dayTaskRanges = getTasksForDate(currentDate);
     const timedTaskRanges = dayTaskRanges.filter(
       (range) =>
@@ -479,23 +477,6 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
 
     return (
       <div className="flex h-full min-h-[32rem] flex-col rounded-md bg-white transition-all duration-200">
-        <div className={`shrink-0 p-4 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
-          <div className="flex items-center justify-center">
-            <WindowsEmoji emoji="📅" size={24} className="mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              {currentDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </h3>
-            {isToday && (
-              <span className="ml-2 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-                Today
-              </span>
-            )}
-          </div>
-        </div>
         <div className="shrink-0 p-4">
           {dayTaskRanges.length === 0 ? (
             <div className="text-sm text-gray-500">No scheduled tasks</div>

@@ -9,6 +9,7 @@ import Profile from './components/Profile'
 import Calendar from './components/Calendar'
 import DerivedFieldStyleDebug from './components/DerivedFieldStyleDebug'
 import OverlayScrollPane from './components/OverlayScrollPane'
+import Settings from './components/Settings'
 import WindowsEmoji from './components/WindowsEmoji'
 import { useNavigationContext, useUser } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
@@ -96,6 +97,8 @@ function App() {
         return <Calendar isMobile={isMobile} />;
       case 'Users':
         return <Profile isMobile={isMobile} />;
+      case 'Settings':
+        return <Settings />;
       default:
         return (
           <div className={`text-center w-full max-w-4xl ${mobilePageClasses}`}>

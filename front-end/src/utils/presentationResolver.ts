@@ -166,11 +166,11 @@ export const DEFAULT_DERIVED_FIELD_STYLE_TUNING: DerivedFieldStyleTuning = {
   cardBorderMix: 0,
   mutedCardBorderMix: 0.74,
   fieldBackgroundMix: 0.90,
-  fieldHoverBackgroundMix: 0.95,
+  fieldHoverBackgroundMix: 0.90,
   selectedFieldBackgroundMix: 0.58,
   selectedFieldHoverBackgroundMix: 0.5,
   mutedFieldBackgroundMix: 1.00,
-  mutedFieldHoverBackgroundMix: 0.96,
+  mutedFieldHoverBackgroundMix: 1.00,
   focusRingMix: 0.52,
 };
 
