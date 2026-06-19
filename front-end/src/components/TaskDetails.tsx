@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
 import { useRules } from '../hooks/useRules';
-import { resolveInheritedTaskColor } from '../utils/presentationResolver';
+import { getDerivedFieldStyle, resolveInheritedTaskColor, resolveTaskColor } from '../utils/presentationResolver';
 import { toDateOnlyValue, toTimeOnlyValue } from '../utils/taskSchedule';
 import ColorPicker from './ColorPicker';
 import WindowsEmoji from './WindowsEmoji';
@@ -45,6 +45,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
   const { categories } = useCategories();
   const { rules } = useRules();
   const inheritedTaskColor = resolveInheritedTaskColor(task, rules, categories);
+  const taskColor = resolveTaskColor(task, rules, categories);
+  const fieldStyle = getDerivedFieldStyle(taskColor, { muted: task.is_completed });
   const [description, setDescription] = useState(task.description || '');
   const [categoryId, setCategoryId] = useState<number | null>(task.category_id || null);
   const [dueDate, setDueDate] = useState(() => toDateOnlyValue(task.due_date));
@@ -207,7 +209,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
             onChange={(e) => setDescription(e.target.value)}
             onBlur={handleDescriptionBlur}
             rows={3}
-            className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 resize-none"
+            className="derived-field w-full px-3 py-2 rounded-md focus:outline-none focus:border-gray-400 resize-none"
+            style={fieldStyle}
             placeholder="Add a description..."
           />
         </div>
@@ -223,6 +226,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
               onChange={(color) => onSave({ color })}
               showClear
               fieldSize
+              buttonClassName="derived-field flex h-10 w-10 items-center justify-center rounded-md transition-colors cursor-pointer"
+              buttonStyle={fieldStyle}
               ariaLabel="Select task color"
             />
           </div>
@@ -241,7 +246,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                   setIsCategoryDropdownOpen(true);
                 }
               }}
-              className="w-full px-3 py-2 mb-1 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
+              className="derived-field w-full px-3 py-2 mb-1 rounded-md text-left flex items-center justify-between transition-colors"
+              style={fieldStyle}
             >
               <div className="flex min-w-0 items-center gap-2">
                 {categoryId ? (
@@ -313,7 +319,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                 onChange={handleDueDateChange}
                 onMouseDown={(e) => handlePickerMouseDown('due-date', e)}
                 onBlur={() => handlePickerBlur('due-date')}
-                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!dueDate ? 'empty-datetime-input' : ''}`}
+                className={`derived-field date-time-picker-input w-full py-2 pr-3 pl-10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!dueDate ? 'empty-datetime-input' : ''}`}
+                style={fieldStyle}
               />
               <CalendarFieldIcon />
             </div>
@@ -331,7 +338,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                 onMouseDown={(e) => handlePickerMouseDown('due-time', e)}
                 onBlur={() => handlePickerBlur('due-time')}
                 disabled={!dueDate}
-                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-50 ${!dueTime ? 'empty-datetime-input' : ''}`}
+                className={`derived-field date-time-picker-input w-full py-2 pr-3 pl-10 rounded-md focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-50 ${!dueTime ? 'empty-datetime-input' : ''}`}
+                style={fieldStyle}
               />
               <ClockFieldIcon />
             </div>
@@ -350,7 +358,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                 onChange={handleEndDateChange}
                 onMouseDown={(e) => handlePickerMouseDown('end-date', e)}
                 onBlur={() => handlePickerBlur('end-date')}
-                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!endDate ? 'empty-datetime-input' : ''}`}
+                className={`derived-field date-time-picker-input w-full py-2 pr-3 pl-10 rounded-md focus:outline-none focus:border-gray-400 transition-colors ${!endDate ? 'empty-datetime-input' : ''}`}
+                style={fieldStyle}
               />
               <CalendarFieldIcon />
             </div>
@@ -368,7 +377,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
                 onMouseDown={(e) => handlePickerMouseDown('end-time', e)}
                 onBlur={() => handlePickerBlur('end-time')}
                 disabled={!endDate}
-                className={`date-time-picker-input w-full py-2 pr-3 pl-10 bg-gray-400/10 rounded-md focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-50 ${!endTime ? 'empty-datetime-input' : ''}`}
+                className={`derived-field date-time-picker-input w-full py-2 pr-3 pl-10 rounded-md focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-50 ${!endTime ? 'empty-datetime-input' : ''}`}
+                style={fieldStyle}
               />
               <ClockFieldIcon />
             </div>

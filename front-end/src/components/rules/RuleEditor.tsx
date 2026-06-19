@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Category } from "../../hooks/types";
+import { getDerivedFieldStyle } from "../../utils/presentationResolver";
 import ColorPicker from "../ColorPicker";
 import WindowsEmoji from "../WindowsEmoji";
 import {
@@ -55,6 +56,9 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
   const effectiveCategoryId = lockCategoryId || draft.categoryId;
   const selectedCategory = categories.find((category) => String(category.id) === effectiveCategoryId) || null;
+  const effectiveRuleColor = draft.color || selectedCategory?.color || null;
+  const fieldStyle = getDerivedFieldStyle(effectiveRuleColor, { muted: !draft.isActive });
+  const nestedFieldStyle = getDerivedFieldStyle(effectiveRuleColor, { muted: !draft.isActive, selected: true });
 
   useEffect(() => {
     if (lockCategoryId && draft.categoryId !== lockCategoryId) {
@@ -116,26 +120,28 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   };
 
   return (
-    <div className="px-4 pb-4">
+    <div className="px-4 pb-4 text-current">
       <div className="pt-4 space-y-4">
         <div>
           <textarea
             value={draft.description}
             onChange={(event) => setDraft((currentDraft) => ({ ...currentDraft, description: event.target.value }))}
             rows={3}
-            className="w-full px-3 py-2 bg-gray-400/10 rounded-md focus:outline-none focus:bg-gray-400/15 resize-none text-gray-800"
+            className="derived-field w-full px-3 py-2 rounded-md focus:outline-none resize-none text-current"
+            style={fieldStyle}
             placeholder="Description..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-current mb-1">
             Enabled
           </label>
           <button
             type="button"
             onClick={() => setDraft((currentDraft) => ({ ...currentDraft, isActive: !currentDraft.isActive }))}
-            className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors hover:bg-gray-400/15"
+            className="derived-field w-full px-3 py-2 rounded-md text-left flex items-center justify-between transition-colors"
+            style={fieldStyle}
             aria-pressed={draft.isActive}
             aria-label={draft.isActive ? "Disable rule" : "Enable rule"}
           >
@@ -145,9 +151,9 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 alt=""
                 className="h-5 w-5"
               />
-              <span className="text-gray-900">{draft.isActive ? "Active" : "Inactive"}</span>
+              <span className="text-current">{draft.isActive ? "Active" : "Inactive"}</span>
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-current opacity-70">
               {draft.isActive ? "Generating tasks" : "Paused"}
             </span>
           </button>
@@ -155,7 +161,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
         <div className={`grid gap-3 ${hideCategorySelector ? "" : "sm:grid-cols-[2.5rem_minmax(0,1fr)]"}`}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-current mb-1">
               Color
             </label>
             <ColorPicker
@@ -164,13 +170,15 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
               onChange={(color) => setDraft((currentDraft) => ({ ...currentDraft, color: color || "" }))}
               showClear
               fieldSize
+              buttonClassName="derived-field flex h-10 w-10 items-center justify-center rounded-md transition-colors cursor-pointer"
+              buttonStyle={fieldStyle}
               ariaLabel="Select rule color"
             />
           </div>
 
           {!hideCategorySelector && (
             <div className="relative" ref={categoryDropdownRef}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-current mb-1">
                 Project
               </label>
               <button
@@ -182,16 +190,17 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                     setIsCategoryDropdownOpen(true);
                   }
                 }}
-                className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors"
+                className="derived-field w-full px-3 py-2 rounded-md text-left flex items-center justify-between transition-colors"
+                style={fieldStyle}
               >
                 <div className="flex min-w-0 items-center gap-2">
                   {selectedCategory ? (
                     <>
                       <WindowsEmoji emoji={selectedCategory.icon || "📁"} size={18} />
-                      <span className="truncate text-gray-900">{selectedCategory.name}</span>
+                      <span className="truncate text-current">{selectedCategory.name}</span>
                     </>
                   ) : (
-                    <span className="text-gray-500">Select project</span>
+                    <span className="text-current opacity-60">Select project</span>
                   )}
                 </div>
                 <svg
@@ -235,7 +244,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-gray-700">Schedule</div>
+            <div className="text-sm font-medium text-current">Schedule</div>
             <button
               type="button"
               onClick={() => {
@@ -246,7 +255,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 }));
                 setExpandedSegmentIds((currentExpanded) => [...currentExpanded, newSegment.id]);
               }}
-              className="px-3 py-2 bg-gray-400/10 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-400/15 transition-colors"
+              className="derived-field px-3 py-2 rounded-md text-sm font-medium text-current transition-colors"
+              style={fieldStyle}
             >
               Add segment
             </button>
@@ -258,13 +268,13 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
             const isSegmentExpanded = expandedSegmentIds.includes(segment.id);
 
             return (
-              <div key={segment.id} className="rounded-md bg-gray-400/10 p-3 space-y-4">
+              <div key={segment.id} className="derived-surface rounded-md p-3 space-y-4" style={nestedFieldStyle}>
                 <button
                   type="button"
                   onClick={() => toggleSegmentExpanded(segment.id)}
                   className="w-full flex items-center justify-between gap-3 text-left"
                 >
-                  <span className="text-sm font-medium text-gray-700 truncate">{segmentSummary || "Set a schedule"}</span>
+                  <span className="text-sm font-medium text-current truncate">{segmentSummary || "Set a schedule"}</span>
                   <svg
                     className={`w-5 h-5 text-gray-500 transition-all duration-200 ${isSegmentExpanded ? "" : "-rotate-90"}`}
                     fill="none"
@@ -324,9 +334,9 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                               dailyInterval: event.target.value,
                             }))
                           }
-                          className="w-24 px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                          className="w-24 px-3 py-2 bg-white rounded-md focus:outline-none text-current"
                         />
-                        <span className="text-sm text-gray-600">day(s)</span>
+                        <span className="text-sm text-current opacity-70">day(s)</span>
                       </div>
                     )}
 
@@ -384,7 +394,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                 ],
                               }))
                             }
-                            className="px-3 py-2 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="px-3 py-2 bg-white rounded-md text-sm font-medium text-current hover:bg-gray-50 transition-colors"
                           >
                             Add row
                           </button>
@@ -404,7 +414,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                   ),
                                 }))
                               }
-                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-current"
                             >
                               {occurrenceOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -424,7 +434,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                   ),
                                 }))
                               }
-                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-current"
                             >
                               {weekdayOptions.map((weekday) => (
                                 <option key={weekday.value} value={weekday.value}>
@@ -463,7 +473,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                 yearlyDates: [...currentSegment.yearlyDates, { id: nextId(), month: 1, date: "1" }],
                               }))
                             }
-                            className="px-3 py-2 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="px-3 py-2 bg-white rounded-md text-sm font-medium text-current hover:bg-gray-50 transition-colors"
                           >
                             Add row
                           </button>
@@ -483,7 +493,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                   ),
                                 }))
                               }
-                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-current"
                             >
                               {monthOptions.map((month) => (
                                 <option key={month.value} value={month.value}>
@@ -506,7 +516,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                   ),
                                 }))
                               }
-                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                              className="px-3 py-2 bg-white rounded-md focus:outline-none text-current"
                               placeholder="Day"
                             />
                             <button
@@ -531,7 +541,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
                     <div className="space-y-3 border-t border-white/30 pt-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-current">
                           <input
                             type="checkbox"
                             checked={segment.hasMonthFilter}
@@ -546,7 +556,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                           Months
                         </label>
 
-                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-current">
                           <input
                             type="checkbox"
                             checked={segment.hasTime}
@@ -591,7 +601,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                               time: event.target.value,
                             }))
                           }
-                          className="px-3 py-2 bg-white rounded-md focus:outline-none text-gray-800"
+                          className="px-3 py-2 bg-white rounded-md focus:outline-none text-current"
                         />
                       )}
                     </div>
@@ -616,12 +626,12 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
               </button>
             ) : (
               <div className="flex items-center justify-between gap-3 px-1 w-full">
-                <span className="text-sm font-medium text-gray-700">Delete rule tasks too?</span>
+                <span className="text-sm font-medium text-current">Delete rule tasks too?</span>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                   <button
                     type="button"
                     onClick={onDeleteCancel}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-md transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium text-current bg-white hover:bg-gray-50 rounded-md transition-colors"
                   >
                     Cancel
                   </button>

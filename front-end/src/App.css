@@ -27,3 +27,22 @@ input.date-time-picker-input::-webkit-calendar-picker-indicator {
   display: none;
   pointer-events: none;
 }
+
+.derived-field,
+.derived-surface {
+  background-color: var(--derived-field-bg, #f3f4f6);
+  border-color: var(--derived-field-border, transparent);
+}
+
+.derived-field:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--derived-field-hover-bg, #e5e7eb);
+}
+
+.derived-field:focus {
+  background-color: var(--derived-field-focus-bg, #e5e7eb);
+}
+
+button.derived-field:focus-visible {
+  outline: 2px solid var(--derived-field-focus-ring, #d1d5db);
+  outline-offset: 2px;
+}

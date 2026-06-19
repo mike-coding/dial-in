@@ -1,6 +1,11 @@
 import React from "react";
 import { Category, Rule as RuleType } from "../../hooks/types";
-import { getTintedColorStyle, mixColor, resolveRuleColor, resolveRuleIcon } from "../../utils/presentationResolver";
+import {
+  getColoredSurfaceStyle,
+  getDerivedFieldStyle,
+  resolveRuleColor,
+  resolveRuleIcon,
+} from "../../utils/presentationResolver";
 import EmojiIconPicker from "../EmojiIconPicker";
 import WindowsEmoji from "../WindowsEmoji";
 import RuleEditor from "./RuleEditor";
@@ -18,24 +23,6 @@ interface RuleItemProps {
   children?: React.ReactNode;
 }
 
-const getRuleItemStyle = (color: string | undefined, isMuted: boolean) => {
-  if (!color) {
-    return {
-      backgroundColor: isMuted ? "#f9fafb" : undefined,
-      borderLeftColor: "transparent",
-    };
-  }
-
-  if (isMuted) {
-    return {
-      backgroundColor: mixColor(color, "#ffffff", 0.94),
-      borderLeftColor: mixColor(color, "#ffffff", 0.55),
-    };
-  }
-
-  return { ...getTintedColorStyle(color, "10"), borderLeftColor: color };
-};
-
 const RuleItem: React.FC<RuleItemProps> = ({
   title,
   icon,
@@ -52,7 +39,11 @@ const RuleItem: React.FC<RuleItemProps> = ({
   return (
   <div
     className="rounded-md border-l-4 bg-gray-100 transition-all duration-200"
-    style={getRuleItemStyle(color, isMuted)}
+    style={getColoredSurfaceStyle(color, {
+      muted: isMuted,
+      fallbackBackground: isMuted ? "#f9fafb" : undefined,
+      fallbackTextColor: isMuted ? "#6b7280" : undefined,
+    })}
   >
     <div className="px-4 py-3 cursor-pointer" onClick={onToggle}>
       <div className={`flex items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
@@ -64,7 +55,7 @@ const RuleItem: React.FC<RuleItemProps> = ({
           <div className="flex min-w-0 items-center px-2 py-1">
             {title}
           </div>
-          {subtitle && <p className="text-sm text-gray-500 px-2 truncate">{subtitle}</p>}
+          {subtitle && <p className="text-sm px-2 truncate opacity-70">{subtitle}</p>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -149,7 +140,7 @@ export const NewRuleItem: React.FC<NewRuleItemProps> = ({
               onSubmit();
             }
           }}
-          className="flex-1 text-gray-600/80 placeholder-gray-600/40 bg-transparent border-none outline-none text-lg"
+          className="flex-1 text-current placeholder-gray-600/40 bg-transparent border-none outline-none text-lg"
           placeholder="Add a new rule..."
           autoFocus={false}
         />
@@ -215,12 +206,13 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
           value={editDraft.name}
           onChange={(event) => setDraft((currentDraft) => ({ ...currentDraft, name: event.target.value }))}
           onClick={(event) => event.stopPropagation()}
-          className="w-full text-lg bg-gray-400/10 rounded-md outline-none transition-all duration-200 focus:bg-gray-400/20 px-2 py-1 text-gray-700"
+          className="derived-field w-full text-lg rounded-md outline-none transition-all duration-200 px-2 py-1 text-current"
+          style={getDerivedFieldStyle(resolveRuleColor(rule, categories), { muted: !rule.is_active })}
           placeholder="Rule name..."
           autoFocus={false}
         />
       ) : (
-        <p className={`text-lg truncate ${rule.is_active ? "text-gray-700" : "text-gray-500"}`}>{rule.name}</p>
+        <p className="text-lg truncate">{rule.name}</p>
       )
     }
     icon={isExpanded && editDraft ? undefined : (rule.icon || category?.icon || resolveRuleIcon(rule, categories))}

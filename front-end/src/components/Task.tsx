@@ -3,6 +3,7 @@ import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
 import { useRules } from '../hooks/useRules';
 import {
+  getDerivedFieldStyle,
   resolveInheritedTaskIcon,
   resolveTaskColor,
   resolveTaskIcon,
@@ -27,6 +28,7 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
   const taskIcon = resolveTaskIcon(task, rules, categories);
   const inheritedTaskIcon = resolveInheritedTaskIcon(task, rules, categories);
   const taskColor = resolveTaskColor(task, rules, categories);
+  const fieldStyle = getDerivedFieldStyle(taskColor, { muted: task.is_completed });
 
   // Update local title when task prop changes
   React.useEffect(() => {
@@ -145,11 +147,12 @@ const Task: React.FC<TaskProps> = ({ task, onToggle, onDelete, onUpdate }) => {
                 onBlur={handleTitleBlur}
                 onKeyDown={handleTitleKeyDown}
                 onClick={(e) => e.stopPropagation()}
-                className={`w-full text-lg bg-gray-400/10 rounded-md outline-none transition-all duration-200 focus:bg-gray-400/20 px-2 py-1 ${
+                className={`derived-field w-full text-lg rounded-md outline-none transition-all duration-200 px-2 py-1 ${
                   task.is_completed 
                     ? 'text-gray-600/90' 
                     : 'text-gray-600/90'
                 }`}
+                style={fieldStyle}
                 placeholder="Enter task title..."
                 autoFocus={false}
               />

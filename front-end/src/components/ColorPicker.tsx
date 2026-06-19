@@ -21,6 +21,7 @@ interface ColorPickerProps {
   showClear?: boolean;
   ariaLabel?: string;
   buttonClassName?: string;
+  buttonStyle?: React.CSSProperties;
   fieldSize?: boolean;
 }
 
@@ -44,6 +45,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   showClear = false,
   ariaLabel = "Select color",
   buttonClassName,
+  buttonStyle,
   fieldSize = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -90,6 +92,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
             fieldSize ? "h-10 w-10 justify-center bg-gray-400/10" : "h-8 w-8 justify-center"
           } ${disabled ? "cursor-default" : "cursor-pointer hover:bg-gray-100"}`
         }
+        style={buttonStyle}
         aria-label={ariaLabel}
       >
         <span

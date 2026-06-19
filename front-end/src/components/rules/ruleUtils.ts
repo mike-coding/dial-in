@@ -417,4 +417,4 @@ export const getSegmentError = (segment: RuleSegment): string | null => {
 export const getFieldChrome = (isActive: boolean) =>
   isActive
     ? "border-gray-700 bg-gray-700 text-white"
-    : "border-white/20 bg-white text-gray-700 hover:bg-gray-50";
+    : "border-white/20 bg-white text-current hover:bg-gray-50";

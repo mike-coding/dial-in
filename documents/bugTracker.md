@@ -19,11 +19,11 @@
 
 - [x] style app as true flat; remove the shadows from the sidebar and sidebar panel/section selection indicator
 
-- [ ] Fix alignment of tasks on timeline in calendar:day view
+- [ ] Fix alignment of tasks on timeline in calendar:day view - off by like 15 minutes
 
 - [ ] fix day element positionining in calendar:week view; presently it's like there's a top row that actually holds the tasks and then the 'day' (which is highlighted on hover) is like an entirely separate element somehow. We don't need one section for tasks and another section for ???. These should be merged
 
-- [ ] task text in calendar views is hard-coded dark blue; this color should be derived from the task color (darkened version)
+- [x] task text in calendar views is hard-coded dark blue; this color should be derived from the task color (darkened version)
 
 - [ ] project card element width can change when one of its rules is expanded; this should be fixed width.
 
@@ -36,3 +36,5 @@
 - [ ] collapsed rule card is taller (greater height) than the new rule field. Fix
 
 - [ ] project/category should have some field that allows you to engage with all its tasks (like we can for rules)
+
+- [ ] sub-task support
