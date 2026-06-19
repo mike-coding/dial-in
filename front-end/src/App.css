@@ -46,3 +46,11 @@ button.derived-field:focus-visible {
   outline: 2px solid var(--derived-field-focus-ring, #d1d5db);
   outline-offset: 2px;
 }
+
+.overlay-scroll-pane {
+  scrollbar-width: none;
+}
+
+.overlay-scroll-pane::-webkit-scrollbar {
+  display: none;
+}

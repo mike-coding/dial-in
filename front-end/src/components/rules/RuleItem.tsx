@@ -7,13 +7,11 @@ import {
   resolveRuleIcon,
 } from "../../utils/presentationResolver";
 import EmojiIconPicker from "../EmojiIconPicker";
-import WindowsEmoji from "../WindowsEmoji";
 import RuleEditor from "./RuleEditor";
 import { RuleDraft } from "./types";
 
 interface RuleItemProps {
   title: React.ReactNode;
-  icon?: string;
   leading?: React.ReactNode;
   subtitle?: string;
   color?: string;
@@ -25,7 +23,6 @@ interface RuleItemProps {
 
 const RuleItem: React.FC<RuleItemProps> = ({
   title,
-  icon,
   leading,
   subtitle,
   color,
@@ -46,19 +43,15 @@ const RuleItem: React.FC<RuleItemProps> = ({
     })}
   >
     <div className="min-w-0 px-4 py-2 cursor-pointer" onClick={onToggle}>
-      <div className={`flex min-h-10 min-w-0 items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
-        {(leading || icon) ? (
-          <div className="flex-shrink-0">{leading ?? (icon ? <WindowsEmoji emoji={icon} size={24} /> : null)}</div>
-        ) : null}
+      <div className={`grid min-h-10 min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2rem] items-center gap-4 ${isMuted ? "opacity-60" : ""}`}>
+        <div className="flex h-10 w-10 items-center justify-center">{leading}</div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex min-w-0 items-center px-2 py-1">
-            {title}
-          </div>
+        <div className="min-w-0 overflow-hidden">
+          {title}
           {subtitle && <p className="text-sm px-2 truncate opacity-70">{subtitle}</p>}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors group">
             <svg
               className={`w-5 h-5 text-gray-500 group-hover:text-gray-400 transition-all duration-200 ${isExpanded ? "" : "transform -rotate-90"}`}
@@ -216,25 +209,29 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
           autoFocus={false}
         />
       ) : (
-        <p className="text-lg truncate">{rule.name}</p>
+        <p className="block w-full max-w-full px-2 py-1 text-lg truncate">{rule.name}</p>
       )
     }
-    icon={isExpanded && editDraft ? undefined : (rule.icon || category?.icon || resolveRuleIcon(rule, categories))}
     color={displayColor}
     isActive={displayIsActive}
     leading={
-      isExpanded && editDraft ? (
-        <EmojiIconPicker
-          value={editDraft.icon}
-          fallbackIcon={category?.icon || resolveRuleIcon(rule, categories)}
-          onChange={(icon) => {
-            setDraft((currentDraft) => ({ ...currentDraft, icon: icon || "" }));
-            onIconChange(icon);
-          }}
-          showClear
-          ariaLabel="Select rule icon"
-        />
-      ) : undefined
+      <EmojiIconPicker
+        value={isExpanded && editDraft ? editDraft.icon : rule.icon}
+        fallbackIcon={category?.icon || resolveRuleIcon(rule, categories)}
+        onChange={(icon) => {
+          if (!isExpanded || !editDraft) {
+            return;
+          }
+          setDraft((currentDraft) => ({ ...currentDraft, icon: icon || "" }));
+          onIconChange(icon);
+        }}
+        disabled={!isExpanded || !editDraft}
+        showClear
+        ariaLabel="Select rule icon"
+        buttonClassName={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+          isExpanded && editDraft ? "cursor-pointer hover:bg-gray-100" : "cursor-default"
+        }`}
+      />
     }
     isExpanded={isExpanded}
     onToggle={onToggle}

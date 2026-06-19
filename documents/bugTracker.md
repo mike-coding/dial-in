@@ -1,12 +1,10 @@
-- [x] New categories are unticked to show in task list by default
+- [ ] prototype dashboard
 
-- [x] Changing a rule's category should update its child task's categories
+- [ ] prototype tracker panel / section
 
-- [x] updating a rule should function the same way tasks do ; save automatically - no 'save' button
+- [ ] Teams object (like household) - Parent to Categories/Projects. May need a relation object for Users on the db so users can join a team/household and see its Categories/Projects
 
-- [x] move running / enabled indicator button into expanded menu for rules; find a more space efficient indicator to convey a rule is enabled at a glance when collapsed
-
-- [ ] tracker panel / section
+- [ ] project/category should have some field that allows you to engage with all its tasks (like we can for rules)
 
 - [ ] 'complete task after end date' tickbox in Task; db field support
     - [ ] Rules should also be able to govern whether tasks are created with this toggled
@@ -17,19 +15,24 @@
     - [ ] theme
     - [ ] tickbox: Allow Dark Entity
 
-- [ ] prototype dashboard
+- [ ] sub-task support
 
-- [x] style app as true flat; remove the shadows from the sidebar and sidebar panel/section selection indicator
+- [ ] fix colored element contrasts
 
-- [ ] Fix alignment of tasks on timeline in calendar:day view - off by like 15 minutes
+- [x] gap / spacing for icon and name field in rules top row changes slightly when expanded / collapsed. fix
 
-- [ ] fix day element positionining in calendar:week view; presently it's like there's a top row that actually holds the tasks and then the 'day' (which is highlighted on hover) is like an entirely separate element somehow. We don't need one section for tasks and another section for ???. These should be merged
+- [ ] using the color dropper to registers as an 'outside click' and immediately closes the color dropper widget, making custom color selection difficult
 
-- [x] task text in calendar views is hard-coded dark blue; this color should be derived from the task color (darkened version)
+================================================================================================
 
-- [x] project card element width can change when one of its rules is expanded; this should be fixed width.
 
-- [ ] scroll bar appearing bumps horizontal positioning of on-screen elements. Can we absolute overlay it or something?
+- [x] New categories are unticked to show in task list by default
+
+- [x] Changing a rule's category should update its child task's categories
+
+- [x] updating a rule should function the same way tasks do ; save automatically - no 'save' button
+
+- [x] move running / enabled indicator button into expanded menu for rules; find a more space efficient indicator to convey a rule is enabled at a glance when collapsed
 
 - [x] tasks should show their parent rule in expanded view
 
@@ -37,8 +40,14 @@
 
 - [x] collapsed rule card is taller (greater height) than the new rule field. Fix
 
-- [ ] project/category should have some field that allows you to engage with all its tasks (like we can for rules)
+- [x] task text in calendar views is hard-coded dark blue; this color should be derived from the task color (darkened version)
 
-- [ ] sub-task support
+- [x] project card element width can change when one of its rules is expanded; this should be fixed width.
 
-- [ ] fix colored element contrasts
+- [x] style app as true flat; remove the shadows from the sidebar and sidebar panel/section selection indicator
+
+- [x] scroll bar appearing bumps horizontal positioning of on-screen elements. Can we absolute overlay it or something?
+
+- [x] Fix alignment of tasks on timeline in calendar:day view - off by like 15 minutes
+
+- [x] fix day element positionining in calendar:week view; presently it's like there's a top row that actually holds the tasks and then the 'day' (which is highlighted on hover) is like an entirely separate element somehow. We don't need one section for tasks and another section for ???. These should be merged

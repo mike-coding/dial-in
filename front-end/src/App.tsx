@@ -7,6 +7,7 @@ import Categories from './components/Categories'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import Calendar from './components/Calendar'
+import OverlayScrollPane from './components/OverlayScrollPane'
 import WindowsEmoji from './components/WindowsEmoji'
 import { useNavigationContext, useUser } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
@@ -116,11 +117,12 @@ function App() {
       {isDesktop && (
         <>
           <Drawer />
-          <div className={`BODY__ min-h-0 w-full flex flex-col items-center overflow-y-auto ${
-            isCalendarPage ? 'mx-4 my-4 p-3' : 'mx-10 my-10 p-6'
-          }`}>
+          <OverlayScrollPane
+            wrapperClassName={isCalendarPage ? 'mx-4 my-4' : 'mx-10 my-10'}
+            className={`BODY__ w-full flex flex-col items-center ${isCalendarPage ? 'p-3' : 'p-6'}`}
+          >
             {renderCurrentPage()}
-          </div>
+          </OverlayScrollPane>
         </>
       )}
 
@@ -128,11 +130,12 @@ function App() {
       {isTablet && (
         <>
           <Drawer />
-          <div className={`BODY__ min-h-0 w-full flex flex-col items-center overflow-y-auto ${
-            isCalendarPage ? 'mx-3 my-3 p-2' : 'mx-6 my-6 p-4'
-          }`}>
+          <OverlayScrollPane
+            wrapperClassName={isCalendarPage ? 'mx-3 my-3' : 'mx-6 my-6'}
+            className={`BODY__ w-full flex flex-col items-center ${isCalendarPage ? 'p-2' : 'p-4'}`}
+          >
             {renderCurrentPage()}
-          </div>
+          </OverlayScrollPane>
         </>
       )}
 
@@ -143,9 +146,9 @@ function App() {
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
           </div>
-          <div className={`min-h-0 flex-1 w-full overflow-y-auto px-4 ${isCalendarPage ? 'py-3' : 'py-8'}`}>
+          <OverlayScrollPane className={`w-full px-4 ${isCalendarPage ? 'py-3' : 'py-8'}`}>
             {renderCurrentPage()}
-          </div>
+          </OverlayScrollPane>
           <MobileNavigation />
         </div>
       )}

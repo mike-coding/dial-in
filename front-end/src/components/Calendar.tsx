@@ -370,59 +370,52 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const renderWeekView = () => {
     const weekStart = new Date(currentDate);
     weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-    
-    const dayCells = [];
     const today = new Date();
     const weekSpans = packTaskSpans(getTaskSpansForRange(weekStart, 7));
     const laneCount = Math.max(1, ...weekSpans.map((span) => span.lane + 1));
-
-    for (let i = 0; i < 7; i++) {
+    const gridTemplateRows = `4.5rem repeat(${laneCount}, minmax(1.75rem, auto)) minmax(0, 1fr)`;
+    const weekDays = Array.from({ length: 7 }, (_, dayIndex) => {
       const day = new Date(weekStart);
-      day.setDate(weekStart.getDate() + i);
-      const isToday = day.toDateString() === today.toDateString();
-      const hasTasks = getTasksForDate(day).length > 0;
-
-      dayCells.push(
-        <div
-          key={`${toDateKey(day)}-background`}
-          style={{ gridColumn: `${i + 1}`, gridRow: '1 / -1' }}
-          className={`rounded-md transition-all duration-200 ${isToday ? 'bg-blue-50' : 'bg-white'}`}
-        />
-      );
-
-      dayCells.push(
-        <div
-          key={`${toDateKey(day)}-header`}
-          style={{ gridColumn: `${i + 1}`, gridRow: '1' }}
-          className={`z-10 flex flex-col items-center justify-center rounded-t-md py-2 ${isToday ? 'text-blue-700' : 'text-gray-900'}`}
-        >
-          <div className="text-xs font-medium">
-            {day.toLocaleDateString('en-US', { weekday: 'short' })}
-          </div>
-          <div className="text-lg font-semibold">
-            {day.getDate()}
-          </div>
-        </div>
-      );
-
-      dayCells.push(
-        <div
-          key={`${toDateKey(day)}-body`}
-          style={{ gridColumn: `${i + 1}`, gridRow: `${laneCount + 2}` }}
-          className="z-10 min-h-0 rounded-b-md p-2 hover:bg-gray-50"
-        >
-          {!hasTasks && <div className="text-xs text-gray-400">No tasks</div>}
-        </div>
-      );
-    }
+      day.setDate(weekStart.getDate() + dayIndex);
+      return day;
+    });
 
     return (
       <div className="h-full min-h-[32rem] rounded-md bg-white p-1 transition-all duration-200">
-        <div
-          className="grid h-full min-h-0 grid-cols-7 gap-x-1 gap-y-1"
-          style={{ gridTemplateRows: `4.5rem repeat(${laneCount}, minmax(1.75rem, auto)) minmax(0, 1fr)` }}
-        >
-          {dayCells}
+        <div className="grid h-full min-h-0 grid-cols-7 gap-1" style={{ gridTemplateRows }}>
+          {weekDays.map((day) => {
+            const isToday = day.toDateString() === today.toDateString();
+            const hasTasks = getTasksForDate(day).length > 0;
+
+            return (
+              <div
+                key={toDateKey(day)}
+                style={{ gridColumn: `${day.getDay() + 1}`, gridRow: '1 / -1', gridTemplateRows }}
+                className={`grid min-h-0 min-w-0 rounded-md p-2 transition-colors duration-200 hover:bg-gray-50 ${
+                  isToday ? 'bg-blue-50' : 'bg-white'
+                }`}
+              >
+                <div
+                  className={`flex flex-col items-center justify-center text-center ${isToday ? 'text-blue-700' : 'text-gray-900'}`}
+                  style={{ gridRow: '1' }}
+                >
+                  <div className="text-xs font-medium">
+                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                  </div>
+                  <div className="text-lg font-semibold">
+                    {day.getDate()}
+                  </div>
+                </div>
+
+                {!hasTasks && (
+                  <div className="min-w-0 text-xs text-gray-400" style={{ gridRow: `${laneCount + 2}` }}>
+                    No tasks
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
           {weekSpans.map((span) => (
             <div
               key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
@@ -473,11 +466,11 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       });
 
       timeSlots.push(
-        <div key={hour} className="flex border-b border-gray-100">
+        <div key={hour} className="flex h-12 border-b border-gray-100">
           <div className="w-16 p-2 text-xs text-gray-500 border-r border-gray-100">
             {timeString}
           </div>
-          <div className="flex-1 p-2 min-h-12 hover:bg-gray-50 cursor-pointer">
+          <div className="flex-1 p-2 hover:bg-gray-50 cursor-pointer">
             {/* Placeholder for events */}
           </div>
         </div>
