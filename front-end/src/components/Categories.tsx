@@ -425,8 +425,8 @@ const Categories: React.FC = () => {
   };
 
   return (
-    <div className="">
-      <div className="w-full max-w-full px-4 mx-auto pt-4">
+    <div className="w-full min-w-0">
+      <div className="w-full min-w-0 max-w-2xl px-4 mx-auto pt-4">
         
         {/* Add Category Input */}
         <div className="mb-6 relative">
@@ -489,7 +489,7 @@ const Categories: React.FC = () => {
                   </span>
                 }
               >
-                <div className="pt-2 border-t border-white/30 space-y-3">
+                <div className="min-w-0 max-w-full pt-2 border-t border-white/30 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">Rules</span>
                   </div>
@@ -497,7 +497,7 @@ const Categories: React.FC = () => {
                   {(rules.filter((rule) => rule.category_id === category.id)).length === 0 ? (
                     <p className="text-sm text-gray-500">No rules yet.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="min-w-0 max-w-full space-y-2">
                       {rules
                         .filter((rule) => rule.category_id === category.id)
                         .map((rule) => (
@@ -603,8 +603,8 @@ const Categories: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="bg-gray-400/10 rounded-md px-4 py-2" data-project-rule-create>
-                    <div className="flex items-center gap-3">
+                  <div className="min-w-0 max-w-full bg-gray-400/10 rounded-md px-4 py-2" data-project-rule-create>
+                    <div className="flex min-w-0 items-center gap-3">
                       <div
                         onClick={() => handleCreateProjectRule(category.id)}
                         className="w-10 h-10 flex items-center justify-center cursor-pointer transition-colors hover:scale-105 transition-all duration-200"
@@ -653,7 +653,7 @@ const Categories: React.FC = () => {
                   </div>
 
                   {openProjectRuleEditors[category.id] && (
-                    <div className="bg-gray-400/10 rounded-md" data-project-rule-create>
+                    <div className="min-w-0 max-w-full bg-gray-400/10 rounded-md" data-project-rule-create>
                       <RuleEditor
                         draft={getProjectRuleDraft(category.id)}
                         setDraft={(value) => setProjectRuleDraft(category.id, value)}

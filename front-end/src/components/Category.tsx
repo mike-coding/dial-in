@@ -120,14 +120,14 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
   return (
     <div 
       ref={categoryRef}
-      className="rounded-md border-l-4 bg-white transition-all duration-200"
+      className="w-full max-w-full min-w-0 overflow-hidden rounded-md border-l-4 bg-white transition-all duration-200"
       style={{ borderLeftColor: category.color || 'transparent' }}
     >
       <div 
         className="px-4 py-3 cursor-pointer"
         onClick={handleCategoryClick}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           {/* Category Icon */}
           <div className="flex-shrink-0">
             <EmojiIconPicker
@@ -203,8 +203,8 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
           isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}
       >
-        <div className="px-4 pb-4">
-          <div className="pt-4 space-y-4">
+        <div className="min-w-0 px-4 pb-4">
+          <div className="min-w-0 pt-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Color

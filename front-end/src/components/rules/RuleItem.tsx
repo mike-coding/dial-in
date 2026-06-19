@@ -38,15 +38,15 @@ const RuleItem: React.FC<RuleItemProps> = ({
 
   return (
   <div
-    className="rounded-md border-l-4 bg-gray-100 transition-all duration-200"
+    className="w-full max-w-full min-w-0 overflow-hidden rounded-md border-l-4 bg-gray-100 transition-all duration-200"
     style={getColoredSurfaceStyle(color, {
       muted: isMuted,
       fallbackBackground: isMuted ? "#f9fafb" : undefined,
       fallbackTextColor: isMuted ? "#6b7280" : undefined,
     })}
   >
-    <div className="px-4 py-2 cursor-pointer" onClick={onToggle}>
-      <div className={`flex min-h-10 items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
+    <div className="min-w-0 px-4 py-2 cursor-pointer" onClick={onToggle}>
+      <div className={`flex min-h-10 min-w-0 items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
         {(leading || icon) ? (
           <div className="flex-shrink-0">{leading ?? (icon ? <WindowsEmoji emoji={icon} size={24} /> : null)}</div>
         ) : null}
@@ -76,7 +76,7 @@ const RuleItem: React.FC<RuleItemProps> = ({
     <div
       className={`transition-all duration-300 ease-in-out ${
         isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
-      }`}
+      } min-w-0 max-w-full`}
     >
       {children}
     </div>

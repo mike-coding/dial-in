@@ -27,7 +27,7 @@
 
 - [x] task text in calendar views is hard-coded dark blue; this color should be derived from the task color (darkened version)
 
-- [ ] project card element width can change when one of its rules is expanded; this should be fixed width.
+- [x] project card element width can change when one of its rules is expanded; this should be fixed width.
 
 - [ ] scroll bar appearing bumps horizontal positioning of on-screen elements. Can we absolute overlay it or something?
 
@@ -40,3 +40,5 @@
 - [ ] project/category should have some field that allows you to engage with all its tasks (like we can for rules)
 
 - [ ] sub-task support
+
+- [ ] fix colored element contrasts
