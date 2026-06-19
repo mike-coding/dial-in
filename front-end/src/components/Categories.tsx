@@ -583,15 +583,6 @@ const Categories: React.FC = () => {
                               ) : undefined
                             }
                             onToggle={() => toggleProjectExistingRule(rule)}
-                            onToggleActive={() => {
-                              const nextIsActive = !rule.is_active;
-                              updateRule(rule.id, { is_active: nextIsActive });
-                              if (expandedRuleId === rule.id) {
-                                setEditRuleDraft((currentDraft) =>
-                                  currentDraft ? { ...currentDraft, isActive: nextIsActive } : currentDraft
-                                );
-                              }
-                            }}
                             onIconChange={(icon) => updateRule(rule.id, { icon })}
                             setDraft={(value) => {
                               setEditRuleDraft((currentDraft) => {

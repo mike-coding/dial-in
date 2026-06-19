@@ -1,6 +1,6 @@
 import React from "react";
 import { Category, Rule as RuleType } from "../../hooks/types";
-import { getTintedColorStyle, resolveRuleColor, resolveRuleIcon } from "../../utils/presentationResolver";
+import { getTintedColorStyle, mixColor, resolveRuleColor, resolveRuleIcon } from "../../utils/presentationResolver";
 import EmojiIconPicker from "../EmojiIconPicker";
 import WindowsEmoji from "../WindowsEmoji";
 import RuleEditor from "./RuleEditor";
@@ -11,42 +11,58 @@ interface RuleItemProps {
   icon?: string;
   leading?: React.ReactNode;
   subtitle?: string;
-  titleSuffix?: React.ReactNode;
-  headerAction?: React.ReactNode;
   color?: string;
+  isActive?: boolean;
   isExpanded: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
 }
+
+const getRuleItemStyle = (color: string | undefined, isMuted: boolean) => {
+  if (!color) {
+    return {
+      backgroundColor: isMuted ? "#f9fafb" : undefined,
+      borderLeftColor: "transparent",
+    };
+  }
+
+  if (isMuted) {
+    return {
+      backgroundColor: mixColor(color, "#ffffff", 0.94),
+      borderLeftColor: mixColor(color, "#ffffff", 0.55),
+    };
+  }
+
+  return { ...getTintedColorStyle(color, "10"), borderLeftColor: color };
+};
 
 const RuleItem: React.FC<RuleItemProps> = ({
   title,
   icon,
   leading,
   subtitle,
-  titleSuffix,
-  headerAction,
   color,
+  isActive = true,
   isExpanded,
   onToggle,
   children,
-}) => (
+}) => {
+  const isMuted = !isActive;
+
+  return (
   <div
     className="rounded-md border-l-4 bg-gray-100 transition-all duration-200"
-    style={{ ...getTintedColorStyle(color, "10"), borderLeftColor: color || "transparent" }}
+    style={getRuleItemStyle(color, isMuted)}
   >
     <div className="px-4 py-3 cursor-pointer" onClick={onToggle}>
-      <div className={`flex items-center ${leading || icon ? "gap-4" : "gap-2"}`}>
-        {headerAction ? <div className="flex-shrink-0">{headerAction}</div> : null}
-
+      <div className={`flex items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
         {(leading || icon) ? (
           <div className="flex-shrink-0">{leading ?? (icon ? <WindowsEmoji emoji={icon} size={24} /> : null)}</div>
         ) : null}
 
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 px-2 py-1">
+          <div className="flex min-w-0 items-center px-2 py-1">
             {title}
-            {titleSuffix}
           </div>
           {subtitle && <p className="text-sm text-gray-500 px-2 truncate">{subtitle}</p>}
         </div>
@@ -74,7 +90,8 @@ const RuleItem: React.FC<RuleItemProps> = ({
       {children}
     </div>
   </div>
-);
+  );
+};
 
 interface NewRuleItemProps {
   isExpanded: boolean;
@@ -167,7 +184,6 @@ interface ExistingRuleItemProps {
   showDeleteConfirm: boolean;
   bodyOverride?: React.ReactNode;
   onToggle: () => void;
-  onToggleActive: () => void;
   onIconChange: (icon: string | null) => void;
   setDraft: (value: React.SetStateAction<RuleDraft>) => void;
   onDeleteRequest: () => void;
@@ -185,7 +201,6 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
   showDeleteConfirm,
   bodyOverride,
   onToggle,
-  onToggleActive,
   onIconChange,
   setDraft,
   onDeleteRequest,
@@ -205,11 +220,12 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
           autoFocus={false}
         />
       ) : (
-        <p className="text-lg truncate text-gray-700">{rule.name}</p>
+        <p className={`text-lg truncate ${rule.is_active ? "text-gray-700" : "text-gray-500"}`}>{rule.name}</p>
       )
     }
     icon={isExpanded && editDraft ? undefined : (rule.icon || category?.icon || resolveRuleIcon(rule, categories))}
     color={resolveRuleColor(rule, categories)}
+    isActive={rule.is_active}
     leading={
       isExpanded && editDraft ? (
         <EmojiIconPicker
@@ -223,23 +239,6 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
           ariaLabel="Select rule icon"
         />
       ) : undefined
-    }
-    headerAction={
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleActive();
-        }}
-        className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-gray-300/40 transition-colors"
-        aria-label={rule.is_active ? "Set rule inactive" : "Set rule active"}
-      >
-        <img
-          src={rule.is_active ? "/svg/active.svg" : "/svg/inactive.svg"}
-          alt=""
-          className="w-4 h-4"
-        />
-      </button>
     }
     isExpanded={isExpanded}
     onToggle={onToggle}

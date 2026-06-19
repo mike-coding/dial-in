@@ -128,6 +128,31 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Enabled
+          </label>
+          <button
+            type="button"
+            onClick={() => setDraft((currentDraft) => ({ ...currentDraft, isActive: !currentDraft.isActive }))}
+            className="w-full px-3 py-2 bg-gray-400/10 rounded-md text-left flex items-center justify-between transition-colors hover:bg-gray-400/15"
+            aria-pressed={draft.isActive}
+            aria-label={draft.isActive ? "Disable rule" : "Enable rule"}
+          >
+            <span className="flex items-center gap-2">
+              <img
+                src={draft.isActive ? "/svg/active.svg" : "/svg/inactive.svg"}
+                alt=""
+                className="h-5 w-5"
+              />
+              <span className="text-gray-900">{draft.isActive ? "Active" : "Inactive"}</span>
+            </span>
+            <span className="text-xs text-gray-500">
+              {draft.isActive ? "Generating tasks" : "Paused"}
+            </span>
+          </button>
+        </div>
+
         <div className={`grid gap-3 ${hideCategorySelector ? "" : "sm:grid-cols-[2.5rem_minmax(0,1fr)]"}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
