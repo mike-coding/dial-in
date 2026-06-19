@@ -6,7 +6,7 @@ import { useRules } from '../hooks/useRules';
 import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
 import {
-  getTintedColorStyle,
+  mixColor,
   resolveTaskColor as resolveTaskDisplayColor,
   resolveTaskIcon as resolveTaskDisplayIcon,
 } from '../utils/presentationResolver';
@@ -181,8 +181,9 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
     const color = resolveTaskColor(task);
     return color
       ? {
-          ...(!task.is_completed ? getTintedColorStyle(color, '22') : {}),
-          borderLeftColor: color,
+          ...(task.is_completed
+            ? { backgroundColor: mixColor(color, '#ffffff', 0.9), borderLeftColor: mixColor(color, '#ffffff', 0.35) }
+            : { backgroundColor: mixColor(color, '#ffffff', 0.82), borderColor: mixColor(color, '#ffffff', 0.45), borderLeftColor: color }),
         }
       : {};
   };

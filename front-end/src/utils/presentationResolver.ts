@@ -98,3 +98,17 @@ export const resolveInheritedTaskColor = (
 
 export const getTintedColorStyle = (color?: string, alpha = "18"): CSSProperties =>
   color ? { backgroundColor: `${color}${alpha}`, borderColor: `${color}66` } : {};
+
+export const mixColor = (color: string, target: string, amount: number) => {
+  const clampedAmount = Math.max(0, Math.min(1, amount));
+  const readChannel = (source: string, start: number) => parseInt(source.slice(start, start + 2), 16);
+  const channels = [1, 3, 5].map((start) => {
+    const sourceValue = readChannel(color, start);
+    const targetValue = readChannel(target, start);
+    return Math.round(sourceValue + (targetValue - sourceValue) * clampedAmount)
+      .toString(16)
+      .padStart(2, "0");
+  });
+
+  return `#${channels.join("")}`;
+};

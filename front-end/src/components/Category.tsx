@@ -213,7 +213,6 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
                 value={category.color}
                 onChange={(color) => handleUpdate({ color })}
                 showClear
-                clearLabel="Clear"
                 ariaLabel="Select project color"
               />
             </div>

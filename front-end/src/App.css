@@ -19,6 +19,10 @@ input.date-time-picker-input {
   cursor: pointer;
 }
 
+input.date-time-picker-input:disabled {
+  cursor: default;
+}
+
 input.date-time-picker-input::-webkit-calendar-picker-indicator {
   display: none;
   pointer-events: none;

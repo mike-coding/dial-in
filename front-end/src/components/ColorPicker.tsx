@@ -19,7 +19,6 @@ interface ColorPickerProps {
   onChange: (color: string | null) => void;
   disabled?: boolean;
   showClear?: boolean;
-  clearLabel?: string;
   ariaLabel?: string;
   buttonClassName?: string;
   fieldSize?: boolean;
@@ -43,7 +42,6 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   onChange,
   disabled = false,
   showClear = false,
-  clearLabel = "Inherit",
   ariaLabel = "Select color",
   buttonClassName,
   fieldSize = false,
@@ -136,9 +134,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
               <button
                 type="button"
                 onClick={() => handleSelect(null)}
-                className="flex-1 rounded-md px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
+                aria-label="Clear color"
+                title="Clear color"
               >
-                {clearLabel}
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 6l12 12M18 6L6 18" />
+                </svg>
               </button>
             ) : null}
           </div>
