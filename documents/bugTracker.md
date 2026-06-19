@@ -17,10 +17,6 @@
 
 - [ ] sub-task support
 
-- [ ] fix colored element contrasts
-
-- [x] gap / spacing for icon and name field in rules top row changes slightly when expanded / collapsed. fix
-
 - [ ] using the color dropper to registers as an 'outside click' and immediately closes the color dropper widget, making custom color selection difficult
 
 ================================================================================================
@@ -51,3 +47,7 @@
 - [x] Fix alignment of tasks on timeline in calendar:day view - off by like 15 minutes
 
 - [x] fix day element positionining in calendar:week view; presently it's like there's a top row that actually holds the tasks and then the 'day' (which is highlighted on hover) is like an entirely separate element somehow. We don't need one section for tasks and another section for ???. These should be merged
+
+- [x] gap / spacing for icon and name field in rules top row changes slightly when expanded / collapsed. fix
+
+- [x] fix colored element contrasts

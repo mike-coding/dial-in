@@ -112,25 +112,6 @@ export const mixColor = (color: string, target: string, amount: number) => {
   return `#${channels.join("")}`;
 };
 
-const getRelativeLuminance = (color: string) => {
-  const channels = [1, 3, 5].map((start) => {
-    const value = parseInt(color.slice(start, start + 2), 16) / 255;
-    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  });
-
-  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-};
-
-const pickMoreDistinctFill = (referenceColor: string, candidates: string[]) => {
-  const referenceLuminance = getRelativeLuminance(referenceColor);
-
-  return candidates.reduce((bestCandidate, candidate) => {
-    const bestDelta = Math.abs(getRelativeLuminance(bestCandidate) - referenceLuminance);
-    const candidateDelta = Math.abs(getRelativeLuminance(candidate) - referenceLuminance);
-    return candidateDelta > bestDelta ? candidate : bestCandidate;
-  }, candidates[0]);
-};
-
 interface ColoredSurfaceOptions {
   muted?: boolean;
   includeBorder?: boolean;
@@ -138,8 +119,78 @@ interface ColoredSurfaceOptions {
   fallbackTextColor?: string;
 }
 
-export const getDerivedTextColor = (color: string, muted = false) =>
-  muted ? mixColor(color, "#6b7280", 0.55) : mixColor(color, "#111827", 0.45);
+interface DerivedFieldOptions {
+  muted?: boolean;
+  selected?: boolean;
+}
+
+export interface DerivedFieldStyleTuning {
+  targetColor: string;
+  textTargetColor: string;
+  mutedTextTargetColor: string;
+  fallbackBackground: string;
+  fallbackSelectedBackground: string;
+  fallbackHoverBackground: string;
+  fallbackSelectedHoverBackground: string;
+  fallbackFocusRing: string;
+  borderColor: string;
+  cardBackgroundMix: number;
+  mutedCardBackgroundMix: number;
+  cardTextMix: number;
+  mutedCardTextMix: number;
+  cardBorderMix: number;
+  mutedCardBorderMix: number;
+  fieldBackgroundMix: number;
+  fieldHoverBackgroundMix: number;
+  selectedFieldBackgroundMix: number;
+  selectedFieldHoverBackgroundMix: number;
+  mutedFieldBackgroundMix: number;
+  mutedFieldHoverBackgroundMix: number;
+  focusRingMix: number;
+}
+
+export const DEFAULT_DERIVED_FIELD_STYLE_TUNING: DerivedFieldStyleTuning = {
+  targetColor: "#ffffff",
+  textTargetColor: "#111827",
+  mutedTextTargetColor: "#6b7280",
+  fallbackBackground: "#f3f4f6",
+  fallbackSelectedBackground: "#e5e7eb",
+  fallbackHoverBackground: "#e5e7eb",
+  fallbackSelectedHoverBackground: "#d1d5db",
+  fallbackFocusRing: "#d1d5db",
+  borderColor: "transparent",
+  cardBackgroundMix: 0.78,
+  mutedCardBackgroundMix: 0.93,
+  cardTextMix: 0.75,
+  mutedCardTextMix: 0.55,
+  cardBorderMix: 0,
+  mutedCardBorderMix: 0.74,
+  fieldBackgroundMix: 0.90,
+  fieldHoverBackgroundMix: 0.95,
+  selectedFieldBackgroundMix: 0.58,
+  selectedFieldHoverBackgroundMix: 0.5,
+  mutedFieldBackgroundMix: 1.00,
+  mutedFieldHoverBackgroundMix: 0.96,
+  focusRingMix: 0.52,
+};
+
+const getTuningColor = (
+  value: string,
+  fallback: string
+) => normalizeColor(value) || normalizeColor(fallback) || "#ffffff";
+
+export const getDerivedTextColor = (
+  color: string,
+  muted = false,
+  tuning: DerivedFieldStyleTuning = DEFAULT_DERIVED_FIELD_STYLE_TUNING
+) =>
+  mixColor(
+    color,
+    muted
+      ? getTuningColor(tuning.mutedTextTargetColor, DEFAULT_DERIVED_FIELD_STYLE_TUNING.mutedTextTargetColor)
+      : getTuningColor(tuning.textTargetColor, DEFAULT_DERIVED_FIELD_STYLE_TUNING.textTargetColor),
+    muted ? tuning.mutedCardTextMix : tuning.cardTextMix
+  );
 
 export const getColoredSurfaceStyle = (
   color?: string,
@@ -148,72 +199,75 @@ export const getColoredSurfaceStyle = (
     includeBorder = true,
     fallbackBackground,
     fallbackTextColor,
-  }: ColoredSurfaceOptions = {}
+  }: ColoredSurfaceOptions = {},
+  tuning: DerivedFieldStyleTuning = DEFAULT_DERIVED_FIELD_STYLE_TUNING
 ): CSSProperties => {
+  const targetColor = getTuningColor(tuning.targetColor, DEFAULT_DERIVED_FIELD_STYLE_TUNING.targetColor);
+
   if (!color) {
     return {
       ...(fallbackBackground ? { backgroundColor: fallbackBackground } : {}),
       ...(fallbackTextColor ? { color: fallbackTextColor } : {}),
-      ...(includeBorder ? { borderLeftColor: "transparent" } : {}),
+      ...(includeBorder ? { borderLeftColor: tuning.borderColor } : {}),
     };
   }
 
   if (muted) {
     return {
-      backgroundColor: mixColor(color, "#ffffff", 0.9),
-      color: getDerivedTextColor(color, true),
-      ...(includeBorder ? { borderLeftColor: mixColor(color, "#ffffff", 0.35) } : {}),
+      backgroundColor: mixColor(color, targetColor, tuning.mutedCardBackgroundMix),
+      color: getDerivedTextColor(color, true, tuning),
+      ...(includeBorder ? { borderLeftColor: mixColor(color, targetColor, tuning.mutedCardBorderMix) } : {}),
     };
   }
 
   return {
-    backgroundColor: mixColor(color, "#ffffff", 0.82),
-    color: getDerivedTextColor(color),
+    backgroundColor: mixColor(color, targetColor, tuning.cardBackgroundMix),
+    color: getDerivedTextColor(color, false, tuning),
     ...(includeBorder
       ? {
-          borderColor: mixColor(color, "#ffffff", 0.45),
-          borderLeftColor: color,
+          borderColor: mixColor(color, targetColor, tuning.cardBorderMix),
+          borderLeftColor: mixColor(color, targetColor, tuning.cardBorderMix),
         }
       : {}),
   };
 };
 
-interface DerivedFieldOptions {
-  muted?: boolean;
-  selected?: boolean;
-}
-
 export const getDerivedFieldStyle = (
   color?: string | null,
-  { muted = false, selected = false }: DerivedFieldOptions = {}
+  { muted = false, selected = false }: DerivedFieldOptions = {},
+  tuning: DerivedFieldStyleTuning = DEFAULT_DERIVED_FIELD_STYLE_TUNING
 ): CSSVariableProperties => {
   const normalizedColor = normalizeColor(color);
+  const targetColor = getTuningColor(tuning.targetColor, DEFAULT_DERIVED_FIELD_STYLE_TUNING.targetColor);
 
   if (!normalizedColor) {
     return {
-      "--derived-field-bg": selected ? "#e5e7eb" : "#f3f4f6",
-      "--derived-field-hover-bg": selected ? "#d1d5db" : "#e5e7eb",
-      "--derived-field-focus-bg": selected ? "#d1d5db" : "#e5e7eb",
-      "--derived-field-border": "transparent",
-      "--derived-field-focus-ring": "#d1d5db",
+      "--derived-field-bg": selected ? tuning.fallbackSelectedBackground : tuning.fallbackBackground,
+      "--derived-field-hover-bg": selected ? tuning.fallbackSelectedHoverBackground : tuning.fallbackHoverBackground,
+      "--derived-field-focus-bg": selected ? tuning.fallbackSelectedHoverBackground : tuning.fallbackHoverBackground,
+      "--derived-field-border": tuning.borderColor,
+      "--derived-field-focus-ring": tuning.fallbackFocusRing,
     };
   }
 
-  const surfaceColor = mixColor(normalizedColor, "#ffffff", muted ? 0.9 : 0.82);
-  const fieldBackground = pickMoreDistinctFill(surfaceColor, [
-    mixColor(normalizedColor, "#ffffff", muted ? 0.98 : 0.95),
-    mixColor(normalizedColor, "#ffffff", muted ? 0.74 : selected ? 0.58 : 0.64),
-  ]);
-  const hoverBackground = pickMoreDistinctFill(fieldBackground, [
-    mixColor(normalizedColor, "#ffffff", muted ? 0.94 : 0.9),
-    mixColor(normalizedColor, "#ffffff", muted ? 0.68 : selected ? 0.5 : 0.56),
-  ]);
+  const backgroundMix = muted
+    ? tuning.mutedFieldBackgroundMix
+    : selected
+      ? tuning.selectedFieldBackgroundMix
+      : tuning.fieldBackgroundMix;
+  const hoverMix = muted
+    ? tuning.mutedFieldHoverBackgroundMix
+    : selected
+      ? tuning.selectedFieldHoverBackgroundMix
+      : tuning.fieldHoverBackgroundMix;
+  const fieldBackground = mixColor(normalizedColor, targetColor, backgroundMix);
+  const hoverBackground = mixColor(normalizedColor, targetColor, hoverMix);
 
   return {
     "--derived-field-bg": fieldBackground,
     "--derived-field-hover-bg": hoverBackground,
     "--derived-field-focus-bg": hoverBackground,
-    "--derived-field-border": "transparent",
-    "--derived-field-focus-ring": mixColor(normalizedColor, "#ffffff", 0.52),
+    "--derived-field-border": tuning.borderColor,
+    "--derived-field-focus-ring": mixColor(normalizedColor, targetColor, tuning.focusRingMix),
   };
 };

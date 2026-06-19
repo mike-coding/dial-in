@@ -7,6 +7,7 @@ import Categories from './components/Categories'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import Calendar from './components/Calendar'
+import DerivedFieldStyleDebug from './components/DerivedFieldStyleDebug'
 import OverlayScrollPane from './components/OverlayScrollPane'
 import WindowsEmoji from './components/WindowsEmoji'
 import { useNavigationContext, useUser } from './hooks/AppContext'
@@ -27,6 +28,12 @@ function App() {
   React.useEffect(() => {
     document.title = `DIAL_IN ${getVersionString()}`;
   }, []);
+
+  const debugView = new URLSearchParams(window.location.search).get('debug');
+
+  if (debugView === 'derived-fields') {
+    return <DerivedFieldStyleDebug />;
+  }
 
   // Show loading screen during initial auth check
   if (authState.isLoading) {
