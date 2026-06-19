@@ -45,8 +45,8 @@ const RuleItem: React.FC<RuleItemProps> = ({
       fallbackTextColor: isMuted ? "#6b7280" : undefined,
     })}
   >
-    <div className="px-4 py-3 cursor-pointer" onClick={onToggle}>
-      <div className={`flex items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
+    <div className="px-4 py-2 cursor-pointer" onClick={onToggle}>
+      <div className={`flex min-h-10 items-center ${leading || icon ? "gap-4" : "gap-2"} ${isMuted ? "opacity-60" : ""}`}>
         {(leading || icon) ? (
           <div className="flex-shrink-0">{leading ?? (icon ? <WindowsEmoji emoji={icon} size={24} /> : null)}</div>
         ) : null}
@@ -197,8 +197,12 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
   onDeleteRequest,
   onDeleteCancel,
   onDeleteConfirm,
-}) => (
-  <RuleItem
+}) => {
+  const displayColor = isExpanded && editDraft ? editDraft.color || category?.color || undefined : resolveRuleColor(rule, categories);
+  const displayIsActive = isExpanded && editDraft ? editDraft.isActive : rule.is_active;
+
+  return (
+    <RuleItem
     title={
       isExpanded && editDraft ? (
         <input
@@ -207,7 +211,7 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
           onChange={(event) => setDraft((currentDraft) => ({ ...currentDraft, name: event.target.value }))}
           onClick={(event) => event.stopPropagation()}
           className="derived-field w-full text-lg rounded-md outline-none transition-all duration-200 px-2 py-1 text-current"
-          style={getDerivedFieldStyle(resolveRuleColor(rule, categories), { muted: !rule.is_active })}
+          style={getDerivedFieldStyle(displayColor, { muted: !displayIsActive })}
           placeholder="Rule name..."
           autoFocus={false}
         />
@@ -216,8 +220,8 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
       )
     }
     icon={isExpanded && editDraft ? undefined : (rule.icon || category?.icon || resolveRuleIcon(rule, categories))}
-    color={resolveRuleColor(rule, categories)}
-    isActive={rule.is_active}
+    color={displayColor}
+    isActive={displayIsActive}
     leading={
       isExpanded && editDraft ? (
         <EmojiIconPicker
@@ -255,6 +259,7 @@ export const ExistingRuleItem: React.FC<ExistingRuleItemProps> = ({
       )
     )}
   </RuleItem>
-);
+  );
+};
 
 export default RuleItem;

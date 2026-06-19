@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Task as TaskType } from '../hooks/types';
 import { useCategories } from '../hooks/useCategories';
 import { useRules } from '../hooks/useRules';
-import { getDerivedFieldStyle, resolveInheritedTaskColor, resolveTaskColor } from '../utils/presentationResolver';
+import { getDerivedFieldStyle, resolveInheritedTaskColor, resolveRuleColor, resolveRuleIcon, resolveTaskColor } from '../utils/presentationResolver';
 import { toDateOnlyValue, toTimeOnlyValue } from '../utils/taskSchedule';
 import ColorPicker from './ColorPicker';
 import WindowsEmoji from './WindowsEmoji';
@@ -47,6 +47,14 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
   const inheritedTaskColor = resolveInheritedTaskColor(task, rules, categories);
   const taskColor = resolveTaskColor(task, rules, categories);
   const fieldStyle = getDerivedFieldStyle(taskColor, { muted: task.is_completed });
+  const parentRule = task.rule_id ? rules.find((rule) => rule.id === task.rule_id) : undefined;
+  const parentRuleCategory = parentRule?.category_id
+    ? categories?.find((category) => category.id === parentRule.category_id)
+    : undefined;
+  const parentRuleStyle = getDerivedFieldStyle(
+    parentRule ? resolveRuleColor(parentRule, categories) || taskColor : taskColor,
+    { muted: task.is_completed }
+  );
   const [description, setDescription] = useState(task.description || '');
   const [categoryId, setCategoryId] = useState<number | null>(task.category_id || null);
   const [dueDate, setDueDate] = useState(() => toDateOnlyValue(task.due_date));
@@ -214,6 +222,34 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({ task, isExpanded, onSave, onD
             placeholder="Add a description..."
           />
         </div>
+
+        {task.rule_id && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Rule
+            </label>
+            <div
+              className="derived-field w-full px-3 py-2 rounded-md flex items-center justify-between gap-3"
+              style={parentRuleStyle}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <WindowsEmoji
+                  emoji={parentRule ? resolveRuleIcon(parentRule, categories) : '⚙️'}
+                  size={18}
+                />
+                <span className="truncate text-gray-900">
+                  {parentRule?.name || 'Rule unavailable'}
+                </span>
+              </div>
+              {parentRuleCategory && (
+                <div className="flex min-w-0 shrink-0 items-center gap-1 text-sm text-gray-600">
+                  <WindowsEmoji emoji={parentRuleCategory.icon || '📁'} size={14} />
+                  <span className="max-w-36 truncate">{parentRuleCategory.name}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]">
           <div>

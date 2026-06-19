@@ -156,10 +156,13 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
           hasPendingWrites: false,
         });
 
-        // Pull fresh tasks/rules after backend rule execution
-        useUserStore.getState().loadUserData(userData.id).catch((error) => {
-          console.error("❌ Error refreshing user data after rule update:", error);
-        });
+        const shouldRefreshChildTasks =
+          'category_id' in updates || 'rate_pattern' in updates || 'is_active' in updates;
+        if (shouldRefreshChildTasks) {
+          useUserStore.getState().loadUserData(userData.id).catch((error) => {
+            console.error("❌ Error refreshing user data after child-affecting rule update:", error);
+          });
+        }
         
         if (VERBOSE_DEBUG) console.log("✅ Rule updated successfully:", updatedRule);
       })

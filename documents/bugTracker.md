@@ -12,8 +12,10 @@
     - [ ] Rules should also be able to govern whether tasks are created with this toggled
 
 - [ ] settings panel
-    - example setting for first implementation: 
-        - [ ] By default, should tasks with end dates auto-complete after window passes?
+    - [ ] By default, should tasks with end dates auto-complete after window passes?
+    - [ ] Menu bar orientation {'desktop': ['top', 'left', 'bottom', 'right'], 'mobile': ['top', 'bottom']}
+    - [ ] theme
+    - [ ] tickbox: Allow Dark Entity
 
 - [ ] prototype dashboard
 
@@ -29,11 +31,11 @@
 
 - [ ] scroll bar appearing bumps horizontal positioning of on-screen elements. Can we absolute overlay it or something?
 
-- [ ] tasks should show their parent rule in expanded view
+- [x] tasks should show their parent rule in expanded view
 
-- [ ] Rules seem to wait for a round trip to the db for the front end to reflect updates, like changing the color. This makes me think the AI created its own (shittier) pattern for updating rule state instead of just referring to projects or tasks. I'm pretty sure for those we were updating state on the frontend first and then relaying updates to the backend whenever we determined state changed. This seems to be consuming backend state only and therefore has to wait for the backend to update before it's reflected on frontend
+- [x] Rules seem to wait for a round trip to the db for the front end to reflect updates, like changing the color. This makes me think the AI created its own (shittier) pattern for updating rule state instead of just referring to projects or tasks. I'm pretty sure for those we were updating state on the frontend first and then relaying updates to the backend whenever we determined state changed. This seems to be consuming backend state only and therefore has to wait for the backend to update before it's reflected on frontend
 
-- [ ] collapsed rule card is taller (greater height) than the new rule field. Fix
+- [x] collapsed rule card is taller (greater height) than the new rule field. Fix
 
 - [ ] project/category should have some field that allows you to engage with all its tasks (like we can for rules)
 

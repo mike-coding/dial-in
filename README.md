@@ -1,4 +1,4 @@
-### Hi
+### DIAL-IN
 <img src="screenshot_tasks.png" alt="Tasks screenshot">
 
 DIAL-IN is a planning app for managing tasks, projects, recurring routines, and scheduled work in one place. It combines focused task lists, project-based organization, rule-driven task generation, visual task metadata, and day/week/month calendar views for seeing work over time.
