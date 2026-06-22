@@ -21,6 +21,14 @@
 
 - [ ] using the color dropper to registers as an 'outside click' and immediately closes the color dropper widget, making custom color selection difficult
 
+- [ ] Tasks without an end date are not being rendered on timeline in day view - they should show as short blips at their due date in this case at minimum
+
+- [ ] Tasks on the calendar view (same is probably true for week view) block the user from clicking on the day element, making it harder to filter tasks list to a certain day
+
+- [ ] Need an option to easily 'deselect' a day in week/month view and return filtering back to the broader view rather than the selected day - should probably be achievable just by clicking on the selected day again
+
+- [ ] We definitely aren't exposing all available emoji options; I had to add the laundry basket back manually myself
+
 ================================================================================================
 
 
