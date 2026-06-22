@@ -199,11 +199,11 @@ const Category: React.FC<CategoryProps> = ({ category, onDelete, onUpdate, child
 
       {/* Expanded Details */}
       <div 
-        className={`transition-all duration-300 ease-in-out ${
-          isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}
       >
-        <div className="min-w-0 px-4 pb-4">
+        <div className="min-h-0 min-w-0 overflow-hidden px-4 pb-4">
           <div className="min-w-0 pt-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

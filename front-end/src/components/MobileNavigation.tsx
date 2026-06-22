@@ -43,6 +43,7 @@ const MobileNavigation: React.FC = () => {
 
   const mainNavigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "Dashboard", icon: <DashboardIcon />, label: "Dash" },
+    { page: "Planner", icon: <CalendarIcon />, label: "Planner" },
     { page: "Tasks", icon: <TasksIcon />, label: "Tasks" },
     { page: "Categories", icon: <CategoriesIcon />, label: "Projects" },
     { page: "Calendar", icon: <CalendarIcon />, label: "Calendar" },

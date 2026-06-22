@@ -32,6 +32,20 @@ const RuleItem: React.FC<RuleItemProps> = ({
   children,
 }) => {
   const isMuted = !isActive;
+  const [renderedChildren, setRenderedChildren] = React.useState(children);
+
+  React.useEffect(() => {
+    if (isExpanded) {
+      setRenderedChildren(children);
+      return;
+    }
+
+    const collapseTimeout = window.setTimeout(() => {
+      setRenderedChildren(undefined);
+    }, 300);
+
+    return () => window.clearTimeout(collapseTimeout);
+  }, [children, isExpanded]);
 
   return (
   <div
@@ -67,11 +81,13 @@ const RuleItem: React.FC<RuleItemProps> = ({
     </div>
 
     <div
-      className={`transition-all duration-300 ease-in-out ${
-        isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+      className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+        isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
       } min-w-0 max-w-full`}
     >
-      {children}
+      <div className="min-h-0 min-w-0 max-w-full overflow-hidden">
+        {renderedChildren}
+      </div>
     </div>
   </div>
   );
@@ -141,19 +157,21 @@ export const NewRuleItem: React.FC<NewRuleItemProps> = ({
     </div>
 
     <div
-      className={`transition-all duration-300 ease-in-out ${
-        isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+      className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+        isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
       }`}
     >
-      <RuleEditor
-        draft={draft}
-        setDraft={setDraft}
-        categories={categories}
-        error={error}
-        submitLabel="Create"
-        onSubmit={onSubmit}
-        showSubmitButton={false}
-      />
+      <div className="min-h-0 overflow-hidden">
+        <RuleEditor
+          draft={draft}
+          setDraft={setDraft}
+          categories={categories}
+          error={error}
+          submitLabel="Create"
+          onSubmit={onSubmit}
+          showSubmitButton={false}
+        />
+      </div>
     </div>
   </div>
 );

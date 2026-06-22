@@ -7,6 +7,7 @@ import Categories from './components/Categories'
 import Auth from './components/Auth'
 import Profile from './components/Profile'
 import Calendar from './components/Calendar'
+import Planner from './components/Planner'
 import DerivedFieldStyleDebug from './components/DerivedFieldStyleDebug'
 import OverlayScrollPane from './components/OverlayScrollPane'
 import Settings from './components/Settings'
@@ -93,6 +94,8 @@ function App() {
             )}
           </div>
         );
+      case 'Planner':
+        return <Planner isMobile={isMobile} />;
       case 'Calendar':
         return <Calendar isMobile={isMobile} />;
       case 'Users':
@@ -111,7 +114,7 @@ function App() {
     }
   };
 
-  const isCalendarPage = navigation.currentPage === 'Calendar';
+  const isCalendarPage = navigation.currentPage === 'Calendar' || navigation.currentPage === 'Planner';
 
   return (
     <div className="h-full w-full relative overflow-hidden">
