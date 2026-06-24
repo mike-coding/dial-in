@@ -310,7 +310,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
             <div
               key={`${toDateKey(day)}-more`}
               style={{ gridColumn: `${dayIndex + 1}`, gridRow: '5' }}
-              className="z-10 min-w-0 px-1 text-[10px] text-gray-500"
+              className="pointer-events-none z-10 min-w-0 px-1 text-[10px] text-gray-500"
             >
               +{hiddenDayCount} more
             </div>
@@ -328,7 +328,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           {visibleWeekSpans.map((span) => (
             <div
               key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`z-20 min-w-0 rounded border-l-4 px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
+              className={`pointer-events-none z-20 min-w-0 rounded border-l-4 px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
               style={{
                 gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
                 gridRow: span.lane + 2,
@@ -419,7 +419,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
           {weekSpans.map((span) => (
             <div
               key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`z-20 min-w-0 rounded border-l-4 px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
+              className={`pointer-events-none z-20 min-w-0 rounded border-l-4 px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
               style={{
                 gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
                 gridRow: span.lane + 2,
@@ -441,16 +441,21 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   // Render day view
   const renderDayView = () => {
     const dayTaskRanges = getTasksForDate(currentDate);
-    const timedTaskRanges = dayTaskRanges.filter(
-      (range) =>
+    const timedTaskRanges = dayTaskRanges.filter((range) => {
+      const startsToday = toDateKey(range.start) === toDateKey(currentDate);
+      const endsToday = toDateKey(range.end) === toDateKey(currentDate);
+      const isTimedRange =
         hasTaskTime(range.task) &&
         range.task.due_time &&
         range.task.end_date &&
         range.task.end_time &&
-        toDateKey(range.start) === toDateKey(currentDate) &&
-        toDateKey(range.end) === toDateKey(currentDate) &&
-        range.end > range.start
-    );
+        startsToday &&
+        endsToday &&
+        range.end > range.start;
+      const isDueDateBlip = !range.task.end_date && startsToday && endsToday;
+
+      return isTimedRange || isDueDateBlip;
+    });
     const rowHeight = 48;
 
     // Generate hourly time slots
