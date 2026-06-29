@@ -12,7 +12,7 @@ const Planner: React.FC<PlannerProps> = ({ isMobile = false }) => {
 
   return (
     <div className={`flex w-full max-w-none flex-col gap-6 ${isMobile ? 'px-2' : ''}`}>
-      <section className="min-h-[32rem] w-full">
+      <section className="w-full">
         <PlannerCalendar
           currentDate={currentDate}
           isMobile={false}

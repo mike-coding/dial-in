@@ -5,12 +5,16 @@ import { useTasks } from '../hooks/useTasks';
 import { useRules } from '../hooks/useRules';
 import { useUser, useUserData } from '../hooks/AppContext';
 import { Task as TaskType } from '../hooks/types';
+import DayTimeline from './calendar/DayTimeline';
+import MonthCalendar from './calendar/MonthCalendar';
+import SevenDayCalendar from './calendar/SevenDayCalendar';
+import type { CalendarTaskSpan, PackedCalendarTaskSpan, TaskRange } from './calendar/types';
 import {
   getColoredSurfaceStyle,
   resolveTaskColor as resolveTaskDisplayColor,
   resolveTaskIcon as resolveTaskDisplayIcon,
 } from '../utils/presentationResolver';
-import { getTaskEnd, getTaskStart, hasTaskTime } from '../utils/taskSchedule';
+import { getTaskEnd, getTaskStart } from '../utils/taskSchedule';
 
 interface PlannerCalendarProps {
   currentDate: Date;
@@ -35,21 +39,6 @@ const PLANNER_PERIOD_VIEW_MODES: Record<PlannerPeriod, ViewMode> = {
   week: 'week',
   month: 'month',
   upcoming: 'upcoming',
-};
-
-type TaskRange = {
-  task: TaskType;
-  start: Date;
-  end: Date;
-};
-
-type CalendarTaskSpan = TaskRange & {
-  startColumn: number;
-  endColumn: number;
-};
-
-type PackedCalendarTaskSpan = CalendarTaskSpan & {
-  lane: number;
 };
 
 const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
@@ -369,370 +358,56 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
     }
   };
 
-  // Render month view
-  const renderMonthView = () => {
-    const today = new Date();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const startDate = new Date(firstDayOfMonth);
-    startDate.setDate(startDate.getDate() - firstDayOfMonth.getDay());
+  const renderMonthView = () => (
+    <MonthCalendar
+      currentDate={currentDate}
+      getTaskSpansForRange={getTaskSpansForRange}
+      isSelectedDate={isSelectedDate}
+      openDate={openDate}
+      packTaskSpans={packTaskSpans}
+      resolveTaskIcon={resolveTaskIcon}
+      selectDate={selectDate}
+      taskPillClasses={taskPillClasses}
+      taskPillStyle={taskPillStyle}
+      toDateKey={toDateKey}
+    />
+  );
 
-    const weeks = [];
-    const currentIterDate = new Date(startDate);
+  const renderSevenDayView = (rangeStart: Date) => (
+    <SevenDayCalendar
+      getTaskSpansForRange={getTaskSpansForRange}
+      getTasksForDate={getTasksForDate}
+      isSelectedDate={isSelectedDate}
+      openDate={openDate}
+      packTaskSpans={packTaskSpans}
+      rangeStart={rangeStart}
+      resolveTaskIcon={resolveTaskIcon}
+      selectDate={selectDate}
+      taskPillClasses={taskPillClasses}
+      taskPillStyle={taskPillStyle}
+      toDateKey={toDateKey}
+    />
+  );
 
-    // Generate 6 weeks of days (42 days total)
-    for (let weekIndex = 0; weekIndex < 6; weekIndex++) {
-      const weekStart = new Date(currentIterDate);
-      const weekDays = [];
-      const weekSpans = packTaskSpans(getTaskSpansForRange(weekStart, 7));
-      const visibleWeekSpans = weekSpans.filter((span) => span.lane < 3);
-      const hiddenWeekSpans = weekSpans.filter((span) => span.lane >= 3);
-
-      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-        const day = new Date(weekStart);
-        day.setDate(weekStart.getDate() + dayIndex);
-
-        const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-        const isToday = day.toDateString() === today.toDateString();
-        const isSelected = isSelectedDate(day);
-        const hiddenDayCount = hiddenWeekSpans.filter(
-          (span) => span.startColumn <= dayIndex && span.endColumn >= dayIndex
-        ).length;
-
-        weekDays.push(
-          <div
-            key={toDateKey(day)}
-            onClick={() => selectDate(day)}
-            onDoubleClick={() => openDate(day)}
-            style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1 / -1' }}
-            className={`
-              cursor-pointer rounded transition-all duration-200
-              ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-              ${isToday ? 'bg-blue-50' : 'bg-white'}
-              ${isSelected ? 'ring-2 ring-slate-600 ring-inset bg-slate-50' : ''}
-            `}
-          />
-        );
-
-        weekDays.push(
-          <div
-            key={`${toDateKey(day)}-label`}
-            onClick={() => selectDate(day)}
-            onDoubleClick={() => openDate(day)}
-            style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1' }}
-            className={`z-10 flex cursor-pointer items-center justify-center text-sm ${isToday ? 'font-semibold text-blue-700' : ''} ${isSelected ? 'font-semibold text-slate-900' : ''}`}
-          >
-            {day.getDate()}
-          </div>
-        );
-
-        if (hiddenDayCount > 0) {
-          weekDays.push(
-            <div
-              key={`${toDateKey(day)}-more`}
-              style={{ gridColumn: `${dayIndex + 1}`, gridRow: '5' }}
-              className="pointer-events-none z-10 min-w-0 px-1 text-[10px] text-gray-500"
-            >
-              +{hiddenDayCount} more
-            </div>
-          );
-        }
-      }
-
-      weeks.push(
-        <div
-          key={weekIndex}
-          className="grid min-h-0 grid-cols-7 gap-x-1 gap-y-1"
-          style={{ gridTemplateRows: '1.5rem repeat(3, minmax(1rem, auto)) minmax(0, 1fr)' }}
-        >
-          {weekDays}
-          {visibleWeekSpans.map((span) => (
-            <div
-              key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`pointer-events-none z-20 min-w-0 rounded border-l-4 px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
-              style={{
-                gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
-                gridRow: span.lane + 2,
-                ...taskPillStyle(span.task),
-              }}
-              title={span.task.title}
-            >
-              <div className="flex min-w-0 items-center gap-1">
-                <WindowsEmoji emoji={resolveTaskIcon(span.task)} size={11} />
-                <span className="truncate">{span.task.title}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-
-      currentIterDate.setDate(currentIterDate.getDate() + 7);
-    }
-
-    return (
-      <div className="flex h-full min-h-[32rem] flex-col rounded-md bg-white p-3 transition-all duration-200">
-        {/* Day headers */}
-        <div className="mb-2 grid shrink-0 grid-cols-7 gap-1">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
-              {day}
-            </div>
-          ))}
-        </div>
-        {/* Calendar grid */}
-        <div className="grid min-h-0 flex-1 grid-rows-6 gap-1">
-          {weeks}
-        </div>
-      </div>
-    );
-  };
-
-  // Render week view
   const renderWeekView = () => {
     const weekStart = new Date(currentDate);
     weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-    const today = new Date();
-    const weekSpans = packTaskSpans(getTaskSpansForRange(weekStart, 7));
-    const laneCount = Math.max(1, ...weekSpans.map((span) => span.lane + 1));
-    const gridTemplateRows = `4.5rem repeat(${laneCount}, minmax(1.75rem, auto)) minmax(0, 1fr)`;
-    const weekDays = Array.from({ length: 7 }, (_, dayIndex) => {
-      const day = new Date(weekStart);
-      day.setDate(weekStart.getDate() + dayIndex);
-      return day;
-    });
-
-    return (
-      <div className="h-full min-h-[32rem] rounded-md bg-white p-1 transition-all duration-200">
-        <div className="grid h-full min-h-0 grid-cols-7 gap-1" style={{ gridTemplateRows }}>
-          {weekDays.map((day) => {
-            const isToday = day.toDateString() === today.toDateString();
-            const isSelected = isSelectedDate(day);
-            const hasTasks = getTasksForDate(day).length > 0;
-
-            return (
-              <div
-                key={toDateKey(day)}
-                onClick={() => selectDate(day)}
-                onDoubleClick={() => openDate(day)}
-                style={{ gridColumn: `${day.getDay() + 1}`, gridRow: '1 / -1', gridTemplateRows }}
-                className={`grid min-h-0 min-w-0 cursor-pointer rounded-md p-2 transition-colors duration-200 ${
-                  isToday ? 'bg-blue-50' : 'bg-white'
-                } ${isSelected ? 'ring-2 ring-slate-600 ring-inset bg-slate-50' : ''}`}
-              >
-                <div
-                  className={`flex flex-col items-center justify-center text-center ${isToday ? 'text-blue-700' : 'text-gray-900'}`}
-                  style={{ gridRow: '1' }}
-                >
-                  <div className="text-xs font-medium">
-                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    {day.getDate()}
-                  </div>
-                </div>
-
-                {!hasTasks && (
-                  <div className="min-w-0 text-xs text-gray-400" style={{ gridRow: `${laneCount + 2}` }}>
-                    No tasks
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {weekSpans.map((span) => (
-            <div
-              key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`pointer-events-none z-20 min-w-0 rounded border-l-4 px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
-              style={{
-                gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
-                gridRow: span.lane + 2,
-                ...taskPillStyle(span.task),
-              }}
-              title={span.task.title}
-            >
-              <div className="flex min-w-0 items-center gap-1">
-                <WindowsEmoji emoji={resolveTaskIcon(span.task)} size={12} />
-                <span className="truncate">{span.task.title}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return renderSevenDayView(weekStart);
   };
 
-  const renderUpcomingView = () => {
-    const rangeStart = startOfDay(currentDate);
-    const today = new Date();
-    const upcomingSpans = packTaskSpans(getTaskSpansForRange(rangeStart, 7));
-    const laneCount = Math.max(1, ...upcomingSpans.map((span) => span.lane + 1));
-    const gridTemplateRows = `4.5rem repeat(${laneCount}, minmax(1.75rem, auto)) minmax(0, 1fr)`;
-    const upcomingDays = Array.from({ length: 7 }, (_, dayIndex) => {
-      const day = new Date(rangeStart);
-      day.setDate(rangeStart.getDate() + dayIndex);
-      return day;
-    });
+  const renderUpcomingView = () => renderSevenDayView(startOfDay(currentDate));
 
-    return (
-      <div className="h-full min-h-[32rem] rounded-md bg-white p-1 transition-all duration-200">
-        <div className="grid h-full min-h-0 grid-cols-7 gap-1" style={{ gridTemplateRows }}>
-          {upcomingDays.map((day, dayIndex) => {
-            const isToday = day.toDateString() === today.toDateString();
-            const isSelected = isSelectedDate(day);
-            const hasTasks = getTasksForDate(day).length > 0;
-
-            return (
-              <div
-                key={toDateKey(day)}
-                onClick={() => selectDate(day)}
-                onDoubleClick={() => openDate(day)}
-                style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1 / -1', gridTemplateRows }}
-                className={`grid min-h-0 min-w-0 cursor-pointer rounded-md p-2 transition-colors duration-200 ${
-                  isToday ? 'bg-blue-50' : 'bg-white'
-                } ${isSelected ? 'ring-2 ring-slate-600 ring-inset bg-slate-50' : ''}`}
-              >
-                <div
-                  className={`flex flex-col items-center justify-center text-center ${isToday ? 'text-blue-700' : 'text-gray-900'}`}
-                  style={{ gridRow: '1' }}
-                >
-                  <div className="text-xs font-medium">
-                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    {day.getDate()}
-                  </div>
-                </div>
-
-                {!hasTasks && (
-                  <div className="min-w-0 text-xs text-gray-400" style={{ gridRow: `${laneCount + 2}` }}>
-                    No tasks
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {upcomingSpans.map((span) => (
-            <div
-              key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-              className={`pointer-events-none z-20 min-w-0 rounded border-l-4 px-2 py-1 text-xs ${taskPillClasses(span.task)}`}
-              style={{
-                gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
-                gridRow: span.lane + 2,
-                ...taskPillStyle(span.task),
-              }}
-              title={span.task.title}
-            >
-              <div className="flex min-w-0 items-center gap-1">
-                <WindowsEmoji emoji={resolveTaskIcon(span.task)} size={12} />
-                <span className="truncate">{span.task.title}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Render day view
-  const renderDayView = () => {
-    const dayTaskRanges = getTasksForDate(currentDate);
-    const timedTaskRanges = dayTaskRanges.filter((range) => {
-      const startsToday = toDateKey(range.start) === toDateKey(currentDate);
-      const endsToday = toDateKey(range.end) === toDateKey(currentDate);
-      const isTimedRange =
-        hasTaskTime(range.task) &&
-        range.task.due_time &&
-        range.task.end_date &&
-        range.task.end_time &&
-        startsToday &&
-        endsToday &&
-        range.end > range.start;
-      const isDueDateBlip = !range.task.end_date && startsToday && endsToday;
-
-      return isTimedRange || isDueDateBlip;
-    });
-    const rowHeight = 48;
-
-    // Generate hourly time slots
-    const timeSlots = [];
-    for (let hour = 0; hour < 24; hour++) {
-      const time = new Date();
-      time.setHours(hour, 0, 0, 0);
-      const timeString = time.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        hour12: true 
-      });
-
-      timeSlots.push(
-        <div key={hour} className="flex h-12 border-b border-gray-100">
-          <div className="w-16 p-2 text-xs text-gray-500 border-r border-gray-100">
-            {timeString}
-          </div>
-          <div className="flex-1 p-2 cursor-pointer">
-            {/* Placeholder for events */}
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex h-full min-h-[32rem] flex-col rounded-md bg-white transition-all duration-200">
-        <div className="shrink-0 p-4">
-          {dayTaskRanges.length === 0 ? (
-            <div className="text-sm text-gray-500">No scheduled tasks</div>
-          ) : (
-            <div className="space-y-2">
-              {dayTaskRanges.map((range) => (
-                <div
-                  key={range.task.id}
-                  className={`flex items-center gap-2 rounded-md border-l-4 px-3 py-2 ${
-                    range.task.is_completed ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-blue-900'
-                  }`}
-                  style={taskPillStyle(range.task)}
-                >
-                  <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={16} />
-                  <span className={`min-w-0 flex-1 truncate text-sm ${range.task.is_completed ? 'line-through' : ''}`}>{range.task.title}</span>
-                  <span className="shrink-0 text-xs opacity-70">{formatTaskRange(range)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="relative">
-            {timeSlots}
-            <div className="pointer-events-none absolute left-16 right-2 top-0">
-              {timedTaskRanges.map((range, index) => {
-                const startMinutes = range.start.getHours() * 60 + range.start.getMinutes();
-                const durationMinutes = Math.max(30, (range.end.getTime() - range.start.getTime()) / 60000);
-
-                return (
-                  <div
-                    key={range.task.id}
-                    className={`absolute left-2 right-2 min-w-0 rounded-md border-l-4 px-2 py-1 text-xs ${taskPillClasses(range.task)}`}
-                    style={{
-                      top: (startMinutes / 60) * rowHeight,
-                      height: (durationMinutes / 60) * rowHeight,
-                      transform: `translateX(${index % 3 * 6}px)`,
-                      ...taskPillStyle(range.task),
-                    }}
-                    title={range.task.title}
-                  >
-                    <div className="flex min-w-0 items-center gap-1">
-                      <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={12} />
-                      <span className="truncate">{range.task.title}</span>
-                    </div>
-                    <div className="truncate text-[10px] opacity-75">{formatTaskRange(range)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const renderDayView = () => (
+    <DayTimeline
+      currentDate={currentDate}
+      dayTaskRanges={getTasksForDate(currentDate)}
+      formatTaskRange={formatTaskRange}
+      resolveTaskIcon={resolveTaskIcon}
+      taskPillClasses={taskPillClasses}
+      taskPillStyle={taskPillStyle}
+      toDateKey={toDateKey}
+    />
+  );
 
   return (
     <div className={`flex h-full min-h-0 w-full max-w-none flex-1 flex-col ${isMobile ? 'px-2' : ''}`}>
@@ -864,7 +539,7 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
       </div>
 
       {/* Calendar Content */}
-      <div className="min-h-0 flex-1">
+      <div className={viewMode === 'week' || viewMode === 'upcoming' ? 'min-h-0' : 'min-h-0 flex-1'}>
         {viewMode === 'month' && renderMonthView()}
         {viewMode === 'week' && renderWeekView()}
         {viewMode === 'upcoming' && renderUpcomingView()}

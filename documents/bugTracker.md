@@ -2,15 +2,15 @@
 
 - [ ] prototype tracker panel / section
 
-- [ ] Teams object (like household) - Parent to Categories/Projects. May need a relation object for Users on the db so users can join a team/household and see its Categories/Projects
+- [ ] Team object (like household) - Parent to Category/Project. May need a relation object for Users on the db so users can join a team/household and see its Categories/Projects
 
 - [ ] project/category should have some field that allows you to engage with all its tasks (like we can for rules)
 
 - [ ] 'complete task after end date' tickbox in Task; db field support
     - [ ] Rules should also be able to govern whether tasks are created with this toggled
 
-- [x] settings panel
-    - [ ] By default, should tasks with end dates auto-complete after window passes? [on/off]
+- [ ] settings panel
+    - [ ] By default, should tasks with end dates auto-complete after window passes? [on/off] (inform default state for planned 'complete task after end date' field on tasks/rules)
     - [ ] Menu bar orientation {'desktop': ['top', 'left', 'bottom', 'right'], 'mobile': ['top', 'bottom']} [picklist]
     - [ ] theme [picklist]
     - [ ] change object bgs based on color value [on/off]
@@ -21,19 +21,27 @@
 
 - [ ] using the color dropper to select a color registers as an 'outside click' and immediately closes the color dropper widget, making custom color selection difficult
 
-- [x] Tasks without an end date are not being rendered on timeline in day view - they should show as short blips at their due date in this case at minimum
-
-- [x] Tasks on the calendar view (same is probably true for week view) block the user from clicking on the day element, making it harder to filter tasks list to a certain day
-
 - [ ] Need an option to easily 'deselect' a day in week/month view and return filtering back to the broader view rather than the selected day - should probably be achievable just by clicking on the selected day again. Ensure this doesn't override the double click effect though
 
 - [ ] We definitely aren't exposing all available emoji options; I had to add the laundry basket back manually myself
 
-- [ ] We gotta come up with a smarter way to display tasks scheduled at the same time in the day view. Use up some of that horizontal space better.
-
 - [ ] outlook-inspired: week view WITH daily timelines? i.e. x axis weekday y axis time of day
 
-- [ ] condense calendar vertical spacing to make more room for task list; may be a bifurcation pt for mobile vs. desktop
+- [ ] rule field on task doesn't need to show rule's parent category also; this is already visible in the task's category field (clarify whether a task can actually have a different category than its parent rule)
+
+- [ ] get docker-ready
+    - [ ] build pipeline
+
+- [ ] 'no tasks' text not centered in day cell in week view
+
+- [ ] condense calendar vertical spacing to make more room for task list on-screen; user should be able to see the calendar and the task list on the same screen without scrolling back and forth between the two elements; may be a bifurcation pt for mobile vs. desktop eventually (for now assume these should be changed the same way for mobile AND desktop)
+    - [x] week view - halve vertical space
+    - [ ] month view 
+        - [ ] halve vertical space
+        - [ ] showing task title in this view takes up too much room. Instead of a single column, we need to do a grid of tasks (more tasks per day cell) and render only the emoji (no title anymore) and colored container for each task
+        - [ ] day view
+            - [ ] halve to maybe even third size of day timeline element. Just add a within-element scrollbar so the user can scroll along the timeline
+
 
 ================================================================================================
 
@@ -67,3 +75,9 @@
 - [x] gap / spacing for icon and name field in rules top row changes slightly when expanded / collapsed. fix
 
 - [x] fix colored element contrasts
+
+- [x] Tasks without an end date are not being rendered on timeline in day view - they should show as short blips at their due date in this case at minimum
+
+- [x] Tasks on the calendar view (same is probably true for week view) block the user from clicking on the day element, making it harder to filter tasks list to a certain day
+
+- [x] We gotta come up with a smarter way to display tasks scheduled at the same time in the day view. Use up some of that horizontal space better. Multiple columns I guess is what I'm asking for here. We need to intelligently divide the horizontal space based on how many overlapping tasks are present.
