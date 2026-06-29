@@ -83,6 +83,7 @@ const SevenDayCalendar = ({
             style={{
               gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
               gridRow: span.lane + 2,
+              marginInline: '0.25rem',
               ...taskPillStyle(span.task),
             }}
             title={span.task.title}

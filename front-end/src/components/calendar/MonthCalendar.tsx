@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import WindowsEmoji from '../WindowsEmoji';
 import type { TaskRange, TaskVisualHelpers } from './types';
 
@@ -8,6 +9,77 @@ type MonthCalendarProps = Omit<TaskVisualHelpers, 'formatTaskRange' | 'taskPillC
   openDate?: (date: Date) => void;
   selectDate?: (date: Date) => void;
   toDateKey: (date: Date) => string;
+};
+
+type MonthTaskStripProps = Pick<TaskVisualHelpers, 'resolveTaskIcon' | 'taskPillStyle'> & {
+  tasks: TaskRange[];
+  toDateKey: (date: Date) => string;
+  day: Date;
+};
+
+const MonthTaskStrip = ({ day, resolveTaskIcon, taskPillStyle, tasks, toDateKey }: MonthTaskStripProps) => {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [tileCapacity, setTileCapacity] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+
+    const updateCapacity = () => {
+      const tile = strip.querySelector<HTMLElement>('[data-month-task-tile]');
+      if (!tile) {
+        setTileCapacity(null);
+        return;
+      }
+
+      const styles = window.getComputedStyle(strip);
+      const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      const tileWidth = tile.offsetWidth;
+      if (tileWidth <= 0) return;
+
+      const nextCapacity = Math.max(1, Math.floor((strip.clientWidth + gap) / (tileWidth + gap)));
+      setTileCapacity((currentCapacity) => (currentCapacity === nextCapacity ? currentCapacity : nextCapacity));
+    };
+
+    updateCapacity();
+    const resizeObserver = new ResizeObserver(updateCapacity);
+    resizeObserver.observe(strip);
+
+    return () => resizeObserver.disconnect();
+  }, [tasks.length]);
+
+  if (tasks.length === 0) {
+    return null;
+  }
+
+  const capacity = tileCapacity ?? tasks.length;
+  const visibleTaskLimit = tasks.length > capacity ? Math.max(0, capacity - 1) : capacity;
+  const visibleTasks = tasks.slice(0, visibleTaskLimit);
+  const hiddenTaskCount = tasks.length - visibleTasks.length;
+
+  return (
+    <div ref={stripRef} className="pointer-events-none m-2 flex min-w-0 flex-nowrap content-start gap-1 overflow-hidden">
+      {visibleTasks.map((range) => (
+        <div
+          key={`${range.task.id}-${toDateKey(day)}`}
+          data-month-task-tile
+          className="flex h-6 w-6 min-w-6 items-center justify-center rounded-sm border-l-2 text-[10px] leading-none"
+          style={taskPillStyle(range.task)}
+          title={range.task.title}
+        >
+          <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={11} />
+        </div>
+      ))}
+      {hiddenTaskCount > 0 && (
+        <div
+          data-month-task-tile
+          className="flex h-6 w-6 min-w-6 items-center justify-center rounded-sm bg-gray-200 text-[10px] font-bold leading-none text-gray-500"
+        >
+          +{hiddenTaskCount}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const MonthCalendar = ({
@@ -40,8 +112,6 @@ const MonthCalendar = ({
       const isToday = day.toDateString() === today.toDateString();
       const isSelected = Boolean(isSelectedDate?.(day));
       const dayTasks = getTasksForDate(day);
-      const visibleDayTasks = dayTasks.slice(0, 12);
-      const hiddenDayCount = dayTasks.length - visibleDayTasks.length;
 
       weekDays.push(
         <div
@@ -50,7 +120,7 @@ const MonthCalendar = ({
           onDoubleClick={openDate ? () => openDate(day) : undefined}
           style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1 / -1' }}
           className={`
-            rounded p-1 transition-all duration-200
+            grid min-h-[3.25rem] grid-cols-[1.25rem_minmax(0,1fr)] gap-1 rounded-xs p-1 transition-all duration-200
             ${isSelectable ? 'cursor-pointer' : ''}
             ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
             ${isToday ? 'bg-blue-50' : isSelectable ? 'bg-white' : 'hover:bg-gray-50'}
@@ -58,29 +128,19 @@ const MonthCalendar = ({
           `}
         >
           <div
-            className={`flex items-center justify-center text-sm ${
+            className={`flex items-start justify-center pt-0.5 text-sm leading-tight ${
               isToday ? 'font-semibold text-blue-700' : ''
             } ${isSelected ? 'font-semibold text-slate-900' : ''}`}
           >
             {day.getDate()}
           </div>
-          <div className="pointer-events-none mt-1 flex flex-wrap content-start gap-0.5 overflow-hidden">
-            {visibleDayTasks.map((range) => (
-              <div
-                key={`${range.task.id}-${toDateKey(day)}`}
-                className="flex h-6 w-6 min-w-6 items-center justify-center rounded-sm border-l-2 text-[10px] leading-none"
-                style={taskPillStyle(range.task)}
-                title={range.task.title}
-              >
-                <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={11} />
-              </div>
-            ))}
-            {hiddenDayCount > 0 && (
-              <div className="flex h-4 min-w-4 items-center justify-center rounded-sm bg-gray-100 px-0.5 text-[10px] leading-none text-gray-500">
-                +{hiddenDayCount}
-              </div>
-            )}
-          </div>
+          <MonthTaskStrip
+            day={day}
+            resolveTaskIcon={resolveTaskIcon}
+            taskPillStyle={taskPillStyle}
+            tasks={dayTasks}
+            toDateKey={toDateKey}
+          />
         </div>
       );
     }
@@ -88,7 +148,7 @@ const MonthCalendar = ({
     weeks.push(
       <div
         key={weekIndex}
-        className="grid min-h-0 grid-cols-7 gap-1"
+        className="grid min-h-[3.25rem] grid-cols-7 gap-1"
       >
         {weekDays}
       </div>
@@ -98,15 +158,15 @@ const MonthCalendar = ({
   }
 
   return (
-    <div className="flex h-full min-h-[32rem] flex-col rounded-md bg-white p-3 transition-all duration-200">
-      <div className="mb-2 grid shrink-0 grid-cols-7 gap-1">
+    <div className="flex flex-col rounded-md bg-gray-200 p-2 transition-all duration-200">
+      <div className="mb-1 grid shrink-0 grid-cols-7 gap-1">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+          <div key={day} className="flex h-6 items-center justify-center text-xs font-medium text-gray-500">
             {day}
           </div>
         ))}
       </div>
-      <div className="grid min-h-0 flex-1 grid-rows-6 gap-1">{weeks}</div>
+      <div className="grid gap-1">{weeks}</div>
     </div>
   );
 };

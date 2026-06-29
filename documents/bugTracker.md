@@ -21,8 +21,6 @@
 
 - [ ] using the color dropper to select a color registers as an 'outside click' and immediately closes the color dropper widget, making custom color selection difficult
 
-- [ ] Need an option to easily 'deselect' a day in week/month view and return filtering back to the broader view rather than the selected day - should probably be achievable just by clicking on the selected day again. Ensure this doesn't override the double click effect though
-
 - [ ] We definitely aren't exposing all available emoji options; I had to add the laundry basket back manually myself
 
 - [ ] outlook-inspired: week view WITH daily timelines? i.e. x axis weekday y axis time of day
@@ -32,12 +30,10 @@
 - [ ] get docker-ready
     - [ ] build pipeline
 
-- [x] seven day calendar gap between days is non-existent. See how month calendar handles this and emulate it
-
 - [ ] condense calendar vertical spacing to make more room for task list on-screen; user should be able to see the calendar and the task list on the same screen without scrolling back and forth between the two elements; may be a bifurcation pt for mobile vs. desktop eventually (for now assume these should be changed the same way for mobile AND desktop)
     - [x] week view - halve vertical space
     - [ ] month view 
-        - [ ] halve vertical space
+        - [x] halve vertical space
         - [x] showing task title in this view takes up too much room. Instead of a single column, we need to do a grid of tasks (more tasks per day cell) and render only the emoji (no title anymore) and colored container for each task
         - [ ] day view
             - [ ] halve to maybe even third size of day timeline element. Just add a within-element scrollbar so the user can scroll along the timeline
@@ -83,3 +79,9 @@
 - [x] We gotta come up with a smarter way to display tasks scheduled at the same time in the day view. Use up some of that horizontal space better. Multiple columns I guess is what I'm asking for here. We need to intelligently divide the horizontal space based on how many overlapping tasks are present.
 
 - [x] 'no tasks' text not centered in day cell in seven day calendar
+
+- [x] seven day calendar gap between days is non-existent. See how month calendar handles this and emulate it
+
+- [x] selected day outline effect in seven day calendar and month calendar renders behind task cards, which looks weird. Easiest fix here is probably some interior padding to each day cell so the task cards can't overlap the border
+
+- [x] Need an option to easily 'deselect' a day in week/month view and return filtering back to the broader view rather than the selected day - should probably be achievable just by clicking on the selected day again. Ensure this doesn't override the double click effect though

@@ -122,7 +122,12 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
   const isSelectedDate = (date: Date) => selectedDate !== null && toDateKey(date) === toDateKey(selectedDate);
 
   const selectDate = (date: Date) => {
-    setSelectedDate(startOfDay(date));
+    const normalizedDate = startOfDay(date);
+    setSelectedDate((currentSelectedDate) =>
+      currentSelectedDate !== null && toDateKey(currentSelectedDate) === toDateKey(normalizedDate)
+        ? null
+        : normalizedDate
+    );
   };
 
   const openDate = (date: Date) => {
