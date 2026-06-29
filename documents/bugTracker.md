@@ -32,7 +32,7 @@
 
 - [ ] condense calendar vertical spacing to make more room for task list on-screen; user should be able to see the calendar and the task list on the same screen without scrolling back and forth between the two elements; may be a bifurcation pt for mobile vs. desktop eventually (for now assume these should be changed the same way for mobile AND desktop)
     - [x] week view - halve vertical space
-    - [ ] month view 
+    - [x] month view 
         - [x] halve vertical space
         - [x] showing task title in this view takes up too much room. Instead of a single column, we need to do a grid of tasks (more tasks per day cell) and render only the emoji (no title anymore) and colored container for each task
         - [ ] day view
