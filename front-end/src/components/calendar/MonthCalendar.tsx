@@ -1,25 +1,22 @@
 import WindowsEmoji from '../WindowsEmoji';
-import type { CalendarTaskSpan, PackedCalendarTaskSpan, TaskVisualHelpers } from './types';
+import type { TaskRange, TaskVisualHelpers } from './types';
 
-type MonthCalendarProps = Omit<TaskVisualHelpers, 'formatTaskRange'> & {
+type MonthCalendarProps = Omit<TaskVisualHelpers, 'formatTaskRange' | 'taskPillClasses'> & {
   currentDate: Date;
-  getTaskSpansForRange: (rangeStartDate: Date, dayCount: number) => CalendarTaskSpan[];
+  getTasksForDate: (date: Date) => TaskRange[];
   isSelectedDate?: (date: Date) => boolean;
   openDate?: (date: Date) => void;
-  packTaskSpans: (spans: CalendarTaskSpan[]) => PackedCalendarTaskSpan[];
   selectDate?: (date: Date) => void;
   toDateKey: (date: Date) => string;
 };
 
 const MonthCalendar = ({
   currentDate,
-  getTaskSpansForRange,
+  getTasksForDate,
   isSelectedDate,
   openDate,
-  packTaskSpans,
   resolveTaskIcon,
   selectDate,
-  taskPillClasses,
   taskPillStyle,
   toDateKey,
 }: MonthCalendarProps) => {
@@ -34,9 +31,6 @@ const MonthCalendar = ({
   for (let weekIndex = 0; weekIndex < 6; weekIndex++) {
     const weekStart = new Date(currentIterDate);
     const weekDays = [];
-    const weekSpans = packTaskSpans(getTaskSpansForRange(weekStart, 7));
-    const visibleWeekSpans = weekSpans.filter((span) => span.lane < 3);
-    const hiddenWeekSpans = weekSpans.filter((span) => span.lane >= 3);
 
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const day = new Date(weekStart);
@@ -45,9 +39,9 @@ const MonthCalendar = ({
       const isCurrentMonth = day.getMonth() === currentDate.getMonth();
       const isToday = day.toDateString() === today.toDateString();
       const isSelected = Boolean(isSelectedDate?.(day));
-      const hiddenDayCount = hiddenWeekSpans.filter(
-        (span) => span.startColumn <= dayIndex && span.endColumn >= dayIndex
-      ).length;
+      const dayTasks = getTasksForDate(day);
+      const visibleDayTasks = dayTasks.slice(0, 12);
+      const hiddenDayCount = dayTasks.length - visibleDayTasks.length;
 
       weekDays.push(
         <div
@@ -56,66 +50,47 @@ const MonthCalendar = ({
           onDoubleClick={openDate ? () => openDate(day) : undefined}
           style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1 / -1' }}
           className={`
-            rounded transition-all duration-200
+            rounded p-1 transition-all duration-200
             ${isSelectable ? 'cursor-pointer' : ''}
             ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
             ${isToday ? 'bg-blue-50' : isSelectable ? 'bg-white' : 'hover:bg-gray-50'}
             ${isSelected ? 'ring-2 ring-slate-600 ring-inset bg-slate-50' : ''}
           `}
-        />
-      );
-
-      weekDays.push(
-        <div
-          key={`${toDateKey(day)}-label`}
-          onClick={selectDate ? () => selectDate(day) : undefined}
-          onDoubleClick={openDate ? () => openDate(day) : undefined}
-          style={{ gridColumn: `${dayIndex + 1}`, gridRow: '1' }}
-          className={`z-10 flex items-center justify-center text-sm ${
-            isSelectable ? 'cursor-pointer' : ''
-          } ${isToday ? 'font-semibold text-blue-700' : ''} ${isSelected ? 'font-semibold text-slate-900' : ''}`}
         >
-          {day.getDate()}
+          <div
+            className={`flex items-center justify-center text-sm ${
+              isToday ? 'font-semibold text-blue-700' : ''
+            } ${isSelected ? 'font-semibold text-slate-900' : ''}`}
+          >
+            {day.getDate()}
+          </div>
+          <div className="pointer-events-none mt-1 flex flex-wrap content-start gap-0.5 overflow-hidden">
+            {visibleDayTasks.map((range) => (
+              <div
+                key={`${range.task.id}-${toDateKey(day)}`}
+                className="flex h-6 w-6 min-w-6 items-center justify-center rounded-sm border-l-2 text-[10px] leading-none"
+                style={taskPillStyle(range.task)}
+                title={range.task.title}
+              >
+                <WindowsEmoji emoji={resolveTaskIcon(range.task)} size={11} />
+              </div>
+            ))}
+            {hiddenDayCount > 0 && (
+              <div className="flex h-4 min-w-4 items-center justify-center rounded-sm bg-gray-100 px-0.5 text-[10px] leading-none text-gray-500">
+                +{hiddenDayCount}
+              </div>
+            )}
+          </div>
         </div>
       );
-
-      if (hiddenDayCount > 0) {
-        weekDays.push(
-          <div
-            key={`${toDateKey(day)}-more`}
-            style={{ gridColumn: `${dayIndex + 1}`, gridRow: '5' }}
-            className="pointer-events-none z-10 min-w-0 px-1 text-[10px] text-gray-500"
-          >
-            +{hiddenDayCount} more
-          </div>
-        );
-      }
     }
 
     weeks.push(
       <div
         key={weekIndex}
-        className="grid min-h-0 grid-cols-7 gap-x-1 gap-y-1"
-        style={{ gridTemplateRows: '1.5rem repeat(3, minmax(1rem, auto)) minmax(0, 1fr)' }}
+        className="grid min-h-0 grid-cols-7 gap-1"
       >
         {weekDays}
-        {visibleWeekSpans.map((span) => (
-          <div
-            key={`${span.task.id}-${span.startColumn}-${span.endColumn}`}
-            className={`pointer-events-none z-20 min-w-0 rounded border-l-4 px-1.5 py-0.5 text-[10px] ${taskPillClasses(span.task)}`}
-            style={{
-              gridColumn: `${span.startColumn + 1} / ${span.endColumn + 2}`,
-              gridRow: span.lane + 2,
-              ...taskPillStyle(span.task),
-            }}
-            title={span.task.title}
-          >
-            <div className="flex min-w-0 items-center gap-1">
-              <WindowsEmoji emoji={resolveTaskIcon(span.task)} size={11} />
-              <span className="truncate">{span.task.title}</span>
-            </div>
-          </div>
-        ))}
       </div>
     );
 

@@ -246,10 +246,8 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
   const renderMonthView = () => (
     <MonthCalendar
       currentDate={currentDate}
-      getTaskSpansForRange={getTaskSpansForRange}
-      packTaskSpans={packTaskSpans}
+      getTasksForDate={getTasksForDate}
       resolveTaskIcon={resolveTaskIcon}
-      taskPillClasses={taskPillClasses}
       taskPillStyle={taskPillStyle}
       toDateKey={toDateKey}
     />

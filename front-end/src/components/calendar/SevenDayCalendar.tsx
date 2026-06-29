@@ -38,7 +38,7 @@ const SevenDayCalendar = ({
 
   return (
     <div className="h-[16rem] overflow-y-auto rounded-md bg-white p-0.5 transition-all duration-200">
-      <div className="grid min-h-full grid-cols-7 gap-0.5" style={{ gridTemplateRows }}>
+      <div className="grid min-h-full grid-cols-7 gap-1" style={{ gridTemplateRows }}>
         {days.map((day, dayIndex) => {
           const isToday = day.toDateString() === today.toDateString();
           const isSelected = Boolean(isSelectedDate?.(day));
@@ -65,7 +65,10 @@ const SevenDayCalendar = ({
               </div>
 
               {!hasTasks && (
-                <div className="min-w-0 text-xs text-gray-400" style={{ gridRow: `${laneCount + 2}` }}>
+                <div
+                  className="flex min-w-0 items-center justify-center text-center text-xs text-gray-400"
+                  style={{ gridRow: '2' }}
+                >
                   No tasks
                 </div>
               )}

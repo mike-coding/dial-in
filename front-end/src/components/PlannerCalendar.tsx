@@ -361,13 +361,11 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
   const renderMonthView = () => (
     <MonthCalendar
       currentDate={currentDate}
-      getTaskSpansForRange={getTaskSpansForRange}
+      getTasksForDate={getTasksForDate}
       isSelectedDate={isSelectedDate}
       openDate={openDate}
-      packTaskSpans={packTaskSpans}
       resolveTaskIcon={resolveTaskIcon}
       selectDate={selectDate}
-      taskPillClasses={taskPillClasses}
       taskPillStyle={taskPillStyle}
       toDateKey={toDateKey}
     />
