@@ -30,14 +30,9 @@
 - [ ] get docker-ready
     - [ ] build pipeline
 
-- [ ] condense calendar vertical spacing to make more room for task list on-screen; user should be able to see the calendar and the task list on the same screen without scrolling back and forth between the two elements; may be a bifurcation pt for mobile vs. desktop eventually (for now assume these should be changed the same way for mobile AND desktop)
-    - [x] week view - halve vertical space
-    - [x] month view 
-        - [x] halve vertical space
-        - [x] showing task title in this view takes up too much room. Instead of a single column, we need to do a grid of tasks (more tasks per day cell) and render only the emoji (no title anymore) and colored container for each task
-        - [ ] day view
-            - [ ] halve to maybe even third size of day timeline element. Just add a within-element scrollbar so the user can scroll along the timeline
+- [ ] day view padding / spacing / formatting could use a lot of work
 
+- [ ] dev setting to show old task / calendar views (by default only expose planner from now on)
 
 ================================================================================================
 
@@ -85,3 +80,13 @@
 - [x] selected day outline effect in seven day calendar and month calendar renders behind task cards, which looks weird. Easiest fix here is probably some interior padding to each day cell so the task cards can't overlap the border
 
 - [x] Need an option to easily 'deselect' a day in week/month view and return filtering back to the broader view rather than the selected day - should probably be achievable just by clicking on the selected day again. Ensure this doesn't override the double click effect though
+
+- [x] condense calendar vertical spacing to make more room for task list on-screen; user should be able to see the calendar and the task list on the same screen without scrolling back and forth between the two elements; may be a bifurcation pt for mobile vs. desktop eventually (for now assume these should be changed the same way for mobile AND desktop)
+    - [x] week view - halve vertical space
+    - [x] month view 
+        - [x] halve vertical space
+        - [x] showing task title in this view takes up too much room. Instead of a single column, we need to do a grid of tasks (more tasks per day cell) and render only the emoji (no title anymore) and colored container for each task
+        - [x] day view
+            - [x] halve to maybe even third size of day timeline element. Just add a within-element scrollbar so the user can scroll along the timeline
+
+- [x] day view need not display tasks on top of the timeline AND within the timeline. within the timeline is sufficient. lose the (pre?) top of timeline element.

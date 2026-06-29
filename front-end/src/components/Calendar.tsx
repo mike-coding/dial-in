@@ -226,12 +226,13 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
         options.year = 'numeric';
         options.month = 'long';
         return currentDate.toLocaleDateString('en-US', options);
-      case 'week':
+      case 'week': {
         const weekStart = new Date(currentDate);
         weekStart.setDate(currentDate.getDate() - currentDate.getDay());
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      }
       case 'day':
         options.year = 'numeric';
         options.month = 'long';
@@ -279,7 +280,6 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       resolveTaskIcon={resolveTaskIcon}
       taskPillClasses={taskPillClasses}
       taskPillStyle={taskPillStyle}
-      toDateKey={toDateKey}
     />
   );
 

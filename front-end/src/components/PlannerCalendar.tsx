@@ -341,23 +341,25 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
         options.year = 'numeric';
         options.month = 'long';
         return currentDate.toLocaleDateString('en-US', options);
-      case 'week':
+      case 'week': {
         const weekStart = new Date(currentDate);
         weekStart.setDate(currentDate.getDate() - currentDate.getDay());
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      }
       case 'day':
         options.year = 'numeric';
         options.month = 'long';
         options.day = 'numeric';
         options.weekday = 'long';
         return currentDate.toLocaleDateString('en-US', options);
-      case 'upcoming':
+      case 'upcoming': {
         const upcomingStart = new Date(currentDate);
         const upcomingEnd = new Date(upcomingStart);
         upcomingEnd.setDate(upcomingStart.getDate() + 6);
         return `${upcomingStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${upcomingEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      }
       default:
         return '';
     }
@@ -408,7 +410,6 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
       resolveTaskIcon={resolveTaskIcon}
       taskPillClasses={taskPillClasses}
       taskPillStyle={taskPillStyle}
-      toDateKey={toDateKey}
     />
   );
 
