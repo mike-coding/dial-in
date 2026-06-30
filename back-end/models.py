@@ -30,6 +30,7 @@ class UserData(Base):
     time_period = Column(String(20), default="today")  # Today, This Week, This Month, Upcoming
     calendar_view = Column(String(20), default="month")  # month, week, day
     show_old_task_calendar_views = Column(Boolean, default=False)
+    show_mobile_top_bar = Column(Boolean, default=False)
     show_undated = Column(Boolean, default=True)
     show_uncategorized = Column(Boolean, default=True)
     show_overdue = Column(Boolean, default=True)
@@ -50,6 +51,7 @@ class UserData(Base):
             "time_period": self.time_period,
             "calendar_view": self.calendar_view or "month",
             "show_old_task_calendar_views": bool(self.show_old_task_calendar_views),
+            "show_mobile_top_bar": bool(self.show_mobile_top_bar),
             "show_undated": self.show_undated,
             "show_uncategorized": self.show_uncategorized,
             "show_overdue": self.show_overdue,

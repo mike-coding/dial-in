@@ -7,6 +7,7 @@ const Settings: React.FC = () => {
   const { userData: authUser } = useUser();
   const { userData: preferences, updateUserData } = useUserData();
   const showOldTaskCalendarViews = preferences?.show_old_task_calendar_views === true;
+  const showMobileTopBar = preferences?.show_mobile_top_bar === true;
 
   const openDerivedFieldsDebug = () => {
     window.open(DERIVED_FIELDS_DEBUG_PATH, '_blank', 'noopener,noreferrer');
@@ -16,6 +17,13 @@ const Settings: React.FC = () => {
     if (!authUser?.id) return;
     updateUserData(authUser.id, {
       show_old_task_calendar_views: !showOldTaskCalendarViews,
+    });
+  };
+
+  const toggleMobileTopBar = () => {
+    if (!authUser?.id) return;
+    updateUserData(authUser.id, {
+      show_mobile_top_bar: !showMobileTopBar,
     });
   };
 
@@ -61,6 +69,31 @@ const Settings: React.FC = () => {
               <span
                 className={`inline-block h-5 w-5 rounded-full bg-white transition-transform ${
                   showOldTaskCalendarViews ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-md bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-gray-900">Mobile Top Bar</h2>
+              <p className="mt-1 text-sm text-gray-500">Show the DIAL_IN version bar above mobile content.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showMobileTopBar}
+              onClick={toggleMobileTopBar}
+              disabled={!authUser?.id}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                showMobileTopBar ? 'bg-blue-600' : 'bg-gray-300'
+              } disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              <span
+                className={`inline-block h-5 w-5 rounded-full bg-white transition-transform ${
+                  showMobileTopBar ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
             </button>

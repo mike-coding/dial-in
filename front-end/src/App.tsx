@@ -24,6 +24,7 @@ function App() {
   const { userData: preferences } = useUserData();
   const { isMobile, isTablet, isDesktop } = useDeviceDetection();
   const showOldTaskCalendarViews = preferences?.show_old_task_calendar_views === true;
+  const showMobileTopBar = preferences?.show_mobile_top_bar === true;
   const effectiveCurrentPage: Page = !showOldTaskCalendarViews && OLD_TASK_CALENDAR_PAGES.includes(navigation.currentPage)
     ? 'Planner'
     : navigation.currentPage;
@@ -168,10 +169,12 @@ function App() {
       {/* Mobile Layout */}
       {isMobile && (
         <div className="w-full h-full flex flex-col">
-          <div className="bg-white/80 border-b border-gray-400 h-10 flex items-center justify-start px-4">
-            <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
-            <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
-          </div>
+          {showMobileTopBar && (
+            <div className="bg-white/80 border-b border-gray-400 h-10 flex items-center justify-start px-4">
+              <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
+              <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
+            </div>
+          )}
           <OverlayScrollPane className={`w-full ${isCalendarPage ? 'px-1.5 py-3' : 'px-4 py-8'}`} showScrollbar={false}>
             {renderCurrentPage()}
           </OverlayScrollPane>

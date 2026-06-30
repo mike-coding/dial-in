@@ -37,8 +37,7 @@
 - [ ] clicking on empty space in planner view should deselect currently selected day
 
 - [ ] figure out how to clearly distinguish day cells in month view without bg
-
-- [ ] DIAL-IN {version_no} top bar eating up too much space on mobile; Hide this by default and add a userdata-tracked option to expose this in settings
+    - [ ] probably just means moving date # into a separate row instead of the two-column structure we're currently employing
 
 ================================================================================================
 
@@ -98,3 +97,5 @@
 - [x] day view need not display tasks on top of the timeline AND within the timeline. within the timeline is sufficient. lose the (pre?) top of timeline element.
 
 - [x] dev setting to show old task / calendar views (by default only expose planner from now on)
+
+- [x] DIAL-IN {version_no} top bar eating up too much space on mobile; Hide this by default and add a userdata-tracked option to expose this in settings
