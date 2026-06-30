@@ -1,11 +1,21 @@
 """Database configuration and session management."""
+import os
+from pathlib import Path
+
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Database setup
-SQLALCHEMY_DATABASE_URL = "sqlite:///./instance/data.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./instance/data.db")
+database_url = make_url(SQLALCHEMY_DATABASE_URL)
+
+if database_url.drivername.startswith("sqlite") and database_url.database not in (None, "", ":memory:"):
+    Path(database_url.database).expanduser().parent.mkdir(parents=True, exist_ok=True)
+
+connect_args = {"check_same_thread": False} if database_url.drivername.startswith("sqlite") else {}
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

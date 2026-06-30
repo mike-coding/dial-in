@@ -153,17 +153,7 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
     return { task, start, end };
   };
 
-  const taskPassesCalendarFilters = (task: TaskType, taskStart: Date) => {
-    const now = new Date();
-    const today = startOfDay(now);
-    const taskDateOnly = startOfDay(taskStart);
-    const isOverdue = Boolean(
-      !task.is_completed &&
-      (task.due_time ? taskStart < now : taskDateOnly < today)
-    );
-
-    if (isOverdue && !showOverdue) return false;
-
+  const taskPassesCalendarFilters = (task: TaskType) => {
     if (categories && categories.length > 0) {
       if (categoryFilter.length > 0) {
         const hasMatchingCategory = task.category_id && categoryFilter.includes(task.category_id);
@@ -186,7 +176,7 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
   const scheduledTaskRanges = (tasks || [])
     .map(getTaskRange)
     .filter((range): range is TaskRange => range !== null)
-    .filter((range) => taskPassesCalendarFilters(range.task, range.start))
+    .filter((range) => taskPassesCalendarFilters(range.task))
     .sort((a, b) => a.start.getTime() - b.start.getTime() || a.end.getTime() - b.end.getTime());
 
   const getTasksForDate = (date: Date) => {

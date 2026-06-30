@@ -1,40 +1,9 @@
 // Centralized API Configuration
-const getApiBaseUrl = (): string => {
-  const hostname = window.location.hostname;
-  
-  // Development environments (local development)
-  if (hostname === 'localhost' || 
-      hostname === '127.0.0.1' || 
-      hostname.startsWith('192.168.') || 
-      hostname.startsWith('10.') || 
-      hostname.startsWith('172.')) {
-    // Development: Use local backend
-    return `http://${hostname}`;
-  }
-  
-  // Production: Railway uses HTTPS and no custom port
-  return 'https://dial-in-production-0132.up.railway.app';
-};
-
-const getPort = (): string => {
-  const hostname = window.location.hostname;
-  
-  // Development environments need port 5000
-  if (hostname === 'localhost' || 
-      hostname === '127.0.0.1' || 
-      hostname.startsWith('192.168.') || 
-      hostname.startsWith('10.') || 
-      hostname.startsWith('172.')) {
-    return ':5000';
-  }
-  
-  // Production: No port needed
-  return '';
-};
-
-export const API_BASE_URL = getApiBaseUrl() + getPort();
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Helper function for making API calls with the base URL
 export const createApiUrl = (endpoint: string): string => {
-  return `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const baseUrl = API_BASE_URL.replace(/\/$/, '');
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${baseUrl}${path}`;
 };
