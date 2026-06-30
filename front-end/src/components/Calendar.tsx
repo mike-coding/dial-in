@@ -263,6 +263,7 @@ const Calendar: React.FC<CalendarProps> = ({ isMobile = false }) => {
       <SevenDayCalendar
         getTaskSpansForRange={getTaskSpansForRange}
         getTasksForDate={getTasksForDate}
+        isMobile={isMobile}
         packTaskSpans={packTaskSpans}
         rangeStart={weekStart}
         resolveTaskIcon={resolveTaskIcon}

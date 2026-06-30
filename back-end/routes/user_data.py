@@ -22,6 +22,7 @@ def get_user_data(user_id: int, db: Session = Depends(get_db)):
             theme="light",
             time_period="today",
             calendar_view="month",
+            show_old_task_calendar_views=False,
             show_undated=True,
             show_uncategorized=True,
             show_overdue=True,
@@ -39,6 +40,7 @@ def create_user_data(
     theme: Optional[str] = Body("light"),
     time_period: Optional[str] = Body("today"),
     calendar_view: Optional[str] = Body("month"),
+    show_old_task_calendar_views: Optional[bool] = Body(False),
     show_undated: Optional[bool] = Body(True),
     show_uncategorized: Optional[bool] = Body(True),
     show_overdue: Optional[bool] = Body(True),
@@ -59,6 +61,7 @@ def create_user_data(
         theme=theme,
         time_period=time_period,
         calendar_view=calendar_view,
+        show_old_task_calendar_views=show_old_task_calendar_views,
         show_undated=show_undated,
         show_uncategorized=show_uncategorized,
         show_overdue=show_overdue,
@@ -75,6 +78,7 @@ def update_user_data(
     theme: Optional[str] = Body(None),
     time_period: Optional[str] = Body(None),
     calendar_view: Optional[str] = Body(None),
+    show_old_task_calendar_views: Optional[bool] = Body(None),
     show_undated: Optional[bool] = Body(None),
     show_uncategorized: Optional[bool] = Body(None),
     show_overdue: Optional[bool] = Body(None),
@@ -93,6 +97,8 @@ def update_user_data(
         user_data.time_period = time_period
     if calendar_view is not None:
         user_data.calendar_view = calendar_view
+    if show_old_task_calendar_views is not None:
+        user_data.show_old_task_calendar_views = show_old_task_calendar_views
     if show_undated is not None:
         user_data.show_undated = show_undated
     if show_uncategorized is not None:

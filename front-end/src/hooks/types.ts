@@ -64,6 +64,7 @@ export interface UserData {
   theme: string;
   time_period: string;
   calendar_view?: "month" | "week" | "day";
+  show_old_task_calendar_views: boolean;
   show_undated: boolean;
   show_uncategorized: boolean;
   show_overdue: boolean;
@@ -77,6 +78,7 @@ export interface UserUpdate {
   theme?: string;
   time_period?: string;
   calendar_view?: "month" | "week" | "day";
+  show_old_task_calendar_views?: boolean;
   show_undated?: boolean;
   show_uncategorized?: boolean;
   show_overdue?: boolean;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Page, useNavigationContext } from "../hooks/AppContext";
+import { Page, useNavigationContext, useUserData } from "../hooks/AppContext";
 
 // SVG Components
 const DashboardIcon = () => (
@@ -40,13 +40,15 @@ const SettingsIcon = () => (
 
 const MobileNavigation: React.FC = () => {
   const { navigation, navigateTo } = useNavigationContext();
+  const { userData: preferences } = useUserData();
+  const showOldTaskCalendarViews = preferences?.show_old_task_calendar_views === true;
 
   const mainNavigationItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "Dashboard", icon: <DashboardIcon />, label: "Dash" },
     { page: "Planner", icon: <CalendarIcon />, label: "Planner" },
-    { page: "Tasks", icon: <TasksIcon />, label: "Tasks" },
+    ...(showOldTaskCalendarViews ? [{ page: "Tasks" as Page, icon: <TasksIcon />, label: "Tasks" }] : []),
     { page: "Categories", icon: <CategoriesIcon />, label: "Projects" },
-    { page: "Calendar", icon: <CalendarIcon />, label: "Calendar" },
+    ...(showOldTaskCalendarViews ? [{ page: "Calendar" as Page, icon: <CalendarIcon />, label: "Calendar" }] : []),
     { page: "Users", icon: <UsersIcon />, label: "Profile" },
     { page: "Settings", icon: <SettingsIcon />, label: "Settings" },
   ];

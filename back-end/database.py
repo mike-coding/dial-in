@@ -93,6 +93,10 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE user_data ADD COLUMN calendar_view VARCHAR(20) DEFAULT 'month'"))
             connection.commit()
 
+        if "show_old_task_calendar_views" not in user_data_columns:
+            connection.execute(text("ALTER TABLE user_data ADD COLUMN show_old_task_calendar_views BOOLEAN DEFAULT 0"))
+            connection.commit()
+
         users_with_uncategorized_rules = connection.execute(
             text("SELECT DISTINCT user_id FROM rules WHERE category_id IS NULL")
         ).fetchall()

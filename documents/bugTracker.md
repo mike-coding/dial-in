@@ -38,9 +38,7 @@
 
 - [ ] figure out how to clearly distinguish day cells in month view without bg
 
-- [ ] dev setting to show old task / calendar views (by default only expose planner from now on)
-
-- [ ] DIAL-IN {version_no} top bar eating up too much space on mobile; move this into bottom bar or add option to hide in settings or something
+- [ ] DIAL-IN {version_no} top bar eating up too much space on mobile; Hide this by default and add a userdata-tracked option to expose this in settings
 
 ================================================================================================
 
@@ -98,3 +96,5 @@
             - [x] halve to maybe even third size of day timeline element. Just add a within-element scrollbar so the user can scroll along the timeline
 
 - [x] day view need not display tasks on top of the timeline AND within the timeline. within the timeline is sufficient. lose the (pre?) top of timeline element.
+
+- [x] dev setting to show old task / calendar views (by default only expose planner from now on)

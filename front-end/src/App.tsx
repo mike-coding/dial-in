@@ -12,14 +12,21 @@ import DerivedFieldStyleDebug from './components/DerivedFieldStyleDebug'
 import OverlayScrollPane from './components/OverlayScrollPane'
 import Settings from './components/Settings'
 import WindowsEmoji from './components/WindowsEmoji'
-import { useNavigationContext, useUser } from './hooks/AppContext'
+import { Page, useNavigationContext, useUser, useUserData } from './hooks/AppContext'
 import useDeviceDetection from './hooks/useDeviceDetection'
 import { getVersionString } from './utils/version'
 
+const OLD_TASK_CALENDAR_PAGES: Page[] = ['Tasks', 'Calendar'];
+
 function App() {
-  const { navigation } = useNavigationContext();
+  const { navigation, navigateTo } = useNavigationContext();
   const { authState, checkAuthStatus } = useUser();
+  const { userData: preferences } = useUserData();
   const { isMobile, isTablet, isDesktop } = useDeviceDetection();
+  const showOldTaskCalendarViews = preferences?.show_old_task_calendar_views === true;
+  const effectiveCurrentPage: Page = !showOldTaskCalendarViews && OLD_TASK_CALENDAR_PAGES.includes(navigation.currentPage)
+    ? 'Planner'
+    : navigation.currentPage;
 
   // Check authentication status on app startup
   React.useEffect(() => {
@@ -30,6 +37,12 @@ function App() {
   React.useEffect(() => {
     document.title = `DIAL_IN ${getVersionString()}`;
   }, []);
+
+  React.useEffect(() => {
+    if (authState.isAuthenticated && !showOldTaskCalendarViews && OLD_TASK_CALENDAR_PAGES.includes(navigation.currentPage)) {
+      navigateTo('Planner');
+    }
+  }, [authState.isAuthenticated, navigation.currentPage, navigateTo, showOldTaskCalendarViews]);
 
   const debugView = new URLSearchParams(window.location.search).get('debug');
 
@@ -60,7 +73,7 @@ function App() {
   const renderCurrentPage = () => {
     const mobilePageClasses = isMobile ? "px-2" : "";
     
-    switch (navigation.currentPage) {
+    switch (effectiveCurrentPage) {
       case 'Tasks':
         return <Tasks isMobile={isMobile} />;
       case 'Categories':
@@ -114,7 +127,7 @@ function App() {
     }
   };
 
-  const isCalendarPage = navigation.currentPage === 'Calendar' || navigation.currentPage === 'Planner';
+  const isCalendarPage = effectiveCurrentPage === 'Calendar' || effectiveCurrentPage === 'Planner';
 
   return (
     <div className="h-full w-full relative overflow-hidden">

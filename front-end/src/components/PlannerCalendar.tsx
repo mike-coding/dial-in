@@ -383,6 +383,7 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
     <SevenDayCalendar
       getTaskSpansForRange={getTaskSpansForRange}
       getTasksForDate={getTasksForDate}
+      isMobile={isMobile}
       isSelectedDate={isSelectedDate}
       openDate={openDate}
       packTaskSpans={packTaskSpans}
