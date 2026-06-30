@@ -20,7 +20,7 @@ services:
     build:
       context: ./front-end
     ports:
-      - "8080:80"
+      - "${DIAL_IN_PORT:-8090}:80"
     depends_on:
       backend:
         condition: service_healthy
