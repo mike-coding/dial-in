@@ -3,10 +3,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 interface OverlayScrollPaneProps {
   children: React.ReactNode;
   className?: string;
+  showScrollbar?: boolean;
   wrapperClassName?: string;
 }
 
-const OverlayScrollPane: React.FC<OverlayScrollPaneProps> = ({ children, className = '', wrapperClassName = '' }) => {
+const OverlayScrollPane: React.FC<OverlayScrollPaneProps> = ({
+  children,
+  className = '',
+  showScrollbar = true,
+  wrapperClassName = '',
+}) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [thumbStyle, setThumbStyle] = useState({ height: 0, top: 0 });
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -57,7 +63,7 @@ const OverlayScrollPane: React.FC<OverlayScrollPaneProps> = ({ children, classNa
       <div ref={scrollRef} className={`overlay-scroll-pane h-full overflow-y-auto ${className}`}>
         {children}
       </div>
-      {hasOverflow && (
+      {showScrollbar && hasOverflow && (
         <div className="pointer-events-none absolute right-1 top-0 h-full w-1.5 py-1">
           <div
             className="w-full rounded-full bg-gray-500/35"

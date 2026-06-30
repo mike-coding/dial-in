@@ -159,7 +159,7 @@ function App() {
             <div className="text-lg font-bold text-gray-800">DIAL_IN</div>
             <div className="text-sm text-gray-500 font-medium ml-2">{getVersionString()}</div>
           </div>
-          <OverlayScrollPane className={`w-full px-4 ${isCalendarPage ? 'py-3' : 'py-8'}`}>
+          <OverlayScrollPane className={`w-full ${isCalendarPage ? 'px-1.5 py-3' : 'px-4 py-8'}`} showScrollbar={false}>
             {renderCurrentPage()}
           </OverlayScrollPane>
           <MobileNavigation />

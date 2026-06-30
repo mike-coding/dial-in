@@ -32,7 +32,15 @@
 
 - [ ] day view padding / spacing / formatting could use a lot of work
 
+- [ ] separate 'show overdue' setting for task list versus calendar
+
+- [ ] clicking on empty space in planner view should deselect currently selected day
+
+- [ ] figure out how to clearly distinguish day cells in month view without bg
+
 - [ ] dev setting to show old task / calendar views (by default only expose planner from now on)
+
+- [ ] DIAL-IN {version_no} top bar eating up too much space on mobile; move this into bottom bar or add option to hide in settings or something
 
 ================================================================================================
 

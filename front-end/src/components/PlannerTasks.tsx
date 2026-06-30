@@ -179,8 +179,8 @@ const PlannerTasks: React.FC<PlannerTasksProps> = ({ currentDate, isMobile = fal
   const completedCount = completedTasks.length;
 
   return (
-    <div className="w-full min-w-0 rounded-xl">
-      <div className={`w-full min-w-0 ${isMobile ? 'max-w-full px-4' : 'max-w-2xl'} mx-auto ${isMobile ? 'pt-4' : 'pt-8'}`}>
+    <div className="w-full min-w-0">
+      <div className={`w-full min-w-0 ${isMobile ? 'max-w-full' : 'max-w-2xl'} mx-auto`}>
         {/* Add Task Input */}
         <div className="mb-2">
           <div className="bg-white rounded-md border border-white/20 px-4 py-2 backdrop-blur-lg backdrop-brightness-105 backdrop-saturate-70 backdrop-contrast-100">

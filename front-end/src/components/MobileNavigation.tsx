@@ -52,20 +52,20 @@ const MobileNavigation: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/90 shadow-lg z-50 h-20">
-      <div className="flex justify-around items-center h-full px-2 max-w-xl mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white/90 shadow-lg">
+      <div className="mx-auto flex h-full max-w-xl items-center justify-between px-1">
         {mainNavigationItems.map(({ page, icon, label }) => (
           <button
             key={page}
             onClick={() => navigateTo(page)}
-            className={`flex flex-col items-center justify-center py-2 px-2 rounded-lg transition-all duration-200 min-w-[58px] ${
+            className={`flex min-w-[46px] flex-1 flex-col items-center justify-center rounded-lg px-1 py-2 transition-all duration-200 ${
               navigation.currentPage === page
                 ? "bg-blue-100 text-blue-600 scale-105"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             }`}
           >
             <div className="mb-1">{icon}</div>
-            <span className="text-xs font-medium">{label}</span>
+            <span className="text-[10px] font-medium leading-tight">{label}</span>
           </button>
         ))}
       </div>

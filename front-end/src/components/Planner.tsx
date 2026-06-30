@@ -11,11 +11,11 @@ const Planner: React.FC<PlannerProps> = ({ isMobile = false }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   return (
-    <div className={`flex w-full max-w-none flex-col gap-6 ${isMobile ? 'px-2' : ''}`}>
+    <div className="flex w-full max-w-none flex-col gap-6 px-1">
       <section className="w-full">
         <PlannerCalendar
           currentDate={currentDate}
-          isMobile={false}
+          isMobile={isMobile}
           selectedDate={selectedDate}
           setCurrentDate={setCurrentDate}
           setSelectedDate={setSelectedDate}

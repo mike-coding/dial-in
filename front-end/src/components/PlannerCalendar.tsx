@@ -369,6 +369,7 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
     <MonthCalendar
       currentDate={currentDate}
       getTasksForDate={getTasksForDate}
+      isMobile={isMobile}
       isSelectedDate={isSelectedDate}
       openDate={openDate}
       resolveTaskIcon={resolveTaskIcon}
@@ -414,7 +415,7 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
   );
 
   return (
-    <div className={`flex h-full min-h-0 w-full max-w-none flex-1 flex-col ${isMobile ? 'px-2' : ''}`}>
+    <div className="flex h-full min-h-0 w-full max-w-none flex-1 flex-col">
       {/* Header */}
       <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
         <div className="relative justify-self-start" ref={filterDropdownRef}>
@@ -549,9 +550,6 @@ const PlannerCalendar: React.FC<PlannerCalendarProps> = ({
         {viewMode === 'upcoming' && renderUpcomingView()}
         {viewMode === 'day' && renderDayView()}
       </div>
-
-      {/* Bottom spacing for mobile navigation */}
-      {isMobile && <div className="h-16"></div>}
     </div>
   );
 };
