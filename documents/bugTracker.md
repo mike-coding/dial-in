@@ -27,15 +27,12 @@
 
 - [ ] rule field on task doesn't need to show rule's parent category also; this is already visible in the task's category field (clarify whether a task can actually have a different category than its parent rule)
 
-- [ ] get docker-ready
-    - [ ] build pipeline
-
 - [ ] day view padding / spacing / formatting could use a lot of work
 
 - [ ] clicking on empty space in planner view should deselect currently selected day
 
-- [ ] figure out how to clearly distinguish day cells in month view without bg for desktop view
-    - [ ] probably just means moving date # into a separate row instead of the two-column structure we're currently employing. It seems like mobile does this already
+- [x] figure out how to clearly distinguish day cells in month view without bg for desktop view
+    - [x] probably just means moving date # into a separate row instead of the two-column structure we're currently employing. It seems like mobile does this already
 
 - [ ] on mobile, task sub-components (when expanded) overflow the card. Half of the 'delete' button specifically gets cut off. Make sure the expanded card isn't a hard-coded size and instead is whatever size necessary to fit all fields and stuff
 
@@ -46,6 +43,8 @@
 - [ ] multi-day-spanning tasks/events broken in month calendar view (freakin AI reverted this again without mentioning it even though you stopped their earlier attempt already). Have the assistant refer to 7 day view, which handles this correctly presently
 
 - [ ] Week view doesn't have a cap on how many task cards can be rendered for a given day; It adds a freaking scrollbar in there for some reason instead of using the [+x tasks] semantic card the month view employs. It's awesome to have an assistant that subverts every app convention you try to establish .......
+
+- [ ] notification support
 
 ================================================================================================
 
@@ -109,3 +108,6 @@
 - [x] DIAL-IN {version_no} top bar eating up too much space on mobile; Hide this by default and add a userdata-tracked option to expose this in settings
 
 - [x] separate 'show overdue' setting for task list versus calendar
+
+- [x] get docker-ready
+    - [x] build pipeline

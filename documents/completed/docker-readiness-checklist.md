@@ -59,15 +59,19 @@ uvicorn app:app --host 0.0.0.0 --port 5000
   - Backend currently allows all origins.
   - If the frontend uses same-origin Nginx proxying, browser CORS should not be needed for normal app traffic.
 
-- [ ] Build and test with Docker on a machine with Docker installed.
-  - Docker CLI is not currently available in this workspace, so image build and Compose validation still need to be run elsewhere.
+- [x] Build and test with Docker on the home server.
+  - `docker compose build` completed successfully on `franklinhome`.
+  - `docker compose up` started backend and frontend containers.
+  - Backend healthcheck passed.
+  - Frontend publishes on host port `8090` by default because `8080` is already used by Zigbee2MQTT.
+  - Local SQLite data was copied into the Docker volume successfully.
 
 ## Target Home Server Shape
 
 Run the app at:
 
 ```text
-http://home-server-ip:8080
+http://home-server-ip:8090
 ```
 
 Frontend calls:
@@ -94,5 +98,14 @@ backend:5000/categories
 4. [x] Add backend Dockerfile.
 5. [x] Add frontend Dockerfile and Nginx config.
 6. [x] Add Docker Compose with persistent SQLite volume.
-7. [ ] Build and test locally with Docker.
-8. [ ] Deploy to the home server.
+7. [x] Build and test on the home server with Docker.
+8. [x] Deploy to the home server.
+
+## Current Server Status
+
+- Server path: `/opt/stacks/dial-in`
+- Default published app URL: `http://franklinhome:8090`
+- Compose frontend port mapping: `${DIAL_IN_PORT:-8090}:80`
+- Backend is internal to Compose on `backend:5000`
+- Persistent database volume: `dial-in_dial-in-data`
+- Database path inside backend container: `/data/data.db`

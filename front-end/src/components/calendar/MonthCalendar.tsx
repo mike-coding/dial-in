@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import WindowsEmoji from '../WindowsEmoji';
 import type { TaskRange, TaskVisualHelpers } from './types';
 
+const MAX_MONTH_TASK_SLOTS = 4;
+
 type MonthCalendarProps = Omit<TaskVisualHelpers, 'formatTaskRange' | 'taskPillClasses'> & {
   currentDate: Date;
   getTasksForDate: (date: Date) => TaskRange[];
@@ -54,13 +56,13 @@ const MonthTaskStrip = ({ day, isMobile = false, resolveTaskIcon, taskPillStyle,
     return null;
   }
 
-  const capacity = tileCapacity ?? tasks.length;
+  const capacity = Math.min(MAX_MONTH_TASK_SLOTS, tileCapacity ?? MAX_MONTH_TASK_SLOTS);
   const visibleTaskLimit = tasks.length > capacity ? Math.max(0, capacity - 1) : capacity;
   const visibleTasks = tasks.slice(0, visibleTaskLimit);
   const hiddenTaskCount = tasks.length - visibleTasks.length;
   const stripClasses = isMobile
-    ? 'pointer-events-none mx-0.5 mt-0.5 flex min-w-0 flex-nowrap content-start gap-0.5 overflow-hidden'
-    : 'pointer-events-none m-2 flex min-w-0 flex-nowrap content-start gap-1 overflow-hidden';
+    ? 'pointer-events-none mx-0.5 mt-0.5 flex min-w-0 flex-nowrap justify-center gap-0.5 overflow-hidden'
+    : 'pointer-events-none m-2 flex min-w-0 flex-nowrap justify-center gap-1 overflow-hidden';
   const tileClasses = isMobile
     ? 'flex h-4 w-4 min-w-4 items-center justify-center rounded-sm border-l-2 text-[9px] leading-none'
     : 'flex h-6 w-6 min-w-6 items-center justify-center rounded-sm border-l-2 text-[10px] leading-none';
@@ -126,11 +128,11 @@ const MonthCalendar = ({
       const isSelected = Boolean(isSelectedDate?.(day));
       const dayTasks = getTasksForDate(day);
       const dayCellClasses = isMobile
-        ? 'flex min-h-[2.75rem] min-w-0 flex-col rounded-xs p-0.5 transition-all duration-200'
-        : 'grid min-h-[3.25rem] grid-cols-[1.25rem_minmax(0,1fr)] gap-1 rounded-xs p-1 transition-all duration-200';
+        ? 'flex min-h-[2.75rem] min-w-0 flex-col rounded-sm p-0.5 transition-all duration-200'
+        : 'flex min-h-[3.25rem] min-w-0 flex-col overflow-hidden rounded-sm p-0 transition-all duration-200';
       const dayNumberClasses = isMobile
         ? 'flex h-4 items-center justify-start pl-1 text-xs leading-none'
-        : 'flex items-start justify-center pt-0.5 text-sm leading-tight';
+        : 'flex h-6 shrink-0 items-center justify-center text-sm leading-tight';
 
       weekDays.push(
         <div
